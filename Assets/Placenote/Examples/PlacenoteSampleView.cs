@@ -87,6 +87,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mImage.y.height = (ulong)mARCamera.videoParams.yHeight;
 		mImage.y.stride = (ulong)mARCamera.videoParams.yWidth;
 
+		// This does assume the YUV_NV21 format
 		int vuBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yWidth/2;
 		mImage.vu.data = Marshal.AllocHGlobal (vuBufSize);
 		mImage.vu.width = (ulong)mARCamera.videoParams.yWidth/2;
