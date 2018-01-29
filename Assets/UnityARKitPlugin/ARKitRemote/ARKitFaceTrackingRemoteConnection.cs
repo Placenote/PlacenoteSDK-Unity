@@ -1,20 +1,18 @@
-﻿using UnityEngine;
+﻿
+using UnityEngine;
 using UnityEngine.Networking.PlayerConnection;
 using System.Text;
 using Utils; 
 
 #if UNITY_EDITOR
- 
+
 using UnityEditor.Networking.PlayerConnection;
 
 namespace UnityEngine.XR.iOS
 {
-	public class ARKitRemoteConnection : MonoBehaviour
+	public class ARKitFaceTrackingRemoteConnection : MonoBehaviour
 	{
-		[Header("AR Config Options")]
-		public UnityARAlignment startAlignment = UnityARAlignment.UnityARAlignmentGravity;
-		public UnityARPlaneDetection planeDetection = UnityARPlaneDetection.Horizontal;
-		public bool getPointCloud = true;
+		[Header("AR FaceTracking Config Options")]
 		public bool enableLightEstimation = true;
 
 		[Header("Run Options")]
@@ -42,9 +40,9 @@ namespace UnityEngine.XR.iOS
 			editorConnection.RegisterConnection (PlayerConnected);
 			editorConnection.RegisterDisconnection (PlayerDisconnected);
 			editorConnection.Register (ConnectionMessageIds.updateCameraFrameMsgId, UpdateCameraFrame);
-			editorConnection.Register (ConnectionMessageIds.addPlaneAnchorMsgeId, AddPlaneAnchor);
-			editorConnection.Register (ConnectionMessageIds.updatePlaneAnchorMsgeId, UpdatePlaneAnchor);
-			editorConnection.Register (ConnectionMessageIds.removePlaneAnchorMsgeId, RemovePlaneAnchor);
+			editorConnection.Register (ConnectionMessageIds.addFaceAnchorMsgeId, AddFaceAnchor);
+			editorConnection.Register (ConnectionMessageIds.updateFaceAnchorMsgeId, UpdateFaceAnchor);
+			editorConnection.Register (ConnectionMessageIds.removePlaneAnchorMsgeId, RemoveFaceAnchor);
 			editorConnection.Register (ConnectionMessageIds.screenCaptureYMsgId, ReceiveRemoteScreenYTex);
 			editorConnection.Register (ConnectionMessageIds.screenCaptureUVMsgId, ReceiveRemoteScreenUVTex);
 
@@ -58,13 +56,13 @@ namespace UnityEngine.XR.iOS
 
 		void OnGUI()
 		{
-			
+
 			if (!bTexturesInitialized) 
 			{
 				if (currentPlayerID != -1) {
 					guimessage = "Connected to ARKit Remote device : " + currentPlayerID.ToString ();
 
-					if (GUI.Button (new Rect ((Screen.width / 2) - 200, (Screen.height / 2) - 200, 400, 100), "Start Remote ARKit Session")) 
+					if (GUI.Button (new Rect ((Screen.width / 2) - 200, (Screen.height / 2) - 200, 400, 100), "Start Remote ARKit FaceTracking Session")) 
 					{
 						SendInitToPlayer ();
 					}
@@ -88,11 +86,11 @@ namespace UnityEngine.XR.iOS
 
 		void OnDestroy()
 		{
-			#if UNITY_2017_1_OR_NEWER
+#if UNITY_2017_1_OR_NEWER
 			if(editorConnection != null) {
 				editorConnection.DisconnectAll ();
 			}
-			#endif
+#endif
 		}
 
 
@@ -131,28 +129,28 @@ namespace UnityEngine.XR.iOS
 			UnityARSessionNativeInterface.RunFrameUpdateCallbacks ();
 		}
 
-		void AddPlaneAnchor(MessageEventArgs mea)
+		void AddFaceAnchor(MessageEventArgs mea)
 		{
-			serializableUnityARPlaneAnchor serPlaneAnchor = mea.data.Deserialize<serializableUnityARPlaneAnchor> ();
+			serializableUnityARFaceAnchor serFaceAnchor = mea.data.Deserialize<serializableUnityARFaceAnchor> ();
 
-			ARPlaneAnchor arPlaneAnchor = serPlaneAnchor;
-			UnityARSessionNativeInterface.RunAddAnchorCallbacks (arPlaneAnchor);
+			ARFaceAnchor arFaceAnchor = serFaceAnchor;
+			UnityARSessionNativeInterface.RunAddAnchorCallbacks (arFaceAnchor);
 		}
 
-		void UpdatePlaneAnchor(MessageEventArgs mea)
+		void UpdateFaceAnchor(MessageEventArgs mea)
 		{
-			serializableUnityARPlaneAnchor serPlaneAnchor = mea.data.Deserialize<serializableUnityARPlaneAnchor> ();
+			serializableUnityARFaceAnchor serFaceAnchor = mea.data.Deserialize<serializableUnityARFaceAnchor> ();
 
-			ARPlaneAnchor arPlaneAnchor = serPlaneAnchor;
-			UnityARSessionNativeInterface.RunUpdateAnchorCallbacks (arPlaneAnchor);
+			ARFaceAnchor arFaceAnchor = serFaceAnchor;
+			UnityARSessionNativeInterface.RunUpdateAnchorCallbacks (arFaceAnchor);
 		}
 
-		void RemovePlaneAnchor(MessageEventArgs mea)
+		void RemoveFaceAnchor(MessageEventArgs mea)
 		{
-			serializableUnityARPlaneAnchor serPlaneAnchor = mea.data.Deserialize<serializableUnityARPlaneAnchor> ();
+			serializableUnityARFaceAnchor serFaceAnchor = mea.data.Deserialize<serializableUnityARFaceAnchor> ();
 
-			ARPlaneAnchor arPlaneAnchor = serPlaneAnchor;
-			UnityARSessionNativeInterface.RunRemoveAnchorCallbacks (arPlaneAnchor);
+			ARFaceAnchor arFaceAnchor = serFaceAnchor;
+			UnityARSessionNativeInterface.RunRemoveAnchorCallbacks (arFaceAnchor);
 		}
 
 		void ReceiveRemoteScreenYTex(MessageEventArgs mea)
@@ -184,9 +182,12 @@ namespace UnityEngine.XR.iOS
 
 		void SendInitToPlayer()
 		{
+
+			//we're going to reuse ARSessionConfiguration and only use its lightestimation field.
+
 			serializableFromEditorMessage sfem = new serializableFromEditorMessage ();
-			sfem.subMessageId = SubMessageIds.editorInitARKit;
-			serializableARSessionConfiguration ssc = new serializableARSessionConfiguration (startAlignment, planeDetection, getPointCloud, enableLightEstimation); 
+			sfem.subMessageId = SubMessageIds.editorInitARKitFaceTracking;
+			serializableARSessionConfiguration ssc = new serializableARSessionConfiguration (UnityARAlignment.UnityARAlignmentCamera, UnityARPlaneDetection.None, false, enableLightEstimation); 
 			UnityARSessionRunOption roTracking = resetTracking ? UnityARSessionRunOption.ARSessionRunOptionResetTracking : 0;
 			UnityARSessionRunOption roAnchors = removeExistingAnchors ? UnityARSessionRunOption.ARSessionRunOptionRemoveExistingAnchors : 0;
 			sfem.arkitConfigMsg = new serializableARKitInit (ssc, roTracking | roAnchors);
@@ -207,7 +208,7 @@ namespace UnityEngine.XR.iOS
 
 		// Update is called once per frame
 		void Update () {
-			
+
 		}
 
 	}
