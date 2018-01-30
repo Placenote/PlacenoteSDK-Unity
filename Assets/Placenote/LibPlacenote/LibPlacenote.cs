@@ -435,13 +435,13 @@ public class LibPlacenote : MonoBehaviour
 		MappingStatus status = (MappingStatus)PNGetStatus ();
 
 		var listeners = Instance.listeners;
-		MainThreadTaskQueue.InvokeOnMainThread (() => {
-			if (status == MappingStatus.RUNNING) {
+		if (status == MappingStatus.RUNNING) {
+			MainThreadTaskQueue.InvokeOnMainThread (() => {
 				foreach (var listener in listeners) {
 					listener.OnPose (outputPoseMat, arkitPoseMat);
 				}
-			}
-		});
+			});
+		}
 
 		if (status != Instance.mPrevStatus) {
 			MainThreadTaskQueue.InvokeOnMainThread (() => {
