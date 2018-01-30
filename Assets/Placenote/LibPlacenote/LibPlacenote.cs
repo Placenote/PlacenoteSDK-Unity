@@ -306,15 +306,8 @@ public class LibPlacenote : MonoBehaviour
 		initParams.appBasePath = Application.streamingAssetsPath + "/Placenote";
 		initParams.mapPath = Application.persistentDataPath;
 
-		Matrix4x4 matFlipY = Matrix4x4.zero;
-		matFlipY [0, 0] = 1;
-		matFlipY [1, 1] = -1;
-		matFlipY [2, 2] = 1;
-		matFlipY [3, 3] = 1;
-
 		mRotUnityCam2RGB = Matrix4x4.TRS (new Vector3 (0, 0, 0), 
-			Quaternion.AngleAxis (90, new Vector3 (0, 0, 1)), new Vector3 (1, 1, 1));
-		mRotUnityCam2RGB = matFlipY * mRotUnityCam2RGB;
+			Quaternion.AngleAxis (-90, new Vector3 (0, 0, 1)), new Vector3 (1, 1, 1));
 
 #if !UNITY_EDITOR
 		PNInitialize (ref initParams, OnInitialized, IntPtr.Zero);
@@ -336,8 +329,42 @@ public class LibPlacenote : MonoBehaviour
 	/// <param name="frameData">Image frame data.</param>
 	/// <param name="position">Position of the camera at the time frameData is captured</param>
 	/// <param name="rotation">Quaternion of the camera at the time frameData is captured.</param>
-	public void SendARFrame (UnityARImageFrameData frameData, Vector3 position, Quaternion rotation)
+	/// <param name="screenOrientation">
+	/// Fill in this parameter with screenOrientation from the current UnityVideoParams structure.
+	/// Used to correct for the extra rotation applied by the Unity ARKit Plugin on the ARKit pose transform.
+	/// </param>
+	public void SendARFrame (UnityARImageFrameData frameData, Vector3 position, Quaternion rotation, int screenOrientation)
 	{
+		Matrix4x4 orientRemovalMat = Matrix4x4.zero;
+		orientRemovalMat.m22 = orientRemovalMat.m33 = 1;
+		switch (screenOrientation) {
+		// portrait
+		case 1:
+			orientRemovalMat.m01 = 1;
+			orientRemovalMat.m10 = -1;
+			break;
+		case 2:
+			orientRemovalMat.m01 = -1;
+			orientRemovalMat.m10 = 1;
+			break;
+		// landscape
+		case 3:
+			// do nothing
+			orientRemovalMat = Matrix4x4.identity;
+			break;
+		case 4:
+			orientRemovalMat.m00 = -1;
+			orientRemovalMat.m11 = -1;
+			break;
+		default:
+			Debug.LogError ("Unrecognized screen orientation");
+			return;
+		}
+
+		Matrix4x4 rotationMat = Matrix4x4.TRS (new Vector3 (0, 0, 0), rotation, new Vector3 (1, 1, 1));
+		rotationMat = rotationMat * orientRemovalMat;
+		rotation = PNUtility.MatrixOps.QuaternionFromMatrix (rotationMat);
+
 		PNTransformUnity pose = new PNTransformUnity ();
 		pose.position.x = position.x;
 		pose.position.y = position.y;

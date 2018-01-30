@@ -81,17 +81,18 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		mImage = new UnityARImageFrameData ();
 
-		int yBufSize = mARCamera.videoParams.yStride * mARCamera.videoParams.yHeight;
+		int yBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yHeight;
 		mImage.y.data = Marshal.AllocHGlobal (yBufSize);
 		mImage.y.width = (ulong)mARCamera.videoParams.yWidth;
 		mImage.y.height = (ulong)mARCamera.videoParams.yHeight;
-		mImage.y.stride = (ulong)mARCamera.videoParams.yStride;
+		mImage.y.stride = (ulong)mARCamera.videoParams.yWidth;
 
-		int vuBufSize = mARCamera.videoParams.vuStride * mARCamera.videoParams.vuHeight;
+		// This does assume the YUV_NV21 format
+		int vuBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yWidth/2;
 		mImage.vu.data = Marshal.AllocHGlobal (vuBufSize);
-		mImage.vu.width = (ulong)mARCamera.videoParams.vuWidth;
-		mImage.vu.height = (ulong)mARCamera.videoParams.vuHeight;
-		mImage.vu.stride = (ulong)mARCamera.videoParams.vuStride;
+		mImage.vu.width = (ulong)mARCamera.videoParams.yWidth/2;
+		mImage.vu.height = (ulong)mARCamera.videoParams.yHeight/2;
+		mImage.vu.stride = (ulong)mARCamera.videoParams.yWidth;
 
 		mSession.SetCapturePixelData (true, mImage.y.data, mImage.vu.data);
 	}
@@ -114,11 +115,12 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				mLabelText.text = "ARKit Initialized";
 			}
 
-			Matrix4x4 matrix = mSession.GetARKitPoseMatrix4x4 ();
+			Matrix4x4 matrix = mSession.GetCameraPose ();
+
 			Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition (matrix);
 			Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation (matrix);
 
-			LibPlacenote.Instance.SendARFrame (mImage, arkitPosition, arkitQuat);
+			LibPlacenote.Instance.SendARFrame (mImage, arkitPosition, arkitQuat, mARCamera.videoParams.screenOrientation);
 		}
 	}
 
@@ -244,7 +246,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		mLabelText.text = "Initializing ARKit";
 		Application.targetFrameRate = 60;
-		ARKitWorldTackingSessionConfiguration config = new ARKitWorldTackingSessionConfiguration ();
+		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
 		config.planeDetection = UnityARPlaneDetection.Horizontal;
 		config.alignment = UnityARAlignment.UnityARAlignmentGravity;
 		config.getPointCloudData = true;

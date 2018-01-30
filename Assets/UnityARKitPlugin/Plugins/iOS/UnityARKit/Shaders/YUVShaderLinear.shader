@@ -1,4 +1,4 @@
-Shader "Unlit/ARCameraShader"
+Shader "Unlit/ARCameraShader(Linear)"
 {
 	Properties
 	{
@@ -66,7 +66,8 @@ Shader "Unlit/ARCameraShader"
 						float4(0.0, +0.0000, +0.0000, +1.0000)
 					);
 
-                return mul(ycbcrToRGBTransform, ycbcr);
+				//gamma->linear conversion
+                return pow(mul(ycbcrToRGBTransform, ycbcr), 2.2);
 			}
 			ENDCG
 		}
