@@ -405,15 +405,16 @@ public class LibPlacenote : MonoBehaviour
 	{
 		Matrix4x4 outputPoseMat = PNUtility.MatrixOps.PNPose2Matrix4x4 (outputPose);
 		Matrix4x4 arkitPoseMat = PNUtility.MatrixOps.PNPose2Matrix4x4 (arkitPose);
+		MappingStatus status = (MappingStatus)PNGetStatus ();
 
 		var listeners = Instance.listeners;
-		MainThreadTaskQueue.InvokeOnMainThread (() => {
-			foreach (var listener in listeners) {
-				listener.OnPose (outputPoseMat, arkitPoseMat);
-			}
-		});
-
-		MappingStatus status = (MappingStatus)PNGetStatus ();
+		if (status == MappingStatus.RUNNING) {
+			MainThreadTaskQueue.InvokeOnMainThread (() => {
+				foreach (var listener in listeners) {
+					listener.OnPose (outputPoseMat, arkitPoseMat);
+				}
+			});
+		}
 
 		if (status != Instance.mPrevStatus) {
 			MainThreadTaskQueue.InvokeOnMainThread (() => {

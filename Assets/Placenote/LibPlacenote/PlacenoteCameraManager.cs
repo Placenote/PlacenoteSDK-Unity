@@ -31,10 +31,6 @@ public class PlacenoteCameraManager : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
-		if (LibPlacenote.Instance.GetStatus () != LibPlacenote.MappingStatus.RUNNING) {
-			return;
-		}
-
 		// Compute the transform of the camera parent so that camera pose ends up at outputPose
 		Matrix4x4 camParentPose = outputPose * arkitPose.inverse;
 		cameraParent.transform.position = PNUtility.MatrixOps.GetPosition (camParentPose);
