@@ -5,12 +5,30 @@ The Placenote SDK Unity Sample app provided here is to serve as an example on ho
 * Note: The Placenote SDK for Unity currently only supports ARKit enabled iOS devices
 
 ## Getting Started
+
+* First off, you will need to create a developer account and generate an API Key on our website:
+  * https://developer.placenote.com/
+* Copy your API key you just created we will need it later
+* Choose one of the following methods to get our SDK into your project:
+
+## Import the Placenote SDK
+
+### Using the Unity Asset Store
+* Coming soon! Waiting for the Unity Asset Store team to review Placenote
+
+### Using the .unitypackage
+* Download the latest Placenote release Unity package from here:
+  * https://github.com/Placenote/PlacenoteSDK-Unity/releases
+* Double-click it to import it into your Unity project
+
+### Using our Github repo
 * Clone this repository
   * Critical library files are stored using lfs, which is the large file storage mechanism for git.
   * To Install these files install lfs either using HomeBrew: `brew install git-lfs` or MacPorts: `port install git-lfs`
   * After you have cloned this repository, additionally run `git lfs install` and then `git lfs pull`
   * More details can be found on the [git lfs website](https://git-lfs.github.com/)
-* Get an API key from: https://developer.placenote.com/
+
+## Configure and test the Placenote SDK
 * Open the example scene in Placenotes/Scenes/
 * Place your API key in the 'Lib Placenote' component of PlacenoteCameraManager
 * Switch the build platform to iOS, and always build in Release mode for optimal performance
@@ -19,7 +37,7 @@ The Placenote SDK Unity Sample app provided here is to serve as an example on ho
     * Under the 'General' tab add 'Placenote.framework' to 'Embedded Binaries'
     * Under the 'Build Settings' tab set 'Enable Bitcode' to NO
 
-To integrate this into your own app
+To integrate this into your own app/scene:
 * Copy the Placenote folder into your project
 * Add the PlacenoteCameraManager prefab to your scene, removing the original camera
     * Make sure to set your API key
