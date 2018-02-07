@@ -1,6 +1,6 @@
 # Placenote SDK Unity Sample app.
 The Placenote Software development kit (SDK) allows developers to create mobile applications that are location aware indoors, in and around complex buildings and with respect to instruments and machinery without the need for GPS, markers or beacons. The SDK is compatible with all ARKit enabled phones and can be used to create persistent augmented reality experiences using Unity!
-The Placenote SDK Unity Sample app provided here is to serve as an example on how to integrate the SDK into a Unity app. This app is written primarily in C#.
+The Placenote SDK Unity Sample app provided here is to serve as an example on how to integrate the SDK into a Unity app. This app is written primarily in C#. Questions? Comments? Issues? Come see us on [Slack](https://join.slack.com/t/placenotedevs/shared_invite/enQtMjk5ODk2MzM0NDMzLTIzMjQwZTAxMzYxYWMyMjY1NzZmYTA2YjY0OGU5NzAzNjUxN2M1ZTQ1ZWZiYzI4ZDg4NGU1ZjQ0ZTA4NDY0OWI)
 
 * Note: The Placenote SDK for Unity currently only supports ARKit enabled iOS devices
 
@@ -23,9 +23,23 @@ The Placenote SDK Unity Sample app provided here is to serve as an example on ho
 
 ### Using our Github repo
 * Clone this repository
-  * Critical library files are stored using lfs, which is the large file storage mechanism for git.
-  * To Install these files install lfs either using HomeBrew: `brew install git-lfs` or MacPorts: `port install git-lfs`
-  * After you have cloned this repository, additionally run `git lfs install` and then `git lfs pull`
+* Critical library files are stored using lfs, which is the large file storage mechanism for git.
+  * To Install these files, install lfs either using HomeBrew:
+  
+     ```Shell Session 
+     brew install git-lfs
+     ```
+
+      or MacPorts: 
+      ```Shell Session
+      port install git-lfs
+      ```
+   
+  * And then, to get the library files, run: 
+     ```Shell Session
+     git lfs install 
+     git lfs pull
+     ```
   * More details can be found on the [git lfs website](https://git-lfs.github.com/)
 
 ## Configure and test the Placenote SDK
