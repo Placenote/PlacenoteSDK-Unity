@@ -74,19 +74,21 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 
 		Vector3[] points = new Vector3[map.Length];
+		Color[] colors = new Color[map.Length];
 		for (int i = 0; i < map.Length; ++i) {
+
 			points [i].x = map [i].point.x;
 			points [i].y = map [i].point.y;
 			points [i].z = -map [i].point.z;
-		}
-
-		// Need to update indicies too!
-		Color[] colors = new Color[map.Length];
-		for (int i = 0; i < map.Length; ++i) {
 			colors [i].r = 1 - map [i].measCount / 10f;
 			colors [i].b = 0;
 			colors [i].g = map [i].measCount / 10f;
-			colors [i].a = 0.2f + 0.8f * (map [i].measCount / 10f);
+
+			if (map [i].measCount < 4) {
+				colors [i].a = 0;
+			} else {
+				colors [i].a = 0.2f + 0.8f * (map [i].measCount / 10f);
+			}
 		}
 
 		// Need to update indicies too!
