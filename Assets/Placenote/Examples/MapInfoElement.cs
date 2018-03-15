@@ -33,6 +33,8 @@ public class MapInfoElement : MonoBehaviour
 
 	public static double Calc(float lat1, float lon1, float lat2, float lon2)
 	{
+		// Very simple spherical calculation, should probably use a better
+		// projection for production
 		var R = 6378.137; // Radius of earth in KM
 		var dLat = lat2 * Mathf.PI / 180 - lat1 * Mathf.PI / 180;
 		var dLon = lon2 * Mathf.PI / 180 - lon1 * Mathf.PI / 180;
