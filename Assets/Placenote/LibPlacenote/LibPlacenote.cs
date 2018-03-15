@@ -481,14 +481,49 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 	/// <summary>
+	/// Raises the dataset upload progress event to listeners
+	/// </summary>
+	/// <param name="status">Status of the upload</param>
+	/// <param name="contextPtr">
+	/// Context pointer to capture progressCb passed the <see cref="StartRecordDataset"/> parameters
+	/// </param>
+	[MonoPInvokeCallback (typeof(PNResultCallback))]
+	static void OnDatasetUpload (ref PNTransferStatusUnity status, IntPtr contextPtr)
+	{
+		GCHandle handle = GCHandle.FromIntPtr (contextPtr);
+		Action<bool, bool, float> uploadProgressCb = handle.Target as Action<bool, bool, float>;
+
+		PNTransferStatusUnity statusClone = status;
+		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			if (statusClone.completed) {
+				Debug.Log ("Dataset uploaded!");
+				uploadProgressCb (true, false, 1);
+				handle.Free ();
+			} else if (statusClone.faulted) {
+				Debug.Log ("Failed to upload dataset!");
+				uploadProgressCb (false, true, 0);
+				handle.Free ();
+			} else {
+				Debug.Log ("Uploading dataset!");
+				uploadProgressCb (false, false, (float)(statusClone.bytesTransferred) / statusClone.bytesTotal);
+			}
+		});
+	}
+
+	/// <summary>
 	/// Tell Placenote to record this session to a dataset, and upload it for analysis.
 	/// </summary>
-//	public void StartRecordDataset ()
-//	{
-//		#if !UNITY_EDITOR
-//		PNStartRecordDataset ();
-//		#endif
-//	}
+	/// <param name="uploadProgressCb">Callback to publish the progress of the dataset upload.</param>
+	public void StartRecordDataset (Action<bool, bool, float> uploadProgressCb)
+	{
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (uploadProgressCb));
+
+		#if !UNITY_EDITOR
+		PNStartRecordDataset (OnDatasetUpload, cSharpContext);
+		#else
+		uploadProgressCb (true, false, 1.0f);
+		#endif
+	}
 
 	/// <summary>
 	/// Set the metadata for the given map, which will be returned in the MapList when
