@@ -483,12 +483,12 @@ public class LibPlacenote : MonoBehaviour
 	/// <summary>
 	/// Tell Placenote to record this session to a dataset, and upload it for analysis.
 	/// </summary>
-	public void StartRecordDataset ()
-	{
-		#if !UNITY_EDITOR
-		PNStartRecordDataset ();
-		#endif
-	}
+//	public void StartRecordDataset ()
+//	{
+//		#if !UNITY_EDITOR
+//		PNStartRecordDataset ();
+//		#endif
+//	}
 
 	/// <summary>
 	/// Set the metadata for the given map, which will be returned in the MapList when
@@ -504,6 +504,17 @@ public class LibPlacenote : MonoBehaviour
 		#else
 		return true;
 		#endif
+	}
+
+	/// <summary>
+	/// Set the metadata for the given map, which will be returned in the MapList when
+	/// you call <see cref="ListMaps"/>.
+	/// </summary>
+	/// <param name="mapId">ID of the map</param>
+	/// <param name="metadata">JSON metadata</param>
+	public bool SetMetadata (string mapId, JToken metadata)
+	{
+		return SetMetadata (mapId, metadata.ToString (Formatting.None));
 	}
 
 	/// <summary>
@@ -866,7 +877,7 @@ public class LibPlacenote : MonoBehaviour
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
-	private static extern int PNStartRecordDataset ();
+	private static extern int PNStartRecordDataset (PNTransferMapCallback cb, IntPtr context);
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]

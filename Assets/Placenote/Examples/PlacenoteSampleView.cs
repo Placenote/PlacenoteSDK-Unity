@@ -6,8 +6,8 @@ using UnityEngine.UI;
 using UnityEngine.XR.iOS;
 using System.Runtime.InteropServices;
 using System.IO;
-
-
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 [System.Serializable]
 public class ShapeInfo
@@ -60,6 +60,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	// Use this for initialization
 	void Start ()
 	{
+		Input.location.Start ();
+
 		mMapListPanel.SetActive (false);
 
 		mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface ();
@@ -142,6 +144,10 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		LibPlacenote.Instance.ListMaps ((mapList) => {
 			// render the map list!
 			foreach (LibPlacenote.MapInfo mapId in mapList) {
+				if (mapId.userData != null) {
+					Debug.LogError (mapId.userData.ToString (Formatting.None));
+				} else {
+				}
 				AddMapToList (mapId);
 			}
 		});
@@ -263,6 +269,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
+		bool useLocation = Input.location.status == LocationServiceStatus.Running;
+		LocationInfo locationInfo = Input.location.lastData;
+
 		mLabelText.text = "Saving...";
 		LibPlacenote.Instance.SaveMap (
 			(mapId) => {
@@ -273,6 +282,15 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 				string jsonPath = Path.Combine(Application.persistentDataPath, mapId + ".json");
 				SaveShapes2JSON(jsonPath);
+
+				JObject metadata = new JObject ();
+				if (useLocation) {
+					metadata["location"] = new JObject ();
+					metadata["location"]["latitude"] = locationInfo.latitude;
+					metadata["location"]["longitude"] = locationInfo.longitude;
+					metadata["location"]["altitude"] = locationInfo.altitude;
+				}
+				LibPlacenote.Instance.SetMetadata (mapId, metadata);
 			},
 			(completed, faulted, percentage) => {}
 		);
