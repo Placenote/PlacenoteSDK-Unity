@@ -7,6 +7,8 @@ using UnityEngine.XR.iOS;
 using System.IO;
 using System.Threading;
 using AOT;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 
 
@@ -217,6 +219,7 @@ public class LibPlacenote : MonoBehaviour
 	public class MapInfo
 	{
 		public string placeId;
+		public JToken userData;
 	}
 
 	/// <summary>
@@ -477,6 +480,77 @@ public class LibPlacenote : MonoBehaviour
 		#endif
 	}
 
+	/// <summary>
+	/// Raises the dataset upload progress event to listeners
+	/// </summary>
+	/// <param name="status">Status of the upload</param>
+	/// <param name="contextPtr">
+	/// Context pointer to capture progressCb passed the <see cref="StartRecordDataset"/> parameters
+	/// </param>
+	[MonoPInvokeCallback (typeof(PNResultCallback))]
+	static void OnDatasetUpload (ref PNTransferStatusUnity status, IntPtr contextPtr)
+	{
+		GCHandle handle = GCHandle.FromIntPtr (contextPtr);
+		Action<bool, bool, float> uploadProgressCb = handle.Target as Action<bool, bool, float>;
+
+		PNTransferStatusUnity statusClone = status;
+		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			if (statusClone.completed) {
+				Debug.Log ("Dataset uploaded!");
+				uploadProgressCb (true, false, 1);
+				handle.Free ();
+			} else if (statusClone.faulted) {
+				Debug.Log ("Failed to upload dataset!");
+				uploadProgressCb (false, true, 0);
+				handle.Free ();
+			} else {
+				Debug.Log ("Uploading dataset!");
+				uploadProgressCb (false, false, (float)(statusClone.bytesTransferred) / statusClone.bytesTotal);
+			}
+		});
+	}
+
+	/// <summary>
+	/// Tell Placenote to record this session to a dataset, and upload it for analysis.
+	/// </summary>
+	/// <param name="uploadProgressCb">Callback to publish the progress of the dataset upload.</param>
+	public void StartRecordDataset (Action<bool, bool, float> uploadProgressCb)
+	{
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (uploadProgressCb));
+
+		#if !UNITY_EDITOR
+		PNStartRecordDataset (OnDatasetUpload, cSharpContext);
+		#else
+		uploadProgressCb (true, false, 1.0f);
+		#endif
+	}
+
+	/// <summary>
+	/// Set the metadata for the given map, which will be returned in the MapList when
+	/// you call <see cref="ListMaps"/>. The metadata must be a valid JSON value, object,
+	///	or array a serialized string.
+	/// </summary>
+	/// <param name="mapId">ID of the map</param>
+	/// <param name="metadataJson">Serialized JSON metadata</param>
+	public bool SetMetadata (string mapId, string metadataJson)
+	{
+		#if !UNITY_EDITOR
+		return PNSetMetadata (mapId, metadataJson) == 0;
+		#else
+		return true;
+		#endif
+	}
+
+	/// <summary>
+	/// Set the metadata for the given map, which will be returned in the MapList when
+	/// you call <see cref="ListMaps"/>.
+	/// </summary>
+	/// <param name="mapId">ID of the map</param>
+	/// <param name="metadata">JSON metadata</param>
+	public bool SetMetadata (string mapId, JToken metadata)
+	{
+		return SetMetadata (mapId, metadata.ToString (Formatting.None));
+	}
 
 	/// <summary>
 	/// Callback to return the map list fetched by <see cref="ListMaps"/> function call.
@@ -496,7 +570,7 @@ public class LibPlacenote : MonoBehaviour
 		MainThreadTaskQueue.InvokeOnMainThread (() => {
 			if (resultClone.success) {
 				String listJson = resultClone.msg;
-				MapList mapIdList = JsonUtility.FromJson<MapList> (listJson);
+				MapList mapIdList = JsonConvert.DeserializeObject<MapList> (listJson);
 				listCb (mapIdList.places);
 			} else {
 				Debug.LogError ("Failed to fetch map list, error: " + resultClone.msg);
@@ -798,11 +872,11 @@ public class LibPlacenote : MonoBehaviour
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
-	private static extern int PNListMaps (PNResultCallback cb, IntPtr swiftContext);
+	private static extern int PNListMaps (PNResultCallback cb, IntPtr context);
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
-	private static extern int PNAddMap (PNResultCallback cb, IntPtr swiftContext);
+	private static extern int PNAddMap (PNResultCallback cb, IntPtr context);
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
@@ -835,4 +909,12 @@ public class LibPlacenote : MonoBehaviour
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNStopSession ();
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNStartRecordDataset (PNTransferMapCallback cb, IntPtr context);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNSetMetadata (string mapId, string metadataJson);
 }
