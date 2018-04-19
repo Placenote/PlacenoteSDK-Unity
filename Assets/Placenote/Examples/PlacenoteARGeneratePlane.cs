@@ -11,7 +11,6 @@ namespace UnityEngine.XR.iOS
 
 		// Use this for initialization
 		void Start () {
-			Debug.Log ("Initializing Plane Generator");
 			placenoteARAnchorManager = new PlacenoteARAnchorManager();
 
 			if (UnityARSessionNativeInterface.IsARKit_1_5_Supported ()) {
