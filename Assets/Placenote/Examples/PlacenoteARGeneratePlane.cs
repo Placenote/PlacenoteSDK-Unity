@@ -3,31 +3,33 @@ using System.Collections.Generic;
 
 namespace UnityEngine.XR.iOS
 {
-	public class UnityARGeneratePlane : MonoBehaviour
+	public class PlacenoteARGeneratePlane : MonoBehaviour
 	{
 		public GameObject planePrefab;
-		public GameObject meshPrefab; //for use when software version >iOS 11.3
-        private UnityARAnchorManager unityARAnchorManager;
+		public GameObject meshPrefab;
+        private PlacenoteARAnchorManager placenoteARAnchorManager;
 
 		// Use this for initialization
 		void Start () {
-            unityARAnchorManager = new UnityARAnchorManager();
+			Debug.Log ("Initializing Plane Generator");
+			placenoteARAnchorManager = new PlacenoteARAnchorManager();
 
 			if (UnityARSessionNativeInterface.IsARKit_1_5_Supported ()) {
-				UnityARUtility.InitializePlanePrefab (meshPrefab);
+				PlacenotePlaneUtility.InitializePlanePrefab (meshPrefab);
 			} else {
-				UnityARUtility.InitializePlanePrefab (planePrefab);
+				PlacenotePlaneUtility.InitializePlanePrefab (planePrefab);
 			}
+				
 		}
 
         void OnDestroy()
         {
-            unityARAnchorManager.Destroy ();
+            placenoteARAnchorManager.Destroy ();
         }
 
         void OnGUI()
         {
-			IEnumerable<ARPlaneAnchorGameObject> arpags = unityARAnchorManager.GetCurrentPlaneAnchors ();
+			IEnumerable<ARPlaneAnchorGameObject> arpags = placenoteARAnchorManager.GetCurrentPlaneAnchors ();
 			foreach(var planeAnchor in arpags)
 			{
                 //ARPlaneAnchor ap = planeAnchor;

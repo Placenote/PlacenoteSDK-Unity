@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.iOS;
 
-public class ARKitPlaneMeshRender : MonoBehaviour {
+public class PlacenotePlaneMeshRender : MonoBehaviour {
 
 	[SerializeField]
 	private MeshFilter meshFilter;
@@ -23,6 +23,7 @@ public class ARKitPlaneMeshRender : MonoBehaviour {
 	{
         if (UnityARSessionNativeInterface.IsARKit_1_5_Supported()) //otherwise we cannot access planeGeometry
         {
+			Debug.Log ("Updating mesh");
             planeMesh.vertices = arPlaneAnchor.planeGeometry.vertices;
             planeMesh.uv = arPlaneAnchor.planeGeometry.textureCoordinates;
             planeMesh.triangles = arPlaneAnchor.planeGeometry.triangleIndices;
