@@ -47,6 +47,17 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	public static void DisablePointcloud ()
 	{
 		sInstance.CancelInvoke ();
+		clearPointcloud ();
+	}
+
+
+	/// <summary>
+	///  Clear currently rendering feature/landmark pointcloud
+	/// </summary>
+	public static void clearPointcloud() 
+	{
+		MeshFilter mf = sInstance.mMap.GetComponent<MeshFilter> ();
+		mf.mesh.Clear ();
 	}
 
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose)
@@ -57,8 +68,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	{
 		if (currStatus == LibPlacenote.MappingStatus.WAITING) {
 			Debug.Log ("Session stopped, resetting pointcloud mesh.");
-			MeshFilter mf = mMap.GetComponent<MeshFilter> ();
-			mf.mesh.Clear ();
+			clearPointcloud ();
 		}
 	}
 

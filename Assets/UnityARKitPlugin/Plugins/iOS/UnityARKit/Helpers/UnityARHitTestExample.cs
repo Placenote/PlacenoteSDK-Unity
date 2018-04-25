@@ -56,11 +56,13 @@ namespace UnityEngine.XR.iOS
 
                     // prioritize reults types
                     ARHitTestResultType[] resultTypes = {
+						//ARHitTestResultType.ARHitTestResultTypeExistingPlaneUsingGeometry,
                         ARHitTestResultType.ARHitTestResultTypeExistingPlaneUsingExtent, 
                         // if you want to use infinite planes use this:
                         //ARHitTestResultType.ARHitTestResultTypeExistingPlane,
-                        ARHitTestResultType.ARHitTestResultTypeHorizontalPlane, 
-                        ARHitTestResultType.ARHitTestResultTypeFeaturePoint
+                        //ARHitTestResultType.ARHitTestResultTypeEstimatedHorizontalPlane, 
+						//ARHitTestResultType.ARHitTestResultTypeEstimatedVerticalPlane, 
+						//ARHitTestResultType.ARHitTestResultTypeFeaturePoint
                     }; 
 					
                     foreach (ARHitTestResultType resultType in resultTypes)
