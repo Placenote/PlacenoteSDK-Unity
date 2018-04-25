@@ -1,29 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Collections.Hybrid.Generic;
 
 namespace UnityEngine.XR.iOS
 {
-	public class UnityARAnchorManager 
+	public class PlacenoteARAnchorManager 
 	{
 
 
-		private Dictionary<string, ARPlaneAnchorGameObject> planeAnchorMap;
+		private LinkedListDictionary<string, ARPlaneAnchorGameObject> planeAnchorMap;
 
 
-        public UnityARAnchorManager ()
+        public PlacenoteARAnchorManager ()
 		{
-			planeAnchorMap = new Dictionary<string,ARPlaneAnchorGameObject> ();
+			planeAnchorMap = new LinkedListDictionary<string,ARPlaneAnchorGameObject> ();
 			UnityARSessionNativeInterface.ARAnchorAddedEvent += AddAnchor;
 			UnityARSessionNativeInterface.ARAnchorUpdatedEvent += UpdateAnchor;
 			UnityARSessionNativeInterface.ARAnchorRemovedEvent += RemoveAnchor;
-
 		}
 
 
 		public void AddAnchor(ARPlaneAnchor arPlaneAnchor)
 		{
-			GameObject go = UnityARUtility.CreatePlaneInScene (arPlaneAnchor);
+			GameObject go = PlacenotePlaneUtility.CreatePlaneInScene (arPlaneAnchor);
 			go.AddComponent<DontDestroyOnLoad> ();  //this is so these GOs persist across scene loads
 			ARPlaneAnchorGameObject arpag = new ARPlaneAnchorGameObject ();
 			arpag.planeAnchor = arPlaneAnchor;
@@ -44,7 +44,7 @@ namespace UnityEngine.XR.iOS
 		{
 			if (planeAnchorMap.ContainsKey (arPlaneAnchor.identifier)) {
 				ARPlaneAnchorGameObject arpag = planeAnchorMap [arPlaneAnchor.identifier];
-				UnityARUtility.UpdatePlaneWithAnchorTransform (arpag.gameObject, arPlaneAnchor);
+				PlacenotePlaneUtility.UpdatePlaneWithAnchorTransform (arpag.gameObject, arPlaneAnchor);
 				arpag.planeAnchor = arPlaneAnchor;
 				planeAnchorMap [arPlaneAnchor.identifier] = arpag;
 			}
@@ -67,9 +67,9 @@ namespace UnityEngine.XR.iOS
             UnsubscribeEvents();
         }
 
-		public List<ARPlaneAnchorGameObject> GetCurrentPlaneAnchors()
+		public LinkedList<ARPlaneAnchorGameObject> GetCurrentPlaneAnchors()
 		{
-			return planeAnchorMap.Values.ToList ();
+			return planeAnchorMap.Values;
 		}
 	}
 }
