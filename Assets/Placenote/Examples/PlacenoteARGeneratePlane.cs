@@ -10,7 +10,7 @@ namespace UnityEngine.XR.iOS
         private PlacenoteARAnchorManager placenoteARAnchorManager;
 
 		// Use this for initialization
-		void Start () {
+		public void StartPlaneDetection () {
 			placenoteARAnchorManager = new PlacenoteARAnchorManager();
 
 			if (UnityARSessionNativeInterface.IsARKit_1_5_Supported ()) {
@@ -21,12 +21,16 @@ namespace UnityEngine.XR.iOS
 				
 		}
 
+		public void ClearPlanes() {
+			placenoteARAnchorManager.Destroy();
+		}
+
         void OnDestroy()
         {
             placenoteARAnchorManager.Destroy ();
         }
 
-        void OnGUI()
+        /*void OnGUI()
         {
 			IEnumerable<ARPlaneAnchorGameObject> arpags = placenoteARAnchorManager.GetCurrentPlaneAnchors ();
 			foreach(var planeAnchor in arpags)
@@ -35,7 +39,7 @@ namespace UnityEngine.XR.iOS
                 //GUI.Box (new Rect (100, 100, 800, 60), string.Format ("Center: x:{0}, y:{1}, z:{2}", ap.center.x, ap.center.y, ap.center.z));
                 //GUI.Box(new Rect(100, 200, 800, 60), string.Format ("Extent: x:{0}, y:{1}, z:{2}", ap.extent.x, ap.extent.y, ap.extent.z));
             }
-        }
+        }*/
 	}
 }
 
