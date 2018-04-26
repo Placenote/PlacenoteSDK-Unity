@@ -36,10 +36,17 @@ namespace UnityEngine.XR.iOS
 
 		public static GameObject UpdatePlaneWithAnchorTransform(GameObject plane, ARPlaneAnchor arPlaneAnchor)
 		{
-			
+
 			//do coordinate conversion from ARKit to Unity
-			plane.transform.position = UnityARMatrixOps.GetPosition (arPlaneAnchor.transform);
-			plane.transform.rotation = UnityARMatrixOps.GetRotation (arPlaneAnchor.transform);
+			Vector3 position =  UnityARMatrixOps.GetPosition (arPlaneAnchor.transform);
+			Quaternion rotation = UnityARMatrixOps.GetRotation (arPlaneAnchor.transform);
+
+			//Transform to placenote frame of reference (planes are detected in ARKit frame of reference)
+			Matrix4x4 worldTransform = Matrix4x4.TRS (position, rotation, Vector3.one);
+			Matrix4x4 placenoteTransform = LibPlacenote.Instance.processPose (worldTransform);
+
+			plane.transform.position = PNUtility.MatrixOps.GetPosition (placenoteTransform);
+			plane.transform.rotation = PNUtility.MatrixOps.GetRotation (placenoteTransform);
 
 			PlacenotePlaneMeshRender ppmr = plane.GetComponent<PlacenotePlaneMeshRender> ();
 			if (ppmr != null) {
