@@ -176,6 +176,11 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mInitButtonPanel.SetActive (true);
 		mExitButton.SetActive (false);
 		mPlaneDetectionToggle.SetActive (false);
+
+		//clear all existing planes
+		mPNPlaneManager.ClearPlanes ();
+		mPlaneDetectionToggle.GetComponent<Toggle>().isOn = false;
+
 		LibPlacenote.Instance.StopSession ();
 	}
 
@@ -199,6 +204,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	public void OnLoadMapClicked ()
 	{
+		configureSession (false);
+
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
 			ToastManager.ShowToast ("SDK not yet initialized", 2f);
@@ -324,6 +331,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 				//clear all existing planes
 				mPNPlaneManager.ClearPlanes ();
+				mPlaneDetectionToggle.GetComponent<Toggle>().isOn = false;
 
 
 				JObject metadata = new JObject ();
