@@ -40,8 +40,10 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] GameObject mListElement;
 	[SerializeField] RectTransform mListContentParent;
 	[SerializeField] ToggleGroup mToggleGroup;
+	[SerializeField] GameObject mPlaneDetectionToggle;
 	[SerializeField] Text mLabelText;
 	[SerializeField] Material mShapeMaterial;
+	[SerializeField] PlacenoteARGeneratePlane mPNPlaneManager;
 
 	private UnityARSessionNativeInterface mSession;
 	private bool mFrameUpdated = false;
@@ -50,6 +52,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	private bool mARKitInit = false;
 	private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
 	private List<GameObject> shapeObjList = new List<GameObject> ();
+	private bool planeViz = false;
 
 	private LibPlacenote.MapInfo mSelectedMapInfo;
 	private string mSelectedMapId {
@@ -172,6 +175,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		mInitButtonPanel.SetActive (true);
 		mExitButton.SetActive (false);
+		mPlaneDetectionToggle.SetActive (false);
 		LibPlacenote.Instance.StopSession ();
 	}
 
@@ -209,7 +213,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mMapListPanel.SetActive (false);
 					mInitButtonPanel.SetActive (false);
 					mExitButton.SetActive (true);
-
+					mPlaneDetectionToggle.SetActive(true);
+						
 					LibPlacenote.Instance.StartSession ();
 					mLabelText.text = "Loaded ID: " + mSelectedMapId;
 				} else if (faulted) {
@@ -238,6 +243,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			}
 		});
 	}
+		
 
 
 	public void OnNewMapClick ()
@@ -249,21 +255,47 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		mInitButtonPanel.SetActive (false);
 		mMappingButtonPanel.SetActive (true);
-
+		mPlaneDetectionToggle.SetActive (true);
+		Debug.Log ("Started Session");
 		LibPlacenote.Instance.StartSession ();
 	}
 
-
+	public void OnTogglePlaneDetection() {
+		planeViz = !planeViz;
+		configureSession (true);
+		Debug.Log ("Plane Viz" + planeViz.ToString ());
+	}
+		
 	private void StartARKit ()
 	{
 		mLabelText.text = "Initializing ARKit";
 		Application.targetFrameRate = 60;
+		configureSession (false);
+	}
+
+
+	private void configureSession(bool clearPlanes) {
 		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
-		config.planeDetection = UnityARPlaneDetection.Horizontal;
+
+		if (planeViz) {
+			if (UnityARSessionNativeInterface.IsARKit_1_5_Supported ()) {
+				config.planeDetection = UnityARPlaneDetection.HorizontalAndVertical;
+			} else {
+				config.planeDetection = UnityARPlaneDetection.Horizontal;
+			}
+			mPNPlaneManager.StartPlaneDetection ();
+		} else {
+			config.planeDetection = UnityARPlaneDetection.None;
+			if (clearPlanes) {
+				mPNPlaneManager.ClearPlanes ();
+			}
+		}
+
 		config.alignment = UnityARAlignment.UnityARAlignmentGravity;
 		config.getPointCloudData = true;
 		config.enableLightEstimation = true;
 		mSession.RunWithConfig (config);
+
 	}
 
 
@@ -285,6 +317,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				mLabelText.text = "Saved Map ID: " + mapId;
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
+				mPlaneDetectionToggle.SetActive (false);
 
 
 				JObject metadata = new JObject ();
