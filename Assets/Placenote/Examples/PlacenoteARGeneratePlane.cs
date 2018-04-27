@@ -11,13 +11,14 @@ namespace UnityEngine.XR.iOS
 
 		// Use this for initialization
 		public void StartPlaneDetection () {
-			placenoteARAnchorManager = new PlacenoteARAnchorManager();
-
+			
 			if (UnityARSessionNativeInterface.IsARKit_1_5_Supported ()) {
 				PlacenotePlaneUtility.InitializePlanePrefab (meshPrefab);
 			} else {
 				PlacenotePlaneUtility.InitializePlanePrefab (planePrefab);
 			}
+
+			placenoteARAnchorManager = new PlacenoteARAnchorManager();
 				
 		}
 

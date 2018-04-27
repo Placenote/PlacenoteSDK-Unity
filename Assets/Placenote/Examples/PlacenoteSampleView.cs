@@ -248,6 +248,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	public void OnNewMapClick ()
 	{
+		configureSession (false);
+
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
 			return;
@@ -276,6 +278,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	private void configureSession(bool clearPlanes) {
 		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
+
 
 		if (planeViz) {
 			if (UnityARSessionNativeInterface.IsARKit_1_5_Supported ()) {
@@ -318,6 +321,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
 				mPlaneDetectionToggle.SetActive (false);
+
+				//clear all existing planes
+				mPNPlaneManager.ClearPlanes ();
 
 
 				JObject metadata = new JObject ();
