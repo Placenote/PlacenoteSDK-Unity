@@ -52,7 +52,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	private bool mARKitInit = false;
 	private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
 	private List<GameObject> shapeObjList = new List<GameObject> ();
-	private bool planeViz = false;
 
 	private LibPlacenote.MapInfo mSelectedMapInfo;
 	private string mSelectedMapId {
@@ -204,7 +203,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	public void OnLoadMapClicked ()
 	{
-		configureSession (false);
+		ConfigureSession (false);
 
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
@@ -255,7 +254,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	public void OnNewMapClick ()
 	{
-		configureSession (false);
+		ConfigureSession (false);
 
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
@@ -270,24 +269,21 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	}
 
 	public void OnTogglePlaneDetection() {
-		planeViz = !planeViz;
-		configureSession (true);
-		Debug.Log ("Plane Viz" + planeViz.ToString ());
+		ConfigureSession (true);
 	}
 		
 	private void StartARKit ()
 	{
 		mLabelText.text = "Initializing ARKit";
 		Application.targetFrameRate = 60;
-		configureSession (false);
+		ConfigureSession (false);
 	}
 
 
-	private void configureSession(bool clearPlanes) {
+	private void ConfigureSession(bool clearPlanes) {
 		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
 
-
-		if (planeViz) {
+		if (mPlaneDetectionToggle.GetComponent<Toggle>().isOn) {
 			if (UnityARSessionNativeInterface.IsARKit_1_5_Supported ()) {
 				config.planeDetection = UnityARPlaneDetection.HorizontalAndVertical;
 			} else {
@@ -305,7 +301,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		config.getPointCloudData = true;
 		config.enableLightEstimation = true;
 		mSession.RunWithConfig (config);
-
 	}
 
 

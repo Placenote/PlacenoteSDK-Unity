@@ -239,7 +239,7 @@ public class LibPlacenote : MonoBehaviour
 	private MappingStatus mPrevStatus = MappingStatus.WAITING;
 	private bool mInitialized = false;
 	private List<Action<MapInfo[]>> mapListCbs = new List<Action<MapInfo[]>> ();
-	private Matrix4x4 mCurrentTransform;
+	private Matrix4x4 mCurrentTransform = Matrix4x4.identity;
 
 	// Fill in API Key here
 	[SerializeField] String apiKey;
@@ -461,10 +461,14 @@ public class LibPlacenote : MonoBehaviour
 
 
 	/// <summary>
-	/// Return a transform in the current ARKit frame transformed into the inertial frame w.r.t the current Placenote Map
+	/// Return a transform in the current ARKit frame transformed into the inertial frame w.r.t the current Placenote Map. Will return null 
+	/// mapping is not initialized 
 	/// </summary>
 	/// <param name="status">Transform in the ARKit frame of reference (e.g: acquired from a screen touch)</param>
-	public Matrix4x4 processPose(Matrix4x4 poseInARKit) {
+	public Matrix4x4 ProcessPose(Matrix4x4 poseInARKit) {
+		/*if (mPrevStatus == MappingStatus.WAITING) {
+			return null; //mCurrentTransform is meaningless. 
+		}*/
 		return (mCurrentTransform * poseInARKit);
 	}
 

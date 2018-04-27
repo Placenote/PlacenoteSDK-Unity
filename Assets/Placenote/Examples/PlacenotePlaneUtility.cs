@@ -43,7 +43,7 @@ namespace UnityEngine.XR.iOS
 
 			//Transform to placenote frame of reference (planes are detected in ARKit frame of reference)
 			Matrix4x4 worldTransform = Matrix4x4.TRS (position, rotation, Vector3.one);
-			Matrix4x4 placenoteTransform = LibPlacenote.Instance.processPose (worldTransform);
+			Matrix4x4 placenoteTransform = LibPlacenote.Instance.ProcessPose (worldTransform);
 
 			plane.transform.position = PNUtility.MatrixOps.GetPosition (placenoteTransform);
 			plane.transform.rotation = PNUtility.MatrixOps.GetRotation (placenoteTransform);
