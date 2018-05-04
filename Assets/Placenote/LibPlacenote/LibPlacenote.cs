@@ -272,6 +272,17 @@ public class LibPlacenote : MonoBehaviour
 
 
 	/// <summary>
+	/// Remove a listener to events published by LibPlacenote
+	/// </summary>
+	/// <param name="listener">A listener to be added to the subscriber list.</param>
+	public void RemoveListener (PlacenoteListener listener)
+	{
+		listeners.Remove (listener);
+	}
+
+
+
+	/// <summary>
 	/// Raises the initialized event that indicates the status of the <see cref="PNInitialize"/> call
 	/// </summary>
 	/// <param name="result">
