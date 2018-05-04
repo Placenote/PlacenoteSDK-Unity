@@ -274,7 +274,7 @@ public class LibPlacenote : MonoBehaviour
 	/// <summary>
 	/// Remove a listener to events published by LibPlacenote
 	/// </summary>
-	/// <param name="listener">A listener to be added to the subscriber list.</param>
+	/// <param name="listener">A listener to be removed to the subscriber list.</param>
 	public void RemoveListener (PlacenoteListener listener)
 	{
 		listeners.Remove (listener);
