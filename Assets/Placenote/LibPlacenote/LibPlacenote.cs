@@ -228,14 +228,13 @@ public class LibPlacenote : MonoBehaviour
 	[System.Serializable]
 	private class MapList
 	{
-		public MapInfo[] places;
+		public MapInfo[] places = null;
 	}
 
 
 	private static LibPlacenote sInstance;
 	private List<PlacenoteListener> listeners = new List<PlacenoteListener> ();
 	private string mMapPath;
-	private Matrix4x4 mRotUnityCam2RGB;
 	private MappingStatus mPrevStatus = MappingStatus.WAITING;
 	private bool mInitialized = false;
 	private List<Action<MapInfo[]>> mapListCbs = new List<Action<MapInfo[]>> ();
@@ -270,6 +269,17 @@ public class LibPlacenote : MonoBehaviour
 	{
 		listeners.Add (listener);
 	}
+
+
+	/// <summary>
+	/// Remove a listener to events published by LibPlacenote
+	/// </summary>
+	/// <param name="listener">A listener to be removed to the subscriber list.</param>
+	public void RemoveListener (PlacenoteListener listener)
+	{
+		listeners.Remove (listener);
+	}
+
 
 
 	/// <summary>
@@ -309,9 +319,6 @@ public class LibPlacenote : MonoBehaviour
 		initParams.apiKey = apiKey;
 		initParams.appBasePath = Application.streamingAssetsPath + "/Placenote";
 		initParams.mapPath = Application.persistentDataPath;
-
-		mRotUnityCam2RGB = Matrix4x4.TRS (new Vector3 (0, 0, 0), 
-			Quaternion.AngleAxis (-90, new Vector3 (0, 0, 1)), new Vector3 (1, 1, 1));
 
 #if !UNITY_EDITOR
 		PNInitialize (ref initParams, OnInitialized, IntPtr.Zero);
@@ -534,9 +541,8 @@ public class LibPlacenote : MonoBehaviour
 	/// <param name="uploadProgressCb">Callback to publish the progress of the dataset upload.</param>
 	public void StartRecordDataset (Action<bool, bool, float> uploadProgressCb)
 	{
-		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (uploadProgressCb));
-
 		#if !UNITY_EDITOR
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (uploadProgressCb));
 		PNStartRecordDataset (OnDatasetUpload, cSharpContext);
 		#else
 		uploadProgressCb (true, false, 1.0f);
@@ -607,9 +613,9 @@ public class LibPlacenote : MonoBehaviour
 	public void ListMaps (Action<MapInfo[]> listCb)
 	{
 		mapListCbs.Add (listCb);
-		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (listCb));
 
 		#if !UNITY_EDITOR
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (listCb));
 		PNListMaps(OnMapList, cSharpContext);
 		#else
 		MapInfo[] mapList = new MapInfo[1];
@@ -707,9 +713,9 @@ public class LibPlacenote : MonoBehaviour
 		SaveLoadContext context = new SaveLoadContext ();
 		context.savedCb = savedCb;
 		context.progressCb = progressCb;
-		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (context));
 
 		#if !UNITY_EDITOR
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (context));
 		PNAddMap (OnMapSaved, cSharpContext);
 		#else
 		savedCb ("123456789");
@@ -757,9 +763,8 @@ public class LibPlacenote : MonoBehaviour
 	/// </param>
 	public void LoadMap (String mapId, Action<bool, bool, float> loadProgressCb)
 	{
-		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (loadProgressCb));
-
 		#if !UNITY_EDITOR
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (loadProgressCb));
 		PNLoadMap (mapId, OnMapLoaded, cSharpContext);
 		#else
 		loadProgressCb (true, false, 1.0f);
@@ -803,8 +808,8 @@ public class LibPlacenote : MonoBehaviour
 	/// </param>
 	public void DeleteMap (String mapId, Action<bool, string> deletedCb)
 	{
-		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (deletedCb));
 		#if !UNITY_EDITOR
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (deletedCb));
 		PNDeleteMap (mapId, OnMapDeleted, cSharpContext);
 		#else
 		deletedCb (true, "Success");
