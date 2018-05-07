@@ -23,12 +23,13 @@ namespace UnityEngine.XR.iOS
 		}
 
 		public void ClearPlanes() {
-			placenoteARAnchorManager.Destroy();
+			if(placenoteARAnchorManager != null)
+				placenoteARAnchorManager.Destroy();
 		}
 
-        void OnDestroy()
-        {
-            placenoteARAnchorManager.Destroy ();
+        void OnDestroy(){
+			if(placenoteARAnchorManager != null)
+            	placenoteARAnchorManager.Destroy ();
         }
 	}
 }
