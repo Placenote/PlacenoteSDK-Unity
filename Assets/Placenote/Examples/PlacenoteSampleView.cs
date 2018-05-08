@@ -107,7 +107,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mSession.SetCapturePixelData (true, mImage.y.data, mImage.vu.data);
 	}
 
-	
+
 	// Update is called once per frame
 	void Update ()
 	{
@@ -153,8 +153,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			// render the map list!
 			foreach (LibPlacenote.MapInfo mapId in mapList) {
 				if (mapId.userData != null) {
-					Debug.LogError (mapId.userData.ToString (Formatting.None));
-				} else {
+					Debug.Log(mapId.userData.ToString (Formatting.None));
 				}
 				AddMapToList (mapId);
 			}
@@ -220,7 +219,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mInitButtonPanel.SetActive (false);
 					mExitButton.SetActive (true);
 					mPlaneDetectionToggle.SetActive(true);
-						
+
 					LibPlacenote.Instance.StartSession ();
 					mLabelText.text = "Loaded ID: " + mSelectedMapId;
 				} else if (faulted) {
@@ -249,7 +248,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			}
 		});
 	}
-		
+
 
 
 	public void OnNewMapClick ()
@@ -271,7 +270,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	public void OnTogglePlaneDetection() {
 		ConfigureSession (true);
 	}
-		
+
 	private void StartARKit ()
 	{
 		mLabelText.text = "Initializing ARKit";
@@ -345,7 +344,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			(completed, faulted, percentage) => {}
 		);
 	}
-		
+
 
 	public void OnDropShapeClick ()
 	{
