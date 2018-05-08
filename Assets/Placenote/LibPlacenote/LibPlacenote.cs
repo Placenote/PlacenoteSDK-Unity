@@ -253,11 +253,11 @@ public class LibPlacenote : MonoBehaviour
 
 	/// For the Unity Simulator
 
-	/// The Current Map status and current localization status that is used 
+	/// The Current Map status and current localization status that is used
 	private MappingStatus mCurrStatus = MappingStatus.WAITING;
 	private bool mLocalization = false;
 
-	/// The thresholds that define when a new camera pose should be saved 
+	/// The thresholds that define when a new camera pose should be saved
 	private float SIM_MAP_DISTANCE_THRESHOLD = 0.4f;
 	private float SIM_MAP_ANGLE_THRESHOLD = 20f;
 	/// The thresholds that define a when the camera should localize
@@ -280,7 +280,7 @@ public class LibPlacenote : MonoBehaviour
 	/// </summary>
 	/// <value>The singleton instance</value>
 	public static LibPlacenote Instance {
-		get {			
+		get {
 			return sInstance;
 		}
 	}
@@ -390,9 +390,9 @@ public class LibPlacenote : MonoBehaviour
 			orientRemovalMat.m01 = -1;
 			orientRemovalMat.m10 = 1;
 			break;
-			// landscape
+		// landscape
 		case 3:
-			// do nothing
+		// do nothing
 			orientRemovalMat = Matrix4x4.identity;
 			break;
 		case 4:
@@ -454,7 +454,7 @@ public class LibPlacenote : MonoBehaviour
 		result.rotation.y = Camera.main.gameObject.transform.rotation.y;
 		result.rotation.z = Camera.main.gameObject.transform.rotation.z;
 		result.rotation.w = Camera.main.gameObject.transform.rotation.w;
-	
+
 		#endif
 		return result;
 	}
@@ -511,8 +511,8 @@ public class LibPlacenote : MonoBehaviour
 
 
 	/// <summary>
-	/// Return a transform in the current ARKit frame transformed into the inertial frame w.r.t the current Placenote Map. Will return null 
-	/// mapping is not initialized 
+	/// Return a transform in the current ARKit frame transformed into the inertial frame w.r.t the current Placenote Map. Will return null
+	/// mapping is not initialized
 	/// </summary>
 	/// <param name="status">Transform in the ARKit frame of reference (e.g: acquired from a screen touch)</param>
 	public Matrix4x4? ProcessPose(Matrix4x4 poseInARKit) {
@@ -521,8 +521,7 @@ public class LibPlacenote : MonoBehaviour
 		}
 		return (mCurrentTransform * poseInARKit);
 	}
-
-
+		
 
 	/// <summary>
 	/// Starts a mapping/localization session. If a map is loaded before <see cref="StartSession"/> is called,
@@ -540,16 +539,14 @@ public class LibPlacenote : MonoBehaviour
 			mCurrStatus = MappingStatus.LOST;
 			/// Start checking for localization
 			sInstance.InvokeRepeating ("checkLocalization", 0f, 0.5f);
-		}
-
-		else {
+		} else {
 			/// Set MappingStatus to RUNNING if status is mapping (ie. not localization)
 			mCurrStatus = MappingStatus.RUNNING;
 			/// Start saving camera poses to create a map
 			simCameraPoses.cameraPoses = new List<PNTransformUnity> ();
 			sInstance.InvokeRepeating ("SaveCameraPose", 0f, 0.5f);
 		}
-			
+
 		/// A coroutine that simulates the InvokeRepeating of OnPose
 		StartCoroutine(OnPoseInvokeRepeat());
 
@@ -561,7 +558,7 @@ public class LibPlacenote : MonoBehaviour
 	/// A coroutine that calls OnPose with in 0.5s intervals
 	/// Designed to mimick the behaviour of Invoke Repeating
 	/// </summary>
-	IEnumerator OnPoseInvokeRepeat() 
+	IEnumerator OnPoseInvokeRepeat()
 	{
 		while (true) {
 			PNTransformUnity currCameraPose =  GetPose();
@@ -569,7 +566,7 @@ public class LibPlacenote : MonoBehaviour
 			yield return new WaitForSeconds (0.5f);
 		}
 	}
-		
+
 	/// <summary>
 	/// For Unity Simulator
 	/// Saves the current camera pose into the struct simCameraPoses
@@ -587,9 +584,7 @@ public class LibPlacenote : MonoBehaviour
 		/// If the cameraPoses list is empty
 		if (simCameraPoses.cameraPoses.Count == 0) {
 			simCameraPoses.cameraPoses.Add (currCameraPose);
-		} 
-
-		else {
+		} else {
 			/// Get previous cameraPose from list
 			PNTransformUnity prevCameraPose = simCameraPoses.cameraPoses[simCameraPoses.cameraPoses.Count - 1];
 			Vector3 prevPosition = new Vector3 (prevCameraPose.position.x, prevCameraPose.position.y, prevCameraPose.position.z);
@@ -617,7 +612,7 @@ public class LibPlacenote : MonoBehaviour
 		Quaternion currRotation = new Quaternion (currCameraPose.rotation.x, currCameraPose.rotation.y,
 			currCameraPose.rotation.z, currCameraPose.rotation.w);
 
-		/// Iterate through each saved cameraPose in the map to find the one that matches 
+		/// Iterate through each saved cameraPose in the map to find the one that matches
 		/// the current cameraPose.
 		for (int i = 0; i < simCameraPoses.cameraPoses.Count; i++) {
 			PNTransformUnity localizeCameraPose = simCameraPoses.cameraPoses[i];
@@ -630,9 +625,7 @@ public class LibPlacenote : MonoBehaviour
 			if (positionDiffNorm < SIM_LOCAL_DISTANCE_THRESHOLD && angleDiffNorm < SIM_LOCAL_ANGLE_THRESHOLD) {
 				mCurrStatus = MappingStatus.RUNNING;
 				break;
-			} 
-
-			else {
+			} else {
 				mCurrStatus = MappingStatus.LOST;
 			}
 		}
@@ -770,16 +763,22 @@ public class LibPlacenote : MonoBehaviour
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (listCb));
 		PNListMaps(OnMapList, cSharpContext);
 		#else
-		// Reads maps from file as JSON
-		string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
-		MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
-		listCb (mapList);
+
+		/// If the file does not exist
+		if(!File.Exists(Application.dataPath + simMapFileName)){
+			Debug.Log("There are no maps. Please create a new map.");
+		}else{
+			/// Reads maps from file as JSON
+			string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
+			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
+			listCb (mapList);
+		}
 		#endif
 	}
 
 
 	/// <summary>
-	/// A class to casted as context to be passed to <see cref="OnMapSaved"/> 
+	/// A class to casted as context to be passed to <see cref="OnMapSaved"/>
 	/// and <see cref="OnMapUploaded"/> functions to capture external states
 	/// </summary>
 	private class SaveLoadContext
@@ -846,7 +845,7 @@ public class LibPlacenote : MonoBehaviour
 				Debug.Log ("Added a record to map db with id " + mapId);
 				PNSaveMap (mapId, OnMapUploaded, contextPtr);
 				savedCb (mapId);
-			} else {        
+			} else {
 				Debug.Log (String.Format ("Failed to add the map! Error msg: %s", resultClone.msg));
 				savedCb (null);
 				handle.Free ();
@@ -876,21 +875,24 @@ public class LibPlacenote : MonoBehaviour
 		/// Setting saved camera poses
 		simMap.userData = JsonConvert.SerializeObject(simCameraPoses.cameraPoses);
 		string jsonMap = JsonConvert.SerializeObject(simMap);
-		string currMapData = File.ReadAllText(Application.dataPath + simMapFileName);
-		var mapInfoList = JsonConvert.DeserializeObject<List<MapInfo>>(currMapData);
 
-		// The file is empty
-		if (mapInfoList == null){
-			File.WriteAllText(Application.dataPath + simMapFileName, jsonMap );
+		/// The file does not exist yet OR The file exists but does not contain '[]'
+		if( !File.Exists(Application.dataPath + simMapFileName) || File.ReadAllText(Application.dataPath + simMapFileName).ToString() == "") {
+			File.WriteAllText(Application.dataPath + simMapFileName, "[" + jsonMap +"]");
+		} else {
+			string currMapData = File.ReadAllText(Application.dataPath + simMapFileName);
+			var mapInfoList = JsonConvert.DeserializeObject<List<MapInfo>>(currMapData);
+			/// The file exists but has no maps
+			if (mapInfoList == null){
+				File.WriteAllText(Application.dataPath + simMapFileName, jsonMap);
+			} else { /// If there is already more than 1 item in the file
+				mapInfoList.Add(simMap);
+				var convertedJson = JsonConvert.SerializeObject(mapInfoList);
+				File.WriteAllText(Application.dataPath + simMapFileName, convertedJson );
+			}
 		}
 
-		else{ // If there is already more than 1 item in the file
-			mapInfoList.Add(simMap);
-			var convertedJson = JsonConvert.SerializeObject(mapInfoList);
-			File.WriteAllText(Application.dataPath + simMapFileName, convertedJson );
-		}
 		savedCb (simMap.placeId);
-
 		progressCb (true, false, 1.0f);
 		#endif
 	}
@@ -939,6 +941,7 @@ public class LibPlacenote : MonoBehaviour
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (loadProgressCb));
 		PNLoadMap (mapId, OnMapLoaded, cSharpContext);
 		#else
+		mLocalization = true;
 		// Reads maps from file as JSON
 		string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
 		MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
@@ -995,10 +998,10 @@ public class LibPlacenote : MonoBehaviour
 		// Reading map
 		string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
 		MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
-		if(mapList.Length == 1)
+		if(mapList.Length == 1){
 			/// Reseting brackets for array in json file
 			File.WriteAllText(Application.dataPath + simMapFileName, "[]" );
-		else{
+		} else {
 			for(int i = 0; i < mapList.Length; i++){
 				if (mapId == mapList[i].placeId){
 					/// Delete map from array
@@ -1012,7 +1015,7 @@ public class LibPlacenote : MonoBehaviour
 			var convertedJson = JsonConvert.SerializeObject(mapList);
 			File.WriteAllText(Application.dataPath + simMapFileName, convertedJson );
 		}
-			
+
 		deletedCb (true, "Success");
 		#endif
 	}
@@ -1079,13 +1082,6 @@ public class LibPlacenote : MonoBehaviour
 		#endif
 
 		return map;
-	}
-
-	/// <summary>
-	/// Public function to set the localizatino status
-	/// </summary>
-	public void SetLocalization (bool mLocalization){
-		this.mLocalization = mLocalization;
 	}
 
 	// Native function headers

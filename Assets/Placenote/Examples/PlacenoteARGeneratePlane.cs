@@ -27,10 +27,9 @@ namespace UnityEngine.XR.iOS
 				placenoteARAnchorManager.Destroy();
 		}
 
-        void OnDestroy(){
+		void OnDestroy(){
 			if(placenoteARAnchorManager != null)
-            	placenoteARAnchorManager.Destroy ();
-        }
+      			placenoteARAnchorManager.Destroy ();
+    	}
 	}
 }
-

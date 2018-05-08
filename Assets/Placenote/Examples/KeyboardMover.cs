@@ -10,7 +10,6 @@ public class KeyboardMover : MonoBehaviour {
 
 	void Awake () {
 		#if UNITY_EDITOR
-//		GetComponent <TangoARPoseController> ().enabled = false;
 		enabled = true;
 		#else
 		enabled = false;

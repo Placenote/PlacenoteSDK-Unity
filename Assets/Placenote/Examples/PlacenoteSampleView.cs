@@ -212,9 +212,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		}
 
 		mLabelText.text = "Loading Map ID: " + mSelectedMapId;
-		#if UNITY_EDITOR
-		LibPlacenote.Instance.SetLocalization(true);
-		#endif
 		LibPlacenote.Instance.LoadMap (mSelectedMapId,
 			(completed, faulted, percentage) => {
 				if (completed) {

@@ -34,3 +34,7 @@ sysinfo.txt
 
 screenshot.png
 **/.DS_Store
+
+# JSON local storage of simulator maps
+jsonMaps.json
+jsonMaps.json.meta
