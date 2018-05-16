@@ -15,16 +15,21 @@ public class MapInfoElement : MonoBehaviour
 	                       RectTransform listParent, UnityAction<bool> onToggleChanged)
 	{
 		mMapIdText.text = mapInfo.placeId;
+		if (mapInfo.metadata.name.Length > 0) {
+			mMapIdText.text = mapInfo.metadata.name;
+		} else {
+			mMapIdText.text = mapInfo.placeId;
+		}			
 		mToggle.group = toggleGroup;
 		gameObject.transform.SetParent (listParent);
 		mToggle.onValueChanged.AddListener (onToggleChanged);
 
 		if (Input.location.status != LocationServiceStatus.Running) {
 			mLocationText.text = "Distance Unknown - No user location";
-		} else if (mapInfo.userData is JObject && mapInfo.userData ["location"] is JObject) {
+		} else if (mapInfo.metadata.location != null) {
 			var distance = Calc (Input.location.lastData.latitude, Input.location.lastData.longitude,
-				mapInfo.userData ["location"] ["latitude"].ToObject<float> (),
-				mapInfo.userData ["location"] ["longitude"].ToObject<float> ());
+				mapInfo.metadata.location.latitude,
+				mapInfo.metadata.location.longitude);
 			mLocationText.text = "Distance: " + distance.ToString("F3") + "km";
 		} else {
 			mLocationText.text = "Distance Unknown - Map does not have location";

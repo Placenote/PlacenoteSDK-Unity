@@ -213,6 +213,45 @@ public class LibPlacenote : MonoBehaviour
 		LOST
 	}
 
+	[System.Serializable]
+	public class MapLocation
+	{
+		public float latitude;
+		public float longitude;
+		public float altitude;
+	}
+
+	[System.Serializable]
+	public class MapLocationSearch
+	{
+		public float latitude;
+		public float longitude;
+		public float radius;
+	}
+
+	[System.Serializable]
+	public class MapMetadataSettable
+	{
+		public string name;
+		public MapLocation location;
+		public JToken userdata;
+	}
+
+	private static DateTime EPOCH = new DateTime(1970, 1, 1);
+
+	/// <summary>
+	/// Class as a container for the JSON that contains information w.r.t a map
+	/// </summary>
+	[System.Serializable]
+	public class MapMetadata : MapMetadataSettable
+	{
+		public long created;
+
+		public DateTime Created() {
+			return EPOCH.AddMilliseconds(created);
+		}
+	}
+
 	/// <summary>
 	/// Class as a container for the JSON that contains information w.r.t a map
 	/// </summary>
@@ -220,7 +259,7 @@ public class LibPlacenote : MonoBehaviour
 	public class MapInfo
 	{
 		public string placeId;
-		public JToken userData;
+		public MapMetadata metadata;
 	}
 
 	/// <summary>
@@ -230,6 +269,24 @@ public class LibPlacenote : MonoBehaviour
 	private class MapList
 	{
 		public MapInfo[] places = null;
+	}
+
+	[System.Serializable]
+	public class MapSearch
+	{
+		public string name;
+		public MapLocationSearch location;
+		public double newerThan;
+		public double olderThan;
+		public string userdataQuery;
+
+		public void SetNewerThan(DateTime dt) {
+			newerThan = (dt - new DateTime (1970, 1, 1)).TotalMilliseconds;
+		}
+
+		public void SetOlderThan(DateTime dt) {
+			olderThan = (dt - new DateTime (1970, 1, 1)).TotalMilliseconds;
+		}
 	}
 
 	/// <summary>
@@ -702,24 +759,13 @@ public class LibPlacenote : MonoBehaviour
 	/// </summary>
 	/// <param name="mapId">ID of the map</param>
 	/// <param name="metadataJson">Serialized JSON metadata</param>
-	public bool SetMetadata (string mapId, string metadataJson)
+	public bool SetMetadata (string mapId, MapMetadataSettable metadata)
 	{
 		#if !UNITY_EDITOR
-		return PNSetMetadata (mapId, metadataJson) == 0;
+		return PNSetMetadata (mapId, JsonConvert.SerializeObject (metadata)) == 0;
 		#else
 		return true;
 		#endif
-	}
-
-	/// <summary>
-	/// Set the metadata for the given map, which will be returned in the MapList when
-	/// you call <see cref="ListMaps"/>.
-	/// </summary>
-	/// <param name="mapId">ID of the map</param>
-	/// <param name="metadata">JSON metadata</param>
-	public bool SetMetadata (string mapId, JToken metadata)
-	{
-		return SetMetadata (mapId, metadata.ToString (Formatting.None));
 	}
 
 	/// <summary>
@@ -776,6 +822,58 @@ public class LibPlacenote : MonoBehaviour
 		#endif
 	}
 
+	public void SearchMaps(string name, Action<MapInfo[]> listCb)
+	{
+		MapSearch ms = new MapSearch ();
+		ms.name = name;
+		SearchMaps (ms, listCb);
+	}
+		
+	public void SearchMaps(float latitude, float longitude, float radius, Action<MapInfo[]> listCb)
+	{
+		MapSearch ms = new MapSearch ();
+		ms.location = new MapLocationSearch ();
+		ms.location.latitude = latitude;
+		ms.location.longitude = longitude;
+		ms.location.radius = radius;
+		SearchMaps (ms, listCb);
+	}
+
+	public void SearchMaps(DateTime newerThan, DateTime olderThan, Action<MapInfo[]> listCb)
+	{
+		MapSearch ms = new MapSearch ();
+		ms.SetNewerThan (newerThan);
+		ms.SetOlderThan (olderThan);
+		SearchMaps (ms, listCb);
+	}
+
+	public void SearchMapsByUserData(string userdataQuery, Action<MapInfo[]> listCb)
+	{
+		MapSearch ms = new MapSearch ();
+		ms.userdataQuery = userdataQuery;
+		SearchMaps (ms, listCb);
+	}
+
+	public void SearchMaps (MapSearch search, Action<MapInfo[]> listCb)
+	{
+		mapListCbs.Add (listCb);
+
+		#if !UNITY_EDITOR
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (listCb));
+		PNSearchMaps(JsonConvert.SerializeObject(search), OnMapList, cSharpContext);
+		#else
+
+		/// If the file does not exist
+		if(!File.Exists(Application.dataPath + simMapFileName)){
+			Debug.Log("There are no maps. Please create a new map.");
+		}else{
+			/// Reads maps from file as JSON
+			string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
+			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
+			listCb (mapList);
+		}
+		#endif
+	}
 
 	/// <summary>
 	/// A class to casted as context to be passed to <see cref="OnMapSaved"/>
@@ -873,7 +971,7 @@ public class LibPlacenote : MonoBehaviour
 		/// Setting map Id
 		simMap.placeId =  Guid.NewGuid().ToString();
 		/// Setting saved camera poses
-		simMap.userData = JsonConvert.SerializeObject(simCameraPoses.cameraPoses);
+		simMap.metadata.userdata = JsonConvert.SerializeObject(simCameraPoses.cameraPoses);
 		string jsonMap = JsonConvert.SerializeObject(simMap);
 
 		/// The file does not exist yet OR The file exists but does not contain '[]'
@@ -949,7 +1047,7 @@ public class LibPlacenote : MonoBehaviour
 			if (mapId == mapList[i].placeId)
 				simMap = mapList[i];
 		}
-		simCameraPoses.cameraPoses = JsonConvert.DeserializeObject<List<PNTransformUnity>> (simMap.userData.ToString() );
+		simCameraPoses.cameraPoses = JsonConvert.DeserializeObject<List<PNTransformUnity>> (simMap.metadata.userdata.ToString() );
 		loadProgressCb (true, false, 1.0f);
 		#endif
 	}
@@ -1013,7 +1111,7 @@ public class LibPlacenote : MonoBehaviour
 			}
 			/// Resaving map
 			var convertedJson = JsonConvert.SerializeObject(mapList);
-			File.WriteAllText(Application.dataPath + simMapFileName, convertedJson );
+			File.WriteAllText(Application.dataPath + simMapFileName, convertedJson);
 		}
 
 		deletedCb (true, "Success");
@@ -1107,6 +1205,10 @@ public class LibPlacenote : MonoBehaviour
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNSearchMaps (string searchJson, PNResultCallback cb, IntPtr context);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNAddMap (PNResultCallback cb, IntPtr context);
 
 	[DllImport ("__Internal")]
@@ -1144,6 +1246,10 @@ public class LibPlacenote : MonoBehaviour
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNStartRecordDataset (PNTransferMapCallback cb, IntPtr context);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNGetMetadata (string mapId, PNResultCallback cb, IntPtr context);
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
