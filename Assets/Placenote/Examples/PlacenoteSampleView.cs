@@ -147,6 +147,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			Destroy (t.gameObject);
 		}
 
+
 		mMapListPanel.SetActive (true);
 		mInitButtonPanel.SetActive (false);
 		LibPlacenote.Instance.ListMaps ((mapList) => {

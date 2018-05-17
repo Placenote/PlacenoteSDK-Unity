@@ -213,52 +213,100 @@ public class LibPlacenote : MonoBehaviour
 		LOST
 	}
 
+	/// <summary>
+	/// Struct that contains location data for the map. All fields are required.
+	/// </summary>
 	[System.Serializable]
 	public class MapLocation
 	{
+		/// <summary>
+		/// The GPS latitude
+		/// </summary>
 		public float latitude;
+		/// <summary>
+		/// The GPS longitude
+		/// </summary>
 		public float longitude;
+		/// <summary>
+		/// The GPS altitude
+		/// </summary>
 		public float altitude;
 	}
 
+	/// <summary>
+	/// Struct for searching maps by location. All fields are required.
+	/// </summary>
 	[System.Serializable]
 	public class MapLocationSearch
 	{
+		/// <summary>
+		/// The GPS latitude for the center of the search circle.
+		/// </summary>
 		public float latitude;
+		/// <summary>
+		/// The GPS longitude for the center of the search circle.
+		/// </summary>
 		public float longitude;
+		/// <summary>
+		/// The radius (in meters) of the search circle.
+		/// </summary>
 		public float radius;
 	}
 
+	/// <summary>
+	/// Struct for setting map metadata. All fields are optional.
+	/// </summary>
 	[System.Serializable]
 	public class MapMetadataSettable
 	{
+		/// <summary>
+		/// The map name.
+		/// </summary>
 		public string name;
+		/// <summary>
+		/// The map location information.
+		/// </summary>
 		public MapLocation location;
+		/// <summary>
+		/// Arbitrary user data, in JSON form.
+		/// </summary>
 		public JToken userdata;
 	}
 
 	private static DateTime EPOCH = new DateTime(1970, 1, 1);
 
 	/// <summary>
-	/// Class as a container for the JSON that contains information w.r.t a map
+	/// Struct for getting map metatada.
 	/// </summary>
 	[System.Serializable]
 	public class MapMetadata : MapMetadataSettable
 	{
+		/// <summary>
+		/// The creation time of the map (in milliseconds since EPOCH).
+		/// </summary>
 		public long created;
 
+		/// <summary>
+		/// Get the map creation time as a DateTime.
+		/// </summary>
 		public DateTime Created() {
 			return EPOCH.AddMilliseconds(created);
 		}
 	}
 
 	/// <summary>
-	/// Class as a container for the JSON that contains information w.r.t a map
+	/// The map info return as the result of ListMaps or SearchMaps
 	/// </summary>
 	[System.Serializable]
 	public class MapInfo
 	{
+		/// <summary>
+		/// The map ID
+		/// </summary>
 		public string placeId;
+		/// <summary>
+		/// The map metadata
+		/// </summary>
 		public MapMetadata metadata;
 	}
 
@@ -271,19 +319,54 @@ public class LibPlacenote : MonoBehaviour
 		public MapInfo[] places = null;
 	}
 
+	/// <summary>
+	/// Structure used for searching your maps. All fields are optional.
+	/// When multiple fields are set the search condition is logically ANDed,
+	/// returning a smaller list of maps.
+	/// </summary>
 	[System.Serializable]
 	public class MapSearch
 	{
+		/// <summary>
+		/// The map name to search for. The search is case insensitive and will match
+		/// and map that's name included the search name.
+		/// </summary>
 		public string name;
+		/// <summary>
+		/// The location to search for maps in. Maps without location data will
+		/// not be returned if this is set.
+		/// </summary>
 		public MapLocationSearch location;
+		/// <summary>
+		/// Only return maps newer than this (in milliseconds since EPOCH)
+		/// </summary>
 		public double newerThan;
+		/// <summary>
+		/// Only return maps older than this (in milliseconds since EPOCH)
+		/// </summary>
 		public double olderThan;
+		/// <summary>
+		/// Filter maps based on this query, which is run via json-query:
+		/// https://www.npmjs.com/package/json-query
+		/// The filter will match if the query return a valid.
+		/// 
+		/// For a simple example, to match only maps that have a 'shapeList'
+		/// in the userdata object, simply pass 'shapeList'.
+		/// 
+		/// For other help, contact us on Slack.
+		/// </summary>
 		public string userdataQuery;
 
+		/// <summary>
+		/// Helper function for setting newerThan via a DateTime
+		/// </summary>
 		public void SetNewerThan(DateTime dt) {
 			newerThan = (dt - new DateTime (1970, 1, 1)).TotalMilliseconds;
 		}
 
+		/// <summary>
+		/// Helper function for setting olderThan via a DateTime
+		/// </summary>
 		public void SetOlderThan(DateTime dt) {
 			olderThan = (dt - new DateTime (1970, 1, 1)).TotalMilliseconds;
 		}
@@ -753,12 +836,55 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 	/// <summary>
-	/// Set the metadata for the given map, which will be returned in the MapList when
-	/// you call <see cref="ListMaps"/>. The metadata must be a valid JSON value, object,
-	///	or array a serialized string.
+	/// Callback to return the map metadata fetched by <see cref="GetMetadata"/> function call.
+	/// </summary>
+	/// <param name="result">
+	/// Result that contains the map metadata if GetMetadata call is successful.
+	/// If not successful, it returns the error message via <see cref="PNCallbackResultUnity"/>
+	/// </param>
+	/// <param name="context">Context.</param>
+	[MonoPInvokeCallback (typeof(PNResultCallback))]
+	static void OnGetMetadata (ref PNCallbackResultUnity result, IntPtr context)
+	{
+		GCHandle handle = GCHandle.FromIntPtr (context);
+		Action<MapMetadata> metadataCb = handle.Target as Action<MapMetadata>;
+
+		PNCallbackResultUnity resultClone = result;
+		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			if (resultClone.success) {
+				String data = resultClone.msg;
+				MapInfo mapInfo = JsonConvert.DeserializeObject<MapInfo> (data);
+				metadataCb (mapInfo.metadata);
+			} else {
+				Debug.LogError ("Failed to fetch map list, error: " + resultClone.msg);
+				metadataCb (null);
+			}
+
+			handle.Free ();
+		});
+	}
+
+	/// <summary>
+	/// Get the metadata for the given ma.
 	/// </summary>
 	/// <param name="mapId">ID of the map</param>
-	/// <param name="metadataJson">Serialized JSON metadata</param>
+	/// <param name="metadata">Map metadata</param>
+	public bool GetMetadata (string mapId, Action<MapMetadata> metadataCb)
+	{
+		#if !UNITY_EDITOR
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (metadataCb));
+		return PNGetMetadata (mapId, OnGetMetadata, cSharpContext) == 0;
+		#else
+		return true;
+		#endif
+	}
+
+	/// <summary>
+	/// Set the metadata for the given map, which will be returned in the MapList when
+	/// you call <see cref="ListMaps"/> or <see cref="SearchMaps"/>.
+	/// </summary>
+	/// <param name="mapId">ID of the map</param>
+	/// <param name="metadata">Map metadata</param>
 	public bool SetMetadata (string mapId, MapMetadataSettable metadata)
 	{
 		#if !UNITY_EDITOR
@@ -822,6 +948,11 @@ public class LibPlacenote : MonoBehaviour
 		#endif
 	}
 
+	/// <summary>
+	/// Fetch a list of maps which include the given name.
+	/// </summary>
+	/// <param name="name">Only return maps which include this name</param>
+	/// <param name="listCb">Asynchronous callback to return the fetched map list</param>
 	public void SearchMaps(string name, Action<MapInfo[]> listCb)
 	{
 		MapSearch ms = new MapSearch ();
@@ -829,6 +960,13 @@ public class LibPlacenote : MonoBehaviour
 		SearchMaps (ms, listCb);
 	}
 		
+	/// <summary>
+	/// Fetch a list of maps in the given location.
+	/// </summary>
+	/// <param name="latitude">The GPS latitude for the center of the search circle</param>
+	/// <param name="longitude">The GPS longitude for the center of the search circle</param>
+	/// <param name="radius">The radius (in meters) of the search circle</param>
+	/// <param name="listCb">Asynchronous callback to return the fetched map list</param>
 	public void SearchMaps(float latitude, float longitude, float radius, Action<MapInfo[]> listCb)
 	{
 		MapSearch ms = new MapSearch ();
@@ -839,6 +977,12 @@ public class LibPlacenote : MonoBehaviour
 		SearchMaps (ms, listCb);
 	}
 
+	/// <summary>
+	/// Fetch a list of maps created in the given time window.
+	/// </summary>
+	/// <param name="newerThan">Only return maps created since this date. Pass in DateTime.MinValue to effectively disable this.</param>
+	/// <param name="olderThan">Only return maps created before this date. Pass in DateTime.MaxValue to effectively disable this.</param>
+	/// <param name="listCb">Asynchronous callback to return the fetched map list</param>
 	public void SearchMaps(DateTime newerThan, DateTime olderThan, Action<MapInfo[]> listCb)
 	{
 		MapSearch ms = new MapSearch ();
@@ -847,6 +991,11 @@ public class LibPlacenote : MonoBehaviour
 		SearchMaps (ms, listCb);
 	}
 
+	/// <summary>
+	/// Fetch a list of maps filtered by a userdata query.
+	/// </summary>
+	/// <param name="userdataQuery">See <see cref="MapSearch.userdataQuery"/> for details.</param>
+	/// <param name="listCb">Asynchronous callback to return the fetched map list</param>
 	public void SearchMapsByUserData(string userdataQuery, Action<MapInfo[]> listCb)
 	{
 		MapSearch ms = new MapSearch ();
@@ -854,6 +1003,11 @@ public class LibPlacenote : MonoBehaviour
 		SearchMaps (ms, listCb);
 	}
 
+	/// <summary>
+	/// Fetch a list of maps filtered by some search parameters.
+	/// </summary>
+	/// <param name="search">See <see cref="MapSearch"/> for details.</param>
+	/// <param name="listCb">Asynchronous callback to return the fetched map list</param>
 	public void SearchMaps (MapSearch search, Action<MapInfo[]> listCb)
 	{
 		mapListCbs.Add (listCb);
