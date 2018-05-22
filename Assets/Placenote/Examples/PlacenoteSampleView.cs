@@ -59,6 +59,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			return mSelectedMapInfo != null ? mSelectedMapInfo.placeId : null;
 		}
 	}
+	private string mSaveMapId = null;
+
 
 	private BoxCollider mBoxColliderDummy;
 	private SphereCollider mSphereColliderDummy;
@@ -319,6 +321,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			(mapId) => {
 				LibPlacenote.Instance.StopSession ();
 				mLabelText.text = "Saved Map ID: " + mapId;
+				mSaveMapId = mapId;
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
 				mPlaneDetectionToggle.SetActive (false);
@@ -341,7 +344,17 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				}
 				LibPlacenote.Instance.SetMetadata (mapId, metadata);
 			},
-			(completed, faulted, percentage) => {}
+			(completed, faulted, percentage) => {
+				if (completed) {
+					mLabelText.text = "Upload Complete:" + mSaveMapId;
+				}
+				else if (faulted) {
+					mLabelText.text = "Upload of Map ID: " + mSaveMapId + "faulted";
+				}
+				else {
+					mLabelText.text = "Uploading Map ID: " + mSaveMapId + "(" + percentage.ToString("F2") + "/1.00)";
+				}
+			}
 		);
 	}
 
