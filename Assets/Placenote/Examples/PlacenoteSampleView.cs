@@ -53,6 +53,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
 	private List<GameObject> shapeObjList = new List<GameObject> ();
 
+	private bool mReportDebug = false;
+
 	private LibPlacenote.MapInfo mSelectedMapInfo;
 	private string mSelectedMapId {
 		get {
@@ -223,6 +225,22 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mPlaneDetectionToggle.SetActive(true);
 
 					LibPlacenote.Instance.StartSession ();
+
+					if (mReportDebug) {
+						LibPlacenote.Instance.StartRecordDataset (
+							(datasetCompleted, datasetFaulted, datasetPercentage) => {
+
+								if (datasetCompleted) {
+									mLabelText.text = "Dataset Upload Complete";
+								} else if (datasetFaulted) {
+									mLabelText.text = "Dataset Upload Faulted";
+								} else {
+									mLabelText.text = "Dataset Upload: " + datasetPercentage.ToString ("F2") + "/1.0";
+								}
+							});
+						Debug.Log ("Started Debug Report");
+					}
+
 					mLabelText.text = "Loaded ID: " + mSelectedMapId;
 				} else if (faulted) {
 					mLabelText.text = "Failed to load ID: " + mSelectedMapId;
@@ -267,6 +285,22 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mPlaneDetectionToggle.SetActive (true);
 		Debug.Log ("Started Session");
 		LibPlacenote.Instance.StartSession ();
+
+		if (mReportDebug) {
+			LibPlacenote.Instance.StartRecordDataset (
+				(completed, faulted, percentage) => {
+					
+					if (completed) {
+						mLabelText.text = "Dataset Upload Complete";
+					} else if (faulted) {
+						mLabelText.text = "Dataset Upload Faulted";
+					} else {
+						mLabelText.text = "Dataset Upload: " + percentage.ToString ("F2") + "/1.0";
+					}
+				});
+			Debug.Log ("Started Debug Report");
+		}
+
 	}
 
 	public void OnTogglePlaneDetection() {
