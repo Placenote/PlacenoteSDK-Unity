@@ -151,6 +151,7 @@ public class LibPlacenote : MonoBehaviour
 		public int measCount;
 		public float maxViewAngle;
 		public PNVector3Unity point;
+		public PNVector3Unity color;
 	}
 
 	/// <summary>
@@ -1028,15 +1029,41 @@ public class LibPlacenote : MonoBehaviour
 	/// The map that contains all 3D feature points created by a mapping session,
 	/// or contained in a loaded map during a localization session
 	/// </returns>
+	public PNFeaturePointUnity[] GetDenseMap ()
+	{
+		int lmSize = 0;
+		PNFeaturePointUnity[] map = new PNFeaturePointUnity [1];
+		#if !UNITY_EDITOR
+		lmSize = PNGetDenseMap (map, 0);
+		#endif
+
+		if (lmSize == 0) {
+			Debug.Log ("Empty landmarks, probably tried to fail");
+			return null;
+		}
+
+		#if !UNITY_EDITOR
+		Array.Resize (ref map, lmSize);
+		PNGetDenseMap (map, lmSize);
+		#endif
+
+		return map;
+	}
+
+
+	/// <summary>
+	/// Return the map created by a mapping session, or the current map used by a localization session
+	/// </summary>
+	/// <returns>
+	/// The map that contains all 3D feature points created by a mapping session,
+	/// or contained in a loaded map during a localization session
+	/// </returns>
 	public PNFeaturePointUnity[] GetMap ()
 	{
 		int lmSize = 0;
 		PNFeaturePointUnity[] map = new PNFeaturePointUnity [1];
 		#if !UNITY_EDITOR
 		lmSize = PNGetAllLandmarks (map, 0);
-
-		#else
-
 		#endif
 
 		if (lmSize == 0) {
@@ -1047,8 +1074,6 @@ public class LibPlacenote : MonoBehaviour
 		#if !UNITY_EDITOR
 		Array.Resize (ref map, lmSize);
 		PNGetAllLandmarks (map, lmSize);
-
-
 		#endif
 
 		return map;
@@ -1128,6 +1153,10 @@ public class LibPlacenote : MonoBehaviour
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNGetAllLandmarks ([In, Out] PNFeaturePointUnity[] lmArrayPtr, int lmSize);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNGetDenseMap ([In, Out] PNFeaturePointUnity[] lmArrayPtr, int lmSize);
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]

@@ -339,6 +339,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					metadata["location"]["longitude"] = locationInfo.longitude;
 					metadata["location"]["altitude"] = locationInfo.altitude;
 				}
+
 				LibPlacenote.Instance.SetMetadata (mapId, metadata);
 			},
 			(completed, faulted, percentage) => {}

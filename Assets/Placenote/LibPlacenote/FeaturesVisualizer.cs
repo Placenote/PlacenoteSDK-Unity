@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 
 /// <summary>
@@ -8,7 +9,26 @@ using UnityEngine;
 /// </summary>
 public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 {
+	/// <summary>
+	/// Struct that captures the status and progress of a map file transfer between client app and the Placenote Cloud
+	/// </summary>
+	public enum ColorMode
+	{
+		/// <summary>
+		/// INVERSE_DEPTH configures FeatureVisualizer to color the dense
+		/// pointcloud based on Jet colormapping of the inverse depth
+		/// </summary>
+		INVERSE_DEPTH = 0,
+		/// <summary>
+		/// IMAGE configures FeatureVisualizer to color the dense pointcloud with the corresponding image
+		/// </summary>
+		IMAGE
+	}
+
 	private static FeaturesVisualizer sInstance;
+	private ColorMode mColorMode = ColorMode.INVERSE_DEPTH;
+	private List<GameObject> mPtCloudObjs = new List<GameObject> ();
+
 	[SerializeField] Material mPtCloudMat;
 	[SerializeField] GameObject mMap;
 
@@ -39,6 +59,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 		sInstance.InvokeRepeating ("DrawMap", 0f, 0.5f);
+		sInstance.InvokeRepeating ("DrawDenseMap", 0f, 0.5f);
 	}
 
 	/// <summary>
@@ -47,17 +68,22 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	public static void DisablePointcloud ()
 	{
 		sInstance.CancelInvoke ();
-		clearPointcloud ();
+		ClearPointcloud ();
 	}
 
 
 	/// <summary>
 	///  Clear currently rendering feature/landmark pointcloud
 	/// </summary>
-	public static void clearPointcloud() 
+	public static void ClearPointcloud() 
 	{
 		MeshFilter mf = sInstance.mMap.GetComponent<MeshFilter> ();
 		mf.mesh.Clear ();
+
+		foreach (var ptCloud in sInstance.mPtCloudObjs) {
+			GameObject.Destroy (ptCloud);
+		}
+		sInstance.mPtCloudObjs.Clear ();
 	}
 
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose)
@@ -68,9 +94,117 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	{
 		if (currStatus == LibPlacenote.MappingStatus.WAITING) {
 			Debug.Log ("Session stopped, resetting pointcloud mesh.");
-			clearPointcloud ();
+			ClearPointcloud ();
 		}
 	}
+
+	void GetColour(float v, float vmin, float vmax, ref float r, ref float g, ref float b)
+	{
+		// scale the gray value into the range [0, 8]
+		float gray = 8*Mathf.Min(1f, Mathf.Max(0f, (v - vmin)/(vmax - vmin)));
+		// s is the slope of color change
+		float s = 0.5f;
+
+		if (gray <= 1)
+		{
+			r = 0f;
+			g = 0f;
+			b = (gray+1)*s + 0.5f;
+		}
+		else if (gray <= 3)
+		{
+			r = 0f;
+			g = (gray-1)*s + 0.5f;
+			b = 255;
+		}
+		else if (gray <= 5)
+		{
+			r = (gray-3)*s + 0.5f;
+			g = 1f;
+			b = (5-gray)*s + 0.5f;
+		}
+		else if (gray <= 7)
+		{
+			r = 1f;
+			g = (7-gray)*s + 0.5f;
+			b = 0f;
+		}
+		else
+		{
+			r = (9-gray)*s + 0.5f;
+			g = 0f;
+			b = 0f;
+		}
+	}
+
+	public void DrawDenseMap ()
+	{
+		if (!LibPlacenote.Instance.Initialized()) {
+			return;
+		}
+
+		LibPlacenote.PNFeaturePointUnity[] densePoints = LibPlacenote.Instance.GetDenseMap ();
+		if (densePoints == null) {
+			Debug.Log ("Empty densePoints.");
+			return;
+		}
+
+		Debug.Log ("Dense points size: " + densePoints.Length);
+		Vector3[] points = new Vector3[densePoints.Length];
+		Color[] colors = new Color[points.Length];
+		for (int i = 0; i < points.Length; i++) {
+			points [i].x = densePoints [i].point.x;
+			points [i].y = densePoints [i].point.y;
+			points [i].z = -densePoints [i].point.z;
+
+			if (mColorMode == ColorMode.IMAGE) {
+				colors [i].r = densePoints [i].color.x / 255f;
+				colors [i].g = densePoints [i].color.y / 255f;
+				colors [i].b = densePoints [i].color.z / 255f;
+			} else {
+				float distance = (float)Vector3.Distance (points[i], Camera.main.transform.position);
+				float invDist = 1f/distance;
+				GetColour (invDist, 0.2f, 2f, ref colors [i].r, ref colors [i].g, ref colors [i].b);
+			}
+
+			if (densePoints [i].measCount < 50) {
+				colors [i].a = 0;
+			} else {
+				colors [i].a = densePoints [i].measCount/255f;
+			}
+
+		}
+
+		// Need to update indicies too!
+		int[] indices = new int[points.Length];
+		for (int i = 0; i < points.Length; ++i) {
+			indices [i] = i;
+		}
+
+		// Create GameObject container with mesh components for the loaded mesh.
+		GameObject pointcloudObj = GameObject.Instantiate(mMap);
+
+		Mesh mesh = new Mesh ();
+		mesh.vertices = points;
+		mesh.colors = colors;
+		mesh.SetIndices (indices, MeshTopology.Points, 0);
+
+		MeshFilter mf = pointcloudObj.GetComponent<MeshFilter> ();
+		if (mf == null) {
+			mf = pointcloudObj.AddComponent<MeshFilter> ();
+		} 
+		mf.mesh = mesh;
+
+		MeshRenderer mr = pointcloudObj.GetComponent<MeshRenderer> ();
+		if (mr == null) {
+			mr = pointcloudObj.AddComponent<MeshRenderer> ();
+		} 
+
+		mr.material = mPtCloudMat;
+
+		mPtCloudObjs.Add (pointcloudObj);
+	}
+
 
 	public void DrawMap ()
 	{
