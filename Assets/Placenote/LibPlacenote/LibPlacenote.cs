@@ -313,7 +313,6 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 
-
 	/// <summary>
 	/// Raises the initialized event that indicates the status of the <see cref="PNInitialize"/> call
 	/// </summary>
@@ -352,7 +351,7 @@ public class LibPlacenote : MonoBehaviour
 		initParams.appBasePath = Application.streamingAssetsPath + "/Placenote";
 		initParams.mapPath = Application.persistentDataPath;
 
-    #if !UNITY_EDITOR
+        	#if !UNITY_EDITOR
 		PNInitialize (ref initParams, OnInitialized, IntPtr.Zero);
 		#endif
 	}
@@ -1038,9 +1037,6 @@ public class LibPlacenote : MonoBehaviour
 		PNFeaturePointUnity[] map = new PNFeaturePointUnity [1];
 		#if !UNITY_EDITOR
 		lmSize = PNGetAllLandmarks (map, 0);
-
-		#else
-
 		#endif
 
 		if (lmSize == 0) {
@@ -1051,8 +1047,6 @@ public class LibPlacenote : MonoBehaviour
 		#if !UNITY_EDITOR
 		Array.Resize (ref map, lmSize);
 		PNGetAllLandmarks (map, lmSize);
-
-
 		#endif
 
 		return map;
