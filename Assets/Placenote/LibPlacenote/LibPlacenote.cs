@@ -453,7 +453,6 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 
-
 	/// <summary>
 	/// Raises the initialized event that indicates the status of the <see cref="PNInitialize"/> call
 	/// </summary>
@@ -492,7 +491,7 @@ public class LibPlacenote : MonoBehaviour
 		initParams.appBasePath = Application.streamingAssetsPath + "/Placenote";
 		initParams.mapPath = Application.persistentDataPath;
 
-    #if !UNITY_EDITOR
+        	#if !UNITY_EDITOR
 		PNInitialize (ref initParams, OnInitialized, IntPtr.Zero);
 		#endif
 	}
@@ -661,7 +660,7 @@ public class LibPlacenote : MonoBehaviour
 		}
 		return (mCurrentTransform * poseInARKit);
 	}
-		
+
 
 	/// <summary>
 	/// Starts a mapping/localization session. If a map is loaded before <see cref="StartSession"/> is called,
@@ -677,11 +676,15 @@ public class LibPlacenote : MonoBehaviour
 		if(mLocalization) {
 			/// Set MappingStatus to LOST if status is localization
 			mCurrStatus = MappingStatus.LOST;
+			/// Stops the relocalization (checkLocalization) or the mapping (saving cameraPoses) invoke
+			sInstance.CancelInvoke();
 			/// Start checking for localization
 			sInstance.InvokeRepeating ("checkLocalization", 0f, 0.5f);
 		} else {
 			/// Set MappingStatus to RUNNING if status is mapping (ie. not localization)
 			mCurrStatus = MappingStatus.RUNNING;
+			/// Stops the relocalization (checkLocalization) or the mapping (saving cameraPoses) invoke
+			sInstance.CancelInvoke();
 			/// Start saving camera poses to create a map
 			simCameraPoses.cameraPoses = new List<PNTransformUnity> ();
 			sInstance.InvokeRepeating ("SaveCameraPose", 0f, 0.5f);
@@ -1286,9 +1289,6 @@ public class LibPlacenote : MonoBehaviour
 		PNFeaturePointUnity[] map = new PNFeaturePointUnity [1];
 		#if !UNITY_EDITOR
 		lmSize = PNGetAllLandmarks (map, 0);
-
-		#else
-
 		#endif
 
 		if (lmSize == 0) {
@@ -1299,8 +1299,6 @@ public class LibPlacenote : MonoBehaviour
 		#if !UNITY_EDITOR
 		Array.Resize (ref map, lmSize);
 		PNGetAllLandmarks (map, lmSize);
-
-
 		#endif
 
 		return map;
