@@ -26,7 +26,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	}
 
 	private static FeaturesVisualizer sInstance;
-	private ColorMode mColorMode = ColorMode.INVERSE_DEPTH;
+	private ColorMode mColorMode = ColorMode.IMAGE;
 	private List<GameObject> mPtCloudObjs = new List<GameObject> ();
 
 	[SerializeField] Material mPtCloudMat;
@@ -59,7 +59,6 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 		sInstance.InvokeRepeating ("DrawMap", 0f, 0.5f);
-		sInstance.InvokeRepeating ("DrawDenseMap", 0f, 0.5f);
 	}
 
 	/// <summary>
@@ -86,9 +85,16 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		sInstance.mPtCloudObjs.Clear ();
 	}
 
-	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose)
-	{
+
+	public void OnInitialized (bool success, string errMsg) {
+		if (!success) {
+			return;
+		}
+
+		LibPlacenote.Instance.EnableDenseMapping ();
 	}
+
+	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose){}
 
 	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
 	{
@@ -137,13 +143,13 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 	}
 
-	public void DrawDenseMap ()
+
+	public void OnDensePointcloud (LibPlacenote.PNFeaturePointUnity[] densePoints)
 	{
 		if (!LibPlacenote.Instance.Initialized()) {
 			return;
 		}
 
-		LibPlacenote.PNFeaturePointUnity[] densePoints = LibPlacenote.Instance.GetDenseMap ();
 		if (densePoints == null) {
 			Debug.Log ("Empty densePoints.");
 			return;

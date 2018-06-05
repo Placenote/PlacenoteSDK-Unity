@@ -75,6 +75,17 @@ public class LibPlacenote : MonoBehaviour
 		ref PNTransformUnity arkitPose, IntPtr context);
 
 	/// <summary>
+	/// Delegate template for a callback for the Placenote Mapping engine to notify user of a message
+	/// </summary>
+	/// <param name="msg">
+	/// The message Placenote Mapping engine tries to pass back
+	/// </param>
+	/// <param name="context">
+	/// Pointer used to pass C# context to/from the C environment, since C callback function can't capture external states
+	/// </param>
+	public delegate void PNNotifcationCallback (string msg, IntPtr context);
+
+	/// <summary>
 	/// Struct that captures the intrinsic calibration parameters of a pinhole model camera.
 	/// </summary>
 	[StructLayout (LayoutKind.Sequential)]
@@ -244,6 +255,7 @@ public class LibPlacenote : MonoBehaviour
 		public List<PNTransformUnity> cameraPoses;
 	}
 
+	private string mInitResultErrMsg;
 	private static LibPlacenote sInstance;
 	private List<PlacenoteListener> listeners = new List<PlacenoteListener> ();
 	private string mMapPath;
@@ -301,6 +313,9 @@ public class LibPlacenote : MonoBehaviour
 	public void RegisterListener (PlacenoteListener listener)
 	{
 		listeners.Add (listener);
+		if (mInitialized) {
+			listener.OnInitialized (true, "");
+		}
 	}
 
 
@@ -327,14 +342,22 @@ public class LibPlacenote : MonoBehaviour
 	static void OnInitialized (ref PNCallbackResultUnity result, IntPtr context)
 	{
 		bool success = result.success;
+		string msg = result.msg;
 
 		if (success) {
 			Debug.Log ("Initialized SDK!");
 			Instance.mInitialized = true;
 		} else {
 			Debug.Log ("Failed to initialize SDK!");
-			Debug.Log ("error message: " + result.msg);
+			Debug.Log ("error message: " + msg);
 		}
+
+		var listeners = Instance.listeners;
+		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			foreach (var listener in listeners) {
+				listener.OnInitialized (success, msg);
+			}
+		});
 	}
 
 	/// <summary>
@@ -1022,6 +1045,49 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 
+	[MonoPInvokeCallback (typeof(PNNotifcationCallback))]
+	private static void OnNewPtcloudNotification (string msg, IntPtr context)
+	{
+		string errorMsg = msg;
+		Debug.Log ("OnNewPtcloudNotification: " + errorMsg);
+
+		LibPlacenote.PNFeaturePointUnity[] densePts = LibPlacenote.Instance.GetDenseMap ();
+		if (densePts == null) {
+			return;
+		}
+
+		var listeners = Instance.listeners;
+		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			foreach (var listener in listeners) {
+				listener.OnDensePointcloud (densePts);
+			}
+		});
+	}
+
+
+	/// <summary>
+	/// Enable dense mapping capability of Placenote mapping engine. OnDensePointcloud callback will start
+	/// getting triggered to broadcast the pointcloud data
+	/// </summary>
+	public void EnableDenseMapping()
+	{
+		#if !UNITY_EDITOR
+		PNEnableDenseMapping (OnNewPtcloudNotification, IntPtr.Zero);
+		#endif
+	}
+
+	/// <summary>
+	/// Disable dense mapping capability of Placenote mapping engine. OnDensePointcloud callback will stop
+	/// getting triggered if dense mapping has previously been enabled
+	/// </summary>
+	public void DisableDenseMapping()
+	{
+		#if !UNITY_EDITOR
+		PNDisableDenseMapping ();
+		#endif
+	}
+
+
 	/// <summary>
 	/// Return the map created by a mapping session, or the current map used by a localization session
 	/// </summary>
@@ -1157,6 +1223,14 @@ public class LibPlacenote : MonoBehaviour
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNGetDenseMap ([In, Out] PNFeaturePointUnity[] lmArrayPtr, int lmSize);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNEnableDenseMapping (PNNotifcationCallback cb, IntPtr context);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNDisableDenseMapping ();
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]

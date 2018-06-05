@@ -37,8 +37,7 @@ public class PlacenoteCameraManager : MonoBehaviour, PlacenoteListener
 		cameraParent.transform.rotation = PNUtility.MatrixOps.GetRotation (camParentPose);
 	}
 
-	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
-	{
-		
-	}
+	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus){}
+	public void OnInitialized (bool success, string errMsg) {}
+	public void OnDensePointcloud (LibPlacenote.PNFeaturePointUnity[] densePoints){}
 }

@@ -423,7 +423,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	}
 
 
+	public void OnInitialized (bool success, string errMsg) {}
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose) {}
+	public void OnDensePointcloud (LibPlacenote.PNFeaturePointUnity[] ptcloud) {}
 
 
 	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
