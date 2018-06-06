@@ -661,7 +661,7 @@ public class LibPlacenote : MonoBehaviour
 	/// <param name="contextPtr">
 	/// Context pointer to capture progressCb passed the <see cref="StartRecordDataset"/> parameters
 	/// </param>
-	[MonoPInvokeCallback (typeof(PNResultCallback))]
+	[MonoPInvokeCallback (typeof(PNTransferMapCallback))]
 	static void OnDatasetUpload (ref PNTransferStatusUnity status, IntPtr contextPtr)
 	{
 		GCHandle handle = GCHandle.FromIntPtr (contextPtr);
