@@ -28,14 +28,18 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	private static FeaturesVisualizer sInstance;
 	private ColorMode mColorMode = ColorMode.IMAGE;
 	private List<GameObject> mPtCloudObjs = new List<GameObject> ();
+	private bool mEnabled = false;
 
 	[SerializeField] Material mPtCloudMat;
 	[SerializeField] GameObject mMap;
+	[SerializeField] GameObject mPointCloud;
 
 	void Awake ()
 	{
 		sInstance = this;
+	}
 
+	void Start () {
 		// This is required for OnPose and OnStatusChange to be triggered
 		LibPlacenote.Instance.RegisterListener (this);
 	}
@@ -59,6 +63,10 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 		sInstance.InvokeRepeating ("DrawMap", 0f, 0.5f);
+		if (LibPlacenote.Instance.Initialized()) {
+			LibPlacenote.Instance.EnableDenseMapping ();
+		}
+		sInstance.mEnabled = true;
 	}
 
 	/// <summary>
@@ -68,6 +76,8 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	{
 		sInstance.CancelInvoke ();
 		ClearPointcloud ();
+		LibPlacenote.Instance.DisableDenseMapping ();
+		sInstance.mEnabled = false;
 	}
 
 
@@ -76,6 +86,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	/// </summary>
 	public static void ClearPointcloud() 
 	{
+		Debug.Log ("Cleared pointcloud");
 		MeshFilter mf = sInstance.mMap.GetComponent<MeshFilter> ();
 		mf.mesh.Clear ();
 
@@ -91,7 +102,9 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
-		LibPlacenote.Instance.EnableDenseMapping ();
+		if (mEnabled) {
+			LibPlacenote.Instance.EnableDenseMapping ();
+		}
 	}
 
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose){}
@@ -188,7 +201,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 
 		// Create GameObject container with mesh components for the loaded mesh.
-		GameObject pointcloudObj = GameObject.Instantiate(mMap);
+		GameObject pointcloudObj = GameObject.Instantiate(mPointCloud);
 
 		Mesh mesh = new Mesh ();
 		mesh.vertices = points;

@@ -325,7 +325,9 @@ public class LibPlacenote : MonoBehaviour
 	/// <param name="listener">A listener to be removed to the subscriber list.</param>
 	public void RemoveListener (PlacenoteListener listener)
 	{
-		listeners.Remove (listener);
+		if (listeners.Contains(listener)) {
+			listeners.Remove (listener);
+		}
 	}
 
 
@@ -352,8 +354,8 @@ public class LibPlacenote : MonoBehaviour
 			Debug.Log ("error message: " + msg);
 		}
 
-		var listeners = Instance.listeners;
 		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			var listeners = Instance.listeners;
 			foreach (var listener in listeners) {
 				listener.OnInitialized (success, msg);
 			}
@@ -458,6 +460,83 @@ public class LibPlacenote : MonoBehaviour
 		#endif
 	}
 
+
+	/// <summary>
+	/// Sends an image frame and its corresponding camera pose to LibPlacenote mapping/localization module
+	/// </summary>
+	/// <param name="frameData">Image frame data.</param>
+	/// <param name="position">Position of the camera at the time frameData is captured</param>
+	/// <param name="rotation">Quaternion of the camera at the time frameData is captured.</param>
+	/// <param name="screenOrientation">
+	/// Fill in this parameter with screenOrientation from the current UnityVideoParams structure.
+	/// Used to correct for the extra rotation applied by the Unity ARKit Plugin on the ARKit pose transform.
+	/// </param>
+	/// <param name="pts">points detected by ARKit</param>
+	public void SendARFrame (UnityARImageFrameData frameData, Vector3 position, Quaternion rotation, int screenOrientation, Vector3[] pts)
+	{
+		Matrix4x4 orientRemovalMat = Matrix4x4.zero;
+		orientRemovalMat.m22 = orientRemovalMat.m33 = 1;
+		switch (screenOrientation) {
+		// portrait
+		case 1:
+			orientRemovalMat.m01 = 1;
+			orientRemovalMat.m10 = -1;
+			break;
+		case 2:
+			orientRemovalMat.m01 = -1;
+			orientRemovalMat.m10 = 1;
+			break;
+			// landscape
+		case 3:
+			// do nothing
+			orientRemovalMat = Matrix4x4.identity;
+			break;
+		case 4:
+			orientRemovalMat.m00 = -1;
+			orientRemovalMat.m11 = -1;
+			break;
+		default:
+			Debug.LogError ("Unrecognized screen orientation");
+			return;
+		}
+
+		Matrix4x4 rotationMat = Matrix4x4.TRS (new Vector3 (0, 0, 0), rotation, new Vector3 (1, 1, 1));
+		rotationMat = rotationMat * orientRemovalMat;
+		rotation = PNUtility.MatrixOps.QuaternionFromMatrix (rotationMat);
+
+		PNTransformUnity pose = new PNTransformUnity ();
+		pose.position.x = position.x;
+		pose.position.y = position.y;
+		pose.position.z = position.z;
+		pose.rotation.x = rotation.x;
+		pose.rotation.y = rotation.y;
+		pose.rotation.z = rotation.z;
+		pose.rotation.w = rotation.w;
+
+		PNImagePlaneUnity yPlane = new PNImagePlaneUnity ();
+		yPlane.width = (int)frameData.y.width;
+		yPlane.height = (int)frameData.y.height;
+		yPlane.stride = (int)frameData.y.stride;
+		yPlane.buf = frameData.y.data;
+
+		PNImagePlaneUnity vuPlane = new PNImagePlaneUnity ();
+		vuPlane.width = (int)frameData.vu.width;
+		vuPlane.height = (int)frameData.vu.height;
+		vuPlane.stride = (int)frameData.vu.stride;
+		vuPlane.buf = frameData.vu.data;
+
+		PNVector3Unity[] pnPts = new PNVector3Unity[pts.Length];
+		for (int i = 0; i < pts.Length; i++) {
+			pnPts[i].x = pts [i].x;
+			pnPts[i].y = -pts [i].y;
+			pnPts[i].z = pts [i].z;
+		}
+
+		#if !UNITY_EDITOR
+		PNSetFrameWithPoints (ref yPlane, ref vuPlane, ref pose, pnPts, pnPts.Length);
+		#endif
+	}
+
 	/// <summary>
 	/// Gets the current pose computed by the mapping session
 	/// </summary>
@@ -513,9 +592,9 @@ public class LibPlacenote : MonoBehaviour
 
 		MappingStatus status = Instance.GetStatus();
 
-		var listeners = Instance.listeners;
 		if (status == MappingStatus.RUNNING) {
 			MainThreadTaskQueue.InvokeOnMainThread (() => {
+				var listeners = Instance.listeners;
 				foreach (var listener in listeners) {
 					listener.OnPose (outputPoseMat, arkitPoseMat);
 				}
@@ -525,6 +604,7 @@ public class LibPlacenote : MonoBehaviour
 
 		if (status != Instance.mPrevStatus) {
 			MainThreadTaskQueue.InvokeOnMainThread (() => {
+				var listeners = Instance.listeners;
 				foreach (var listener in listeners) {
 					listener.OnStatusChange (Instance.mPrevStatus, status);
 				}
@@ -1056,8 +1136,8 @@ public class LibPlacenote : MonoBehaviour
 			return;
 		}
 
-		var listeners = Instance.listeners;
 		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			var listeners = Instance.listeners;
 			foreach (var listener in listeners) {
 				listener.OnDensePointcloud (densePts);
 			}
@@ -1190,6 +1270,13 @@ public class LibPlacenote : MonoBehaviour
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern void PNSetFrame (
 		ref PNImagePlaneUnity yPlane, ref PNImagePlaneUnity vuPlane, ref PNTransformUnity pose
+	);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern void PNSetFrameWithPoints (
+		ref PNImagePlaneUnity yPlane, ref PNImagePlaneUnity vuPlane,
+		ref PNTransformUnity pose, PNVector3Unity[] ptsArrayPtr, int ptsCount
 	);
 
 	[DllImport ("__Internal")]

@@ -130,7 +130,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition (matrix);
 			Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation (matrix);
 
-			LibPlacenote.Instance.SendARFrame (mImage, arkitPosition, arkitQuat, mARCamera.videoParams.screenOrientation);
+			LibPlacenote.Instance.SendARFrame (mImage, arkitPosition, arkitQuat,
+				mARCamera.videoParams.screenOrientation, mARCamera.pointCloudData);
 		}
 	}
 
