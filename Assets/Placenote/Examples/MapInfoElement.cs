@@ -15,11 +15,9 @@ public class MapInfoElement : MonoBehaviour
 	                       RectTransform listParent, UnityAction<bool> onToggleChanged)
 	{
 		mMapIdText.text = mapInfo.placeId;
-		if (mapInfo.metadata.name.Length > 0) {
+		if (mapInfo.metadata.name != null && mapInfo.metadata.name.Length > 0) {
 			mMapIdText.text = mapInfo.metadata.name;
-		} else {
-			mMapIdText.text = mapInfo.placeId;
-		}			
+		}
 		mToggle.group = toggleGroup;
 		gameObject.transform.SetParent (listParent);
 		mToggle.onValueChanged.AddListener (onToggleChanged);

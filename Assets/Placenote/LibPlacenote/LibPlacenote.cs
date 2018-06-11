@@ -482,6 +482,7 @@ public class LibPlacenote : MonoBehaviour
 	{
 		#if UNITY_EDITOR
 		mInitialized = true;
+		simMap.metadata = new MapMetadata ();
 		#endif
 
 		PNInitParamsUnity initParams = new PNInitParamsUnity ();
