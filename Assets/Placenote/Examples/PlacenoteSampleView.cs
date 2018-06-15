@@ -55,6 +55,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	private bool mARKitInit = false;
 	private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
 	private List<GameObject> shapeObjList = new List<GameObject> ();
+	private LibPlacenote.MapMetadataSettable mCurrMapDetails;
 
 	private bool mReportDebug = false;
 
@@ -388,7 +389,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		LibPlacenote.Instance.SaveMap (
 			(mapId) => {
 				LibPlacenote.Instance.StopSession ();
-				mLabelText.text = "Saved Map ID: " + mapId;
 				mSaveMapId = mapId;
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
@@ -415,16 +415,17 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					metadata.location.altitude = locationInfo.altitude;
 				}
 				LibPlacenote.Instance.SetMetadata (mapId, metadata);
+				mCurrMapDetails = metadata;
 			},
 			(completed, faulted, percentage) => {
 				if (completed) {
-					mLabelText.text = "Upload Complete:" + mSaveMapId;
+					mLabelText.text = "Upload Complete:" + mCurrMapDetails.name;
 				}
 				else if (faulted) {
-					mLabelText.text = "Upload of Map ID: " + mSaveMapId + "faulted";
+					mLabelText.text = "Upload of Map Named: " + mCurrMapDetails.name + "faulted";
 				}
 				else {
-					mLabelText.text = "Uploading Map ID: " + mSaveMapId + "(" + percentage.ToString("F2") + "/1.0)";
+					mLabelText.text = "Uploading Map Named: " + mCurrMapDetails.name + "(" + percentage.ToString("F2") + "/1.0)";
 				}
 			}
 		);
