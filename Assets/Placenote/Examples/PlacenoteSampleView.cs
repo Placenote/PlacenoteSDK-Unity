@@ -124,7 +124,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			if (mARCamera.trackingState == ARTrackingState.ARTrackingStateNotAvailable) {
 				// ARKit pose is not yet initialized
 				return;
-			} else if (!mARKitInit) {
+            } else if (!mARKitInit && LibPlacenote.Instance.Initialized()) {
 				mARKitInit = true;
 				mLabelText.text = "ARKit Initialized";
 			}
