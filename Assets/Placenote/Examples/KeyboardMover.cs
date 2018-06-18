@@ -7,7 +7,7 @@ public class KeyboardMover : MonoBehaviour {
 	[SerializeField] float translateSpeed = 2.0f;
 	[SerializeField] float rotateSpeed = 90f;
 	[SerializeField] float randomOffset = 0.01f;
-  [SerializeField] bool enableSimulatedHandshake = false;
+ 	[SerializeField] bool enableSimulatedHandshake = false;
 
 	void Awake () {
 		#if UNITY_EDITOR
