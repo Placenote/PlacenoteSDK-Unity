@@ -291,7 +291,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		if (mReportDebug) {
 			LibPlacenote.Instance.StartRecordDataset (
 				(completed, faulted, percentage) => {
-					
+
 					if (completed) {
 						mLabelText.text = "Dataset Upload Complete";
 					} else if (faulted) {
@@ -339,7 +339,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		config.getPointCloudData = true;
 		config.enableLightEstimation = true;
 		mSession.RunWithConfig (config);
-    #endif 
+    #endif
 	}
 
 
