@@ -20,7 +20,7 @@ public class PostBuildTrigger : MonoBehaviour
         proj.ReadFromString (File.ReadAllText (projPath));
         var targetGuid = proj.TargetGuidByName ("Unity-iPhone");
         // EmbedFrameworks cannot be added in Unity 5.6.5
-        #if UNITY_2018_1_OR_NEWER
+        #if UNITY_2017_2_OR_NEWER
         const string defaultLocationInProj = "Plugins/iOS";
         const string coreFrameworkName = "Placenote.framework";
         var framework = Path.Combine(defaultLocationInProj, coreFrameworkName);

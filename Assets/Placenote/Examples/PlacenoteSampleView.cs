@@ -318,6 +318,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 
 	private void ConfigureSession(bool clearPlanes) {
+    #if !UNITY_EDITOR
 		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
 
 		if (mPlaneDetectionToggle.GetComponent<Toggle>().isOn) {
@@ -338,6 +339,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		config.getPointCloudData = true;
 		config.enableLightEstimation = true;
 		mSession.RunWithConfig (config);
+    #endif 
 	}
 
 
