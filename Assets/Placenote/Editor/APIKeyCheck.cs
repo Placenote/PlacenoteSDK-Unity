@@ -33,15 +33,12 @@ public class LibPlacenoteEditor : Editor, IPreprocessBuild
 		string keyRead = reader.ReadToEnd ();
 	
 		if (keyRead == null) {
-			Debug.LogError ("API Key Empty");
+			Debug.LogError ("API Key Empty. Please get an API Key from http://developers.placenote.com and enter it under the LibPlacenote Object in the PlacenoteCameraManager");
 		} else if (keyRead.Trim () == "") {
-			Debug.LogError ("API Key Empty");
+			Debug.LogError ("API Key Empty. Please get an API Key from http://developers.placenote.com and enter it under the LibPlacenote Object in the PlacenoteCameraManager");
 		} else {
 			Debug.Log ("API Key Entered:" + keyRead);
 		}
-
-
-		
 		reader.Close();
 	}
 }

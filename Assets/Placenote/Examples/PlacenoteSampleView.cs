@@ -186,7 +186,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		LibPlacenote.Instance.SearchMaps(locationInfo.latitude, locationInfo.longitude, radiusSearch, 
 			(mapList) => {
-
 			// render the map list!
 			foreach (LibPlacenote.MapInfo mapId in mapList) {
 				if (mapId.metadata.userdata != null) {

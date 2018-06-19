@@ -23,18 +23,15 @@ class LibraryCheck : ScriptableObject, IPreprocessBuild
 		}
 	}
 }
-
-
+	
 public class PlacenoteVersionInfo : EditorWindow
 {
-
 	private string versionString = "v1.6.1";
 
 	// Add a menu item named "Do Something" to MyMenu in the menu bar.
 	[MenuItem("Placenote/About Placenote...")]
 	static void VersionOutput()
 	{
-
 		PlacenoteVersionInfo window = ScriptableObject.CreateInstance<PlacenoteVersionInfo>();
 		window.position = new Rect(Screen.width / 2, Screen.height / 2, 450, 100);
 		window.ShowPopup();
