@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.iOS.Xcode;
 using System.IO;
-#if UNITY_2018_1_OR_NEWER
+#if UNITY_2017_2_OR_NEWER
 using UnityEditor.iOS.Xcode.Extensions;
 #endif
 
