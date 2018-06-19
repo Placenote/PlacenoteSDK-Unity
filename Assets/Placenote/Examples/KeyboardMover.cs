@@ -50,7 +50,7 @@ public class KeyboardMover : MonoBehaviour {
 			transform.Rotate (Vector3.down * rotateSpeed * Time.deltaTime);
 		}
 
-        if (enableSimulatedHandshake)
+		if (enableSimulatedHandshake)
 		    transform.Translate (Random.onUnitSphere * Random.Range (0f, randomOffset));
 
 		transform.eulerAngles = Vector3.Scale (transform.eulerAngles, new Vector3 (1, 1, 0));
