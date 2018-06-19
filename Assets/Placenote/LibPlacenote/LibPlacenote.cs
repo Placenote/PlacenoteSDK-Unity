@@ -413,7 +413,7 @@ public class LibPlacenote : MonoBehaviour
 	/// End for Unity Simulator
 
 	// Fill in API Key here
-	[SerializeField] String apiKey;
+	public String apiKey;
 
 	/// <summary>
 	/// Get accessor for the LibPlacenote singleton

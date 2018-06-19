@@ -46,8 +46,6 @@ public class PlacenoteVersionInfo : EditorWindow
 		Application.OpenURL("https://vertical.us11.list-manage.com/track/click?u=b63923e54766af5486b0555d4&id=f8c5cd33ec&e=e427dca59e");
 	}
 
-
-
 	void OnGUI()
 	{
 		EditorGUILayout.LabelField("www.placenote.com\nPlacenote Version " + versionString + "\n" +
