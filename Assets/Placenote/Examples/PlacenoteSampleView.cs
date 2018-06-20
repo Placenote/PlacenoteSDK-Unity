@@ -59,7 +59,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	private bool mReportDebug = false;
 
-
 	private LibPlacenote.MapInfo mSelectedMapInfo;
 	private string mSelectedMapId {
 		get {
