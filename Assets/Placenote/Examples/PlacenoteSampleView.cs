@@ -129,7 +129,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			if (mARCamera.trackingState == ARTrackingState.ARTrackingStateNotAvailable) {
 				// ARKit pose is not yet initialized
 				return;
-			} else if (!mARKitInit) {
+			} else if (!mARKitInit && LibPlacenote.Instance.Initialized()) {
 				mARKitInit = true;
 				mLabelText.text = "ARKit Initialized";
 			}
@@ -322,7 +322,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		if (mReportDebug) {
 			LibPlacenote.Instance.StartRecordDataset (
 				(completed, faulted, percentage) => {
-					
 					if (completed) {
 						mLabelText.text = "Dataset Upload Complete";
 					} else if (faulted) {
@@ -349,6 +348,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 
 	private void ConfigureSession(bool clearPlanes) {
+ 		#if !UNITY_EDITOR
 		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
 
 		if (mPlaneDetectionToggle.GetComponent<Toggle>().isOn) {
@@ -369,6 +369,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		config.getPointCloudData = true;
 		config.enableLightEstimation = true;
 		mSession.RunWithConfig (config);
+ 		#endif
 	}
 
 
