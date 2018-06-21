@@ -44,6 +44,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] Text mLabelText;
 	[SerializeField] Material mShapeMaterial;
 	[SerializeField] PlacenoteARGeneratePlane mPNPlaneManager;
+	[SerializeField] Slider mRadiusSlider;
+	[SerializeField] float mMaxRadiusSearch;
+	[SerializeField] Text mRadiusLabel;
 
 	private UnityARSessionNativeInterface mSession;
 	private bool mFrameUpdated = false;
@@ -52,6 +55,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	private bool mARKitInit = false;
 	private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
 	private List<GameObject> shapeObjList = new List<GameObject> ();
+	private LibPlacenote.MapMetadataSettable mCurrMapDetails;
 
 	private bool mReportDebug = false;
 
@@ -81,6 +85,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		StartARKit ();
 		FeaturesVisualizer.EnablePointcloud ();
 		LibPlacenote.Instance.RegisterListener (this);
+		mRadiusSlider.value = 1.0f;
 	}
 
 
@@ -154,7 +159,32 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		mMapListPanel.SetActive (true);
 		mInitButtonPanel.SetActive (false);
+		mRadiusSlider.gameObject.SetActive (true);
 		LibPlacenote.Instance.ListMaps ((mapList) => {
+			// render the map list!
+			foreach (LibPlacenote.MapInfo mapId in mapList) {
+				if (mapId.metadata.userdata != null) {
+					Debug.Log(mapId.metadata.userdata.ToString (Formatting.None));
+				}
+				AddMapToList (mapId);
+			}
+		});
+	}
+
+	public void OnRadiusSelect ()
+	{
+		Debug.Log ("Map search:" + mRadiusSlider.value.ToString("F2"));
+		LocationInfo locationInfo = Input.location.lastData;
+
+		foreach (Transform t in mListContentParent.transform) {
+			Destroy (t.gameObject);
+		}
+
+		float radiusSearch = mRadiusSlider.value * mMaxRadiusSearch;
+		mRadiusLabel.text = "Distance Filter: " + (radiusSearch / 1000.0).ToString ("F2") + " km";
+
+		LibPlacenote.Instance.SearchMaps(locationInfo.latitude, locationInfo.longitude, radiusSearch, 
+			(mapList) => {
 			// render the map list!
 			foreach (LibPlacenote.MapInfo mapId in mapList) {
 				if (mapId.metadata.userdata != null) {
@@ -201,6 +231,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		mSelectedMapInfo = mapInfo;
 		mMapSelectedPanel.SetActive (true);
+		mRadiusSlider.gameObject.SetActive (false);
 	}
 
 
@@ -356,7 +387,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		LibPlacenote.Instance.SaveMap (
 			(mapId) => {
 				LibPlacenote.Instance.StopSession ();
-				mLabelText.text = "Saved Map ID: " + mapId;
 				mSaveMapId = mapId;
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
@@ -383,16 +413,17 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					metadata.location.altitude = locationInfo.altitude;
 				}
 				LibPlacenote.Instance.SetMetadata (mapId, metadata);
+				mCurrMapDetails = metadata;
 			},
 			(completed, faulted, percentage) => {
 				if (completed) {
-					mLabelText.text = "Upload Complete:" + mSaveMapId;
+					mLabelText.text = "Upload Complete:" + mCurrMapDetails.name;
 				}
 				else if (faulted) {
-					mLabelText.text = "Upload of Map ID: " + mSaveMapId + "faulted";
+					mLabelText.text = "Upload of Map Named: " + mCurrMapDetails.name + "faulted";
 				}
 				else {
-					mLabelText.text = "Uploading Map ID: " + mSaveMapId + "(" + percentage.ToString("F2") + "/1.0)";
+					mLabelText.text = "Uploading Map Named: " + mCurrMapDetails.name + "(" + percentage.ToString("F2") + "/1.0)";
 				}
 			}
 		);
