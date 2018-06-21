@@ -41,7 +41,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			);
 			return;
 		}
-		sInstance.InvokeRepeating ("DrawMap", 0f, 0.5f);
+		sInstance.InvokeRepeating ("DrawMap", 0f, 0.1f);
 	}
 
 	/// <summary>
