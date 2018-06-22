@@ -668,6 +668,10 @@ public class LibPlacenote : MonoBehaviour
 	/// the session will operate in localization mode, and will not add more points. If a map
 	/// is not loaded, a mapping session will be started to create a map that can be saved with <see cref="SaveMap"/>
 	/// </summary>
+	/// <param name="extend">
+	/// Boolean that governs whether Placenote will keep extending the map after localization. One can save the extended
+	/// map as a seperate map with a different map ID.
+	/// </param>
 	public void StartSession (bool extend = false)
 	{
 		#if !UNITY_EDITOR
