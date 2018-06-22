@@ -85,7 +85,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		StartARKit ();
 		FeaturesVisualizer.EnablePointcloud ();
 		LibPlacenote.Instance.RegisterListener (this);
-		mRadiusSlider.value = 1.0f;
+		ResetSlider ();
 	}
 
 
@@ -176,15 +176,15 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		Debug.Log ("Map search:" + mRadiusSlider.value.ToString("F2"));
 		LocationInfo locationInfo = Input.location.lastData;
 
-		foreach (Transform t in mListContentParent.transform) {
-			Destroy (t.gameObject);
-		}
 
 		float radiusSearch = mRadiusSlider.value * mMaxRadiusSearch;
 		mRadiusLabel.text = "Distance Filter: " + (radiusSearch / 1000.0).ToString ("F2") + " km";
 
 		LibPlacenote.Instance.SearchMaps(locationInfo.latitude, locationInfo.longitude, radiusSearch, 
 			(mapList) => {
+			foreach (Transform t in mListContentParent.transform) {
+				Destroy (t.gameObject);
+			}
 			// render the map list!
 			foreach (LibPlacenote.MapInfo mapId in mapList) {
 				if (mapId.metadata.userdata != null) {
@@ -195,11 +195,17 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		});
 	}
 
+	public void ResetSlider() {
+		mRadiusSlider.value = 1.0f;
+		mRadiusLabel.text = "Distance Filter: Off";
+	}
+
 	public void OnCancelClick ()
 	{
 		mMapSelectedPanel.SetActive (false);
 		mMapListPanel.SetActive (false);
 		mInitButtonPanel.SetActive (true);
+		ResetSlider ();
 	}
 
 
@@ -245,6 +251,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
+		ResetSlider ();
 		mLabelText.text = "Loading Map ID: " + mSelectedMapId;
 		LibPlacenote.Instance.LoadMap (mSelectedMapId,
 			(completed, faulted, percentage) => {
