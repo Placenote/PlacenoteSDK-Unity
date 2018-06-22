@@ -668,10 +668,10 @@ public class LibPlacenote : MonoBehaviour
 	/// the session will operate in localization mode, and will not add more points. If a map
 	/// is not loaded, a mapping session will be started to create a map that can be saved with <see cref="SaveMap"/>
 	/// </summary>
-	public void StartSession ()
+	public void StartSession (bool extend = false)
 	{
 		#if !UNITY_EDITOR
-		PNStartSession (OnPose, IntPtr.Zero);
+		PNStartSession (OnPose, extend, IntPtr.Zero);
 		#else
 
 		if(mLocalization) {
@@ -1390,7 +1390,7 @@ public class LibPlacenote : MonoBehaviour
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
-	private static extern int PNStartSession (PNPoseCallback cb, IntPtr context);
+	private static extern int PNStartSession (PNPoseCallback cb, bool extend, IntPtr context);
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
