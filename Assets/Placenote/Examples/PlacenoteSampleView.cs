@@ -44,6 +44,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] Text mLabelText;
 	[SerializeField] Material mShapeMaterial;
 	[SerializeField] PlacenoteARGeneratePlane mPNPlaneManager;
+	[SerializeField] Slider mRadiusSlider;
+	[SerializeField] float mMaxRadiusSearch;
+	[SerializeField] Text mRadiusLabel;
 
 	private UnityARSessionNativeInterface mSession;
 	private bool mFrameUpdated = false;
@@ -52,6 +55,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	private bool mARKitInit = false;
 	private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
 	private List<GameObject> shapeObjList = new List<GameObject> ();
+	private LibPlacenote.MapMetadataSettable mCurrMapDetails;
+
+	private bool mReportDebug = false;
 
 	private LibPlacenote.MapInfo mSelectedMapInfo;
 	private string mSelectedMapId {
@@ -59,6 +65,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			return mSelectedMapInfo != null ? mSelectedMapInfo.placeId : null;
 		}
 	}
+	private string mSaveMapId = null;
+
 
 	private BoxCollider mBoxColliderDummy;
 	private SphereCollider mSphereColliderDummy;
@@ -77,6 +85,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		StartARKit ();
 		FeaturesVisualizer.EnablePointcloud ();
 		LibPlacenote.Instance.RegisterListener (this);
+		ResetSlider ();
 	}
 
 
@@ -120,7 +129,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			if (mARCamera.trackingState == ARTrackingState.ARTrackingStateNotAvailable) {
 				// ARKit pose is not yet initialized
 				return;
-			} else if (!mARKitInit) {
+			} else if (!mARKitInit && LibPlacenote.Instance.Initialized()) {
 				mARKitInit = true;
 				mLabelText.text = "ARKit Initialized";
 			}
@@ -148,25 +157,56 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			Destroy (t.gameObject);
 		}
 
+
 		mMapListPanel.SetActive (true);
 		mInitButtonPanel.SetActive (false);
+		mRadiusSlider.gameObject.SetActive (true);
 		LibPlacenote.Instance.ListMaps ((mapList) => {
 			// render the map list!
 			foreach (LibPlacenote.MapInfo mapId in mapList) {
-				if (mapId.userData != null) {
-					Debug.Log(mapId.userData.ToString (Formatting.None));
+				if (mapId.metadata.userdata != null) {
+					Debug.Log(mapId.metadata.userdata.ToString (Formatting.None));
 				}
 				AddMapToList (mapId);
 			}
 		});
 	}
 
+	public void OnRadiusSelect ()
+	{
+		Debug.Log ("Map search:" + mRadiusSlider.value.ToString("F2"));
+		LocationInfo locationInfo = Input.location.lastData;
+
+
+		float radiusSearch = mRadiusSlider.value * mMaxRadiusSearch;
+		mRadiusLabel.text = "Distance Filter: " + (radiusSearch / 1000.0).ToString ("F2") + " km";
+
+		LibPlacenote.Instance.SearchMaps(locationInfo.latitude, locationInfo.longitude, radiusSearch, 
+			(mapList) => {
+			foreach (Transform t in mListContentParent.transform) {
+				Destroy (t.gameObject);
+			}
+			// render the map list!
+			foreach (LibPlacenote.MapInfo mapId in mapList) {
+				if (mapId.metadata.userdata != null) {
+					Debug.Log(mapId.metadata.userdata.ToString (Formatting.None));
+				}
+				AddMapToList (mapId);
+			}
+		});
+	}
+
+	public void ResetSlider() {
+		mRadiusSlider.value = 1.0f;
+		mRadiusLabel.text = "Distance Filter: Off";
+	}
 
 	public void OnCancelClick ()
 	{
 		mMapSelectedPanel.SetActive (false);
 		mMapListPanel.SetActive (false);
 		mInitButtonPanel.SetActive (true);
+		ResetSlider ();
 	}
 
 
@@ -198,6 +238,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		mSelectedMapInfo = mapInfo;
 		mMapSelectedPanel.SetActive (true);
+		mRadiusSlider.gameObject.SetActive (false);
 	}
 
 
@@ -211,6 +252,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
+		ResetSlider ();
 		mLabelText.text = "Loading Map ID: " + mSelectedMapId;
 		LibPlacenote.Instance.LoadMap (mSelectedMapId,
 			(completed, faulted, percentage) => {
@@ -222,9 +264,27 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mPlaneDetectionToggle.SetActive(true);
 
 					LibPlacenote.Instance.StartSession ();
+
+					if (mReportDebug) {
+						LibPlacenote.Instance.StartRecordDataset (
+							(datasetCompleted, datasetFaulted, datasetPercentage) => {
+
+								if (datasetCompleted) {
+									mLabelText.text = "Dataset Upload Complete";
+								} else if (datasetFaulted) {
+									mLabelText.text = "Dataset Upload Faulted";
+								} else {
+									mLabelText.text = "Dataset Upload: " + datasetPercentage.ToString ("F2") + "/1.0";
+								}
+							});
+						Debug.Log ("Started Debug Report");
+					}
+
 					mLabelText.text = "Loaded ID: " + mSelectedMapId;
 				} else if (faulted) {
 					mLabelText.text = "Failed to load ID: " + mSelectedMapId;
+				} else {
+					mLabelText.text = "Map Download: " + percentage.ToString ("F2") + "/1.0";
 				}
 			}
 		);
@@ -266,6 +326,21 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mPlaneDetectionToggle.SetActive (true);
 		Debug.Log ("Started Session");
 		LibPlacenote.Instance.StartSession ();
+
+		if (mReportDebug) {
+			LibPlacenote.Instance.StartRecordDataset (
+				(completed, faulted, percentage) => {
+					if (completed) {
+						mLabelText.text = "Dataset Upload Complete";
+					} else if (faulted) {
+						mLabelText.text = "Dataset Upload Faulted";
+					} else {
+						mLabelText.text = "Dataset Upload: (" + percentage.ToString ("F2") + "/1.0)";
+					}
+				});
+			Debug.Log ("Started Debug Report");
+		}
+
 	}
 
 	public void OnTogglePlaneDetection() {
@@ -281,6 +356,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 
 	private void ConfigureSession(bool clearPlanes) {
+ 		#if !UNITY_EDITOR
 		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
 
 		if (mPlaneDetectionToggle.GetComponent<Toggle>().isOn) {
@@ -301,6 +377,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		config.getPointCloudData = true;
 		config.enableLightEstimation = true;
 		mSession.RunWithConfig (config);
+ 		#endif
 	}
 
 
@@ -319,7 +396,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		LibPlacenote.Instance.SaveMap (
 			(mapId) => {
 				LibPlacenote.Instance.StopSession ();
-				mLabelText.text = "Saved Map ID: " + mapId;
+				mSaveMapId = mapId;
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
 				mPlaneDetectionToggle.SetActive (false);
@@ -328,22 +405,37 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				mPNPlaneManager.ClearPlanes ();
 				mPlaneDetectionToggle.GetComponent<Toggle>().isOn = false;
 
+				LibPlacenote.MapMetadataSettable metadata = new LibPlacenote.MapMetadataSettable();
+				metadata.name = RandomName.Get ();
+				mLabelText.text = "Saved Map Name: " + metadata.name;
 
-				JObject metadata = new JObject ();
+				JObject userdata = new JObject ();
+				metadata.userdata = userdata;
 
 				JObject shapeList = Shapes2JSON();
-				metadata["shapeList"] = shapeList;
+				userdata["shapeList"] = shapeList;
 
 				if (useLocation) {
-					metadata["location"] = new JObject ();
-					metadata["location"]["latitude"] = locationInfo.latitude;
-					metadata["location"]["longitude"] = locationInfo.longitude;
-					metadata["location"]["altitude"] = locationInfo.altitude;
+					metadata.location = new LibPlacenote.MapLocation();
+					metadata.location.latitude = locationInfo.latitude;
+					metadata.location.longitude = locationInfo.longitude;
+					metadata.location.altitude = locationInfo.altitude;
 				}
 
 				LibPlacenote.Instance.SetMetadata (mapId, metadata);
+				mCurrMapDetails = metadata;
 			},
-			(completed, faulted, percentage) => {}
+			(completed, faulted, percentage) => {
+				if (completed) {
+					mLabelText.text = "Upload Complete:" + mCurrMapDetails.name;
+				}
+				else if (faulted) {
+					mLabelText.text = "Upload of Map Named: " + mCurrMapDetails.name + "faulted";
+				}
+				else {
+					mLabelText.text = "Uploading Map Named: " + mCurrMapDetails.name + "(" + percentage.ToString("F2") + "/1.0)";
+				}
+			}
 		);
 	}
 
@@ -434,7 +526,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		Debug.Log ("prevStatus: " + prevStatus.ToString() + " currStatus: " + currStatus.ToString());
 		if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.LOST) {
 			mLabelText.text = "Localized";
-			LoadShapesJSON (mSelectedMapInfo.userData);
+			LoadShapesJSON (mSelectedMapInfo.metadata.userdata);
 		} else if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.WAITING) {
 			mLabelText.text = "Mapping";
 		} else if (currStatus == LibPlacenote.MappingStatus.LOST) {

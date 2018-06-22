@@ -7,6 +7,7 @@ public class KeyboardMover : MonoBehaviour {
 	[SerializeField] float translateSpeed = 2.0f;
 	[SerializeField] float rotateSpeed = 90f;
 	[SerializeField] float randomOffset = 0.01f;
+ 	[SerializeField] bool enableSimulatedHandshake = false;
 
 	void Awake () {
 		#if UNITY_EDITOR
@@ -49,7 +50,8 @@ public class KeyboardMover : MonoBehaviour {
 			transform.Rotate (Vector3.down * rotateSpeed * Time.deltaTime);
 		}
 
-		transform.Translate (Random.onUnitSphere * Random.Range (0f, randomOffset));
+		if (enableSimulatedHandshake)
+		    transform.Translate (Random.onUnitSphere * Random.Range (0f, randomOffset));
 
 		transform.eulerAngles = Vector3.Scale (transform.eulerAngles, new Vector3 (1, 1, 0));
 	}

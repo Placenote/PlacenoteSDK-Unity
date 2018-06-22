@@ -55,5 +55,6 @@ MonoBehaviour:
   planeDetection: 1
   getPointCloud: 1
   enableLightEstimation: 1
+  enableAutoFocus: 1
   resetTracking: 1
   removeExistingAnchors: 1
