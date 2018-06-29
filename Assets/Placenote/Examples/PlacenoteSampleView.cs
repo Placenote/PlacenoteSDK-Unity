@@ -262,7 +262,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mExitButton.SetActive (true);
 					mPlaneDetectionToggle.SetActive(true);
 
-					LibPlacenote.Instance.StartSession (true);
+					LibPlacenote.Instance.StartSession ();
 
 					if (mReportDebug) {
 						LibPlacenote.Instance.StartRecordDataset (
