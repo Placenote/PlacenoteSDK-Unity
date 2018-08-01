@@ -492,19 +492,20 @@ public class LibPlacenote : MonoBehaviour
 		initParams.appBasePath = Application.streamingAssetsPath + "/Placenote";
 		initParams.mapPath = Application.persistentDataPath;
 
-        #if !UNITY_EDITOR
+		#if !UNITY_EDITOR
 		PNInitialize (ref initParams, OnInitialized, IntPtr.Zero);
 		#endif
 	}
 
 
 	/// <summary>
-	/// Initializes the LibPlacenote SDK singleton class.
+	/// Shutdown the Placenote SDK, especially all mapping threads
 	/// </summary>
 	public void Shutdown ()
 	{
 		#if UNITY_EDITOR
 		mInitialized = false;
+		StopSession();
 		#endif
 
 		#if !UNITY_EDITOR
