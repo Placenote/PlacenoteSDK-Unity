@@ -492,10 +492,27 @@ public class LibPlacenote : MonoBehaviour
 		initParams.appBasePath = Application.streamingAssetsPath + "/Placenote";
 		initParams.mapPath = Application.persistentDataPath;
 
-        	#if !UNITY_EDITOR
+		#if !UNITY_EDITOR
 		PNInitialize (ref initParams, OnInitialized, IntPtr.Zero);
 		#endif
 	}
+
+
+	/// <summary>
+	/// Shutdown the Placenote SDK, especially all mapping threads
+	/// </summary>
+	public void Shutdown ()
+	{
+		#if UNITY_EDITOR
+		mInitialized = false;
+		StopSession();
+		#endif
+
+		#if !UNITY_EDITOR
+		PNShutdown();
+		#endif
+	}
+
 
 	/// <summary>
 	/// Indicates whether the LibPlacenote SDK is successful
@@ -1407,4 +1424,8 @@ public class LibPlacenote : MonoBehaviour
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNSetMetadata (string mapId, string metadataJson);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNShutdown ();
 }
