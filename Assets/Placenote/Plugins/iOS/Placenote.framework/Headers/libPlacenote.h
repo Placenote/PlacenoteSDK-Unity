@@ -105,6 +105,7 @@ typedef void (*transfer_map_callback) (PNTransferStatus* status, void* context);
 typedef void (*pose_callback) (PNTransform* placenotePose, PNTransform* arkitPose, void* context);
 typedef void (*notification_callback) (const char* msg, void* context);
 
+
 FOUNDATION_EXPORT int PNInitialize(PNInitParams* params, result_callback cb, void* context);
 FOUNDATION_EXPORT int PNGetStatus ();
 FOUNDATION_EXPORT int PNGetTrackedLandmarks (PNFeaturePoint* points, int size);
@@ -118,7 +119,7 @@ FOUNDATION_EXPORT int PNSaveMap (const char* mapId, transfer_map_callback cb, vo
 FOUNDATION_EXPORT int PNLoadMap (const char* mapId, transfer_map_callback cb, void* context);
 FOUNDATION_EXPORT int PNDeleteMap (const char* mapId, result_callback cb, void* context);
 FOUNDATION_EXPORT int PNAddMap (result_callback cb, void* context);
-FOUNDATION_EXPORT int PNStartSession (pose_callback cb, void* context);
+FOUNDATION_EXPORT int PNStartSession (pose_callback cb, bool extending, void* context);
 FOUNDATION_EXPORT int PNStopSession ();
 FOUNDATION_EXPORT int PNStartRecordDataset(transfer_map_callback cb, void* context);
 FOUNDATION_EXPORT int PNGetMetadata (const char* mapId, result_callback cb, void* context);
@@ -128,5 +129,6 @@ FOUNDATION_EXPORT int PNSetIntrinsics(PNCameraInstrinsics* instrinsics);
 FOUNDATION_EXPORT int PNSetFrame(PNImagePlane* yPlane, PNImagePlane* vuPlane, PNTransform* arPose);
 FOUNDATION_EXPORT int PNSetFrameWithPoints(PNImagePlane* yPlane, PNImagePlane* vuPlane,
     PNTransform* arPose, PNVector3* pts, int ptsCount);
+FOUNDATION_EXPORT int PNShutdown();
 
 #endif  // LIBPLACENOTE_H
