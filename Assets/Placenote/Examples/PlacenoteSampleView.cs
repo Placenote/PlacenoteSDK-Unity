@@ -214,6 +214,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mInitButtonPanel.SetActive (true);
 		mExitButton.SetActive (false);
 		mPlaneDetectionToggle.SetActive (false);
+		mMappingButtonPanel.SetActive (false);
 
 		//clear all existing planes
 		mPNPlaneManager.ClearPlanes ();
@@ -259,10 +260,11 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mMapSelectedPanel.SetActive (false);
 					mMapListPanel.SetActive (false);
 					mInitButtonPanel.SetActive (false);
+					mMappingButtonPanel.SetActive(true);
 					mExitButton.SetActive (true);
 					mPlaneDetectionToggle.SetActive(true);
 
-					LibPlacenote.Instance.StartSession ();
+					LibPlacenote.Instance.StartSession (true);
 
 					if (mReportDebug) {
 						LibPlacenote.Instance.StartRecordDataset (
@@ -398,6 +400,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				mSaveMapId = mapId;
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
+				mExitButton.SetActive(false);
 				mPlaneDetectionToggle.SetActive (false);
 
 				//clear all existing planes
@@ -497,7 +500,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	private void LoadShapesJSON (JToken mapMetadata)
 	{
 		ClearShapes ();
-
 		if (mapMetadata is JObject && mapMetadata ["shapeList"] is JObject) {
 			ShapeList shapeList = mapMetadata ["shapeList"].ToObject<ShapeList> ();
 			if (shapeList.shapes == null) {
