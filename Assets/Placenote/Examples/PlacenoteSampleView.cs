@@ -9,6 +9,7 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
+/*
 [System.Serializable]
 public class ShapeInfo
 {
@@ -28,7 +29,7 @@ public class ShapeList
 {
 	public ShapeInfo[] shapes;
 }
-
+*/
 
 public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 {
@@ -42,7 +43,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] ToggleGroup mToggleGroup;
 	[SerializeField] GameObject mPlaneDetectionToggle;
 	[SerializeField] Text mLabelText;
-	[SerializeField] Material mShapeMaterial;
 	[SerializeField] PlacenoteARGeneratePlane mPNPlaneManager;
 	[SerializeField] Slider mRadiusSlider;
 	[SerializeField] float mMaxRadiusSearch;
@@ -53,9 +53,11 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	private UnityARImageFrameData mImage = null;
 	private UnityARCamera mARCamera;
 	private bool mARKitInit = false;
-	private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
-	private List<GameObject> shapeObjList = new List<GameObject> ();
-	private LibPlacenote.MapMetadataSettable mCurrMapDetails;
+
+	//private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
+	//private List<GameObject> shapeObjList = new List<GameObject> ();
+	
+    private LibPlacenote.MapMetadataSettable mCurrMapDetails;
 
 	private bool mReportDebug = false;
 
@@ -414,7 +416,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				JObject userdata = new JObject ();
 				metadata.userdata = userdata;
 
-				JObject shapeList = Shapes2JSON();
+                JObject shapeList = GetComponent<ShapeManager>().Shapes2JSON();
+
 				userdata["shapeList"] = shapeList;
 
 				if (useLocation) {
@@ -440,7 +443,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		);
 	}
 
-
+    /*
 	public void OnDropShapeClick ()
 	{
 		Vector3 shapePosition = Camera.main.transform.position + Camera.main.transform.forward * 0.3f;
@@ -514,6 +517,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			}
 		}
 	}
+*/
+
 
 
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose) {}
@@ -524,14 +529,14 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		Debug.Log ("prevStatus: " + prevStatus.ToString() + " currStatus: " + currStatus.ToString());
 		if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.LOST) {
 			mLabelText.text = "Localized";
-			LoadShapesJSON (mSelectedMapInfo.metadata.userdata);
+            GetComponent<ShapeManager>().LoadShapesJSON (mSelectedMapInfo.metadata.userdata);
 		} else if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.WAITING) {
 			mLabelText.text = "Mapping";
 		} else if (currStatus == LibPlacenote.MappingStatus.LOST) {
 			mLabelText.text = "Searching for position lock";
 		} else if (currStatus == LibPlacenote.MappingStatus.WAITING) {
-			if (shapeObjList.Count != 0) {
-				ClearShapes ();
+            if (GetComponent<ShapeManager>().shapeObjList.Count != 0) {
+                GetComponent<ShapeManager>().ClearShapes ();
 			}
 		}
 	}
