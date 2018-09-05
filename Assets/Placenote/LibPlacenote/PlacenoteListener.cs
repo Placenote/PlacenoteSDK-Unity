@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using System.Collections.Generic;
 
 public interface PlacenoteListener
 {
@@ -7,5 +8,6 @@ public interface PlacenoteListener
 	void OnPose(Matrix4x4 outputPose, Matrix4x4 arkitPose);
 	void OnStatusChange(LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus);
 	void OnDensePointcloud(LibPlacenote.PNFeaturePointUnity[] ptcloud);
+	void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, Mesh> meshBlocks);
 }
 

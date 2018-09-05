@@ -40,4 +40,5 @@ public class PlacenoteCameraManager : MonoBehaviour, PlacenoteListener
 	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus){}
 	public void OnInitialized (bool success, string errMsg) {}
 	public void OnDensePointcloud (LibPlacenote.PNFeaturePointUnity[] densePoints){}
+	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, Mesh> meshBlocks){}
 }

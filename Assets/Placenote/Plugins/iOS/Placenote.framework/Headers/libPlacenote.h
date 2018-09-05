@@ -85,6 +85,25 @@ typedef struct PNFeaturePoint_t
   PNVector3 color;
 } PNFeaturePoint;
 
+typedef struct PNTriangle_t
+{
+  int idx;
+  PNVector3 point1;
+  PNVector3 point2;
+  PNVector3 point3;
+  PNVector3 color1;
+  PNVector3 color2;
+  PNVector3 color3;
+} PNTriangle;
+
+typedef struct PNMeshBlockInfo_t
+{
+  int x;
+  int y;
+  int z;
+  int triCount;
+} PNMeshBlockInfo;
+
 typedef struct PNKeyframe_t
 {
   int idx;
@@ -111,6 +130,8 @@ FOUNDATION_EXPORT int PNGetStatus ();
 FOUNDATION_EXPORT int PNGetTrackedLandmarks (PNFeaturePoint* points, int size);
 FOUNDATION_EXPORT int PNGetAllLandmarks (PNFeaturePoint* points, int size);
 FOUNDATION_EXPORT int PNGetDenseMap (PNFeaturePoint* points, int size);
+FOUNDATION_EXPORT int PNGetMeshTriangles (PNTriangle* tris, int size);
+FOUNDATION_EXPORT int PNGetUpdatedMeshBlocks (PNMeshBlockInfo* blocks, int size);
 FOUNDATION_EXPORT int PNEnableDenseMapping (notification_callback newPtcloudCb, void* context);
 FOUNDATION_EXPORT int PNDisableDenseMapping ();
 FOUNDATION_EXPORT int PNListMaps (result_callback cb, void* context);

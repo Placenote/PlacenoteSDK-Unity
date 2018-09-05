@@ -93,6 +93,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mPtCloudMat: {fileID: 2100000, guid: 66bd9910888c24617939470d60a5b27f, type: 2}
+  mMeshMat: {fileID: 2100000, guid: 04845b76859034d95b1487d887525145, type: 2}
   mMap: {fileID: 1271650370769016}
   mPointCloud: {fileID: 1170009386759964, guid: b994d747abbb845cd92cc8c725045a44,
     type: 2}

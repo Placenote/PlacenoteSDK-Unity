@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
+using System;
 
 
 /// <summary>
@@ -28,9 +29,12 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	private static FeaturesVisualizer sInstance;
 	private ColorMode mColorMode = ColorMode.IMAGE;
 	private List<GameObject> mPtCloudObjs = new List<GameObject> ();
+	private Dictionary<LibPlacenote.PNMeshBlockIndex, GameObject> mMeshBlocks = 
+		new Dictionary<LibPlacenote.PNMeshBlockIndex, GameObject> ();
 	private bool mEnabled = false;
 
 	[SerializeField] Material mPtCloudMat;
+	[SerializeField] Material mMeshMat;
 	[SerializeField] GameObject mMap;
 	[SerializeField] GameObject mPointCloud;
 
@@ -157,6 +161,43 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 	}
 
+	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, Mesh> meshBlocks)
+	{
+		if (!LibPlacenote.Instance.Initialized()) {
+			return;
+		}
+
+		if (meshBlocks == null) {
+			Debug.Log ("Empty meshBlocks.");
+			return;
+		}
+
+		foreach(KeyValuePair<LibPlacenote.PNMeshBlockIndex, Mesh> entry in meshBlocks)
+		{
+			// Create GameObject container with mesh components for the loaded mesh.
+			GameObject meshObj = GameObject.Instantiate(mPointCloud);
+			MeshFilter mf = meshObj.GetComponent<MeshFilter> ();
+			if (mf == null) {
+				mf = meshObj.AddComponent<MeshFilter> ();
+			} 
+			mf.mesh = entry.Value;
+
+			LibPlacenote.PNMeshBlockIndex block = entry.Key;
+			MeshRenderer mr = meshObj.GetComponent<MeshRenderer> ();
+			if (mr == null) {
+				mr = meshObj.AddComponent<MeshRenderer> ();
+			} 
+			mr.material = mPtCloudMat;
+
+			if (mMeshBlocks.ContainsKey (entry.Key)) {
+				GameObject.Destroy (mMeshBlocks [entry.Key]);
+				mMeshBlocks[entry.Key] = meshObj;
+			} else {
+				mMeshBlocks.Add (entry.Key, meshObj);
+			}
+		}
+	}
+
 
 	public void OnDensePointcloud (LibPlacenote.PNFeaturePointUnity[] densePoints)
 	{
@@ -187,12 +228,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 				GetColour (invDist, 0.2f, 2f, ref colors [i].r, ref colors [i].g, ref colors [i].b);
 			}
 
-			if (densePoints [i].measCount < 50) {
-				colors [i].a = 0;
-			} else {
-				colors [i].a = densePoints [i].measCount/255f;
-			}
-
+			colors [i].a = 1f;
 		}
 
 		// Need to update indicies too!

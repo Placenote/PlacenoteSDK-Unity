@@ -141,6 +141,43 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 	/// <summary>
+	/// Struct that decribes a triangle
+	/// </summary>
+	public struct PNMeshBlockIndex
+	{
+		public int x;
+		public int y;
+		public int z;
+	}
+
+	/// <summary>
+	/// Struct that decribes a triangle
+	/// </summary>
+	[StructLayout (LayoutKind.Sequential)]
+	public struct PNMeshBlockInfoUnity
+	{
+		public int x;
+		public int y;
+		public int z;
+		public int triCount;
+	}
+
+	/// <summary>
+	/// Struct that decribes a triangle
+	/// </summary>
+	[StructLayout (LayoutKind.Sequential)]
+	public struct PNTriangleUnity
+	{
+		public int idx;
+		public PNVector3Unity point1;
+		public PNVector3Unity point2;
+		public PNVector3Unity point3;
+		public PNVector3Unity color1;
+		public PNVector3Unity color2;
+		public PNVector3Unity color3;
+	}
+
+	/// <summary>
 	/// Struct that decribes a rotation quaternion
 	/// </summary>
 	[StructLayout (LayoutKind.Sequential)]
@@ -1389,8 +1426,8 @@ public class LibPlacenote : MonoBehaviour
 	private static void OnNewPtcloudNotification (string msg, IntPtr context)
 	{
 		string errorMsg = msg;
-		Debug.Log ("OnNewPtcloudNotification: " + errorMsg);
 
+		/*
 		LibPlacenote.PNFeaturePointUnity[] densePts = LibPlacenote.Instance.GetDenseMap ();
 		if (densePts == null) {
 			return;
@@ -1400,6 +1437,19 @@ public class LibPlacenote : MonoBehaviour
 			var listeners = Instance.listeners;
 			foreach (var listener in listeners) {
 				listener.OnDensePointcloud (densePts);
+			}
+		});
+		*/
+
+		Dictionary<PNMeshBlockIndex, Mesh> denseMesh = LibPlacenote.Instance.GetDenseMesh ();
+		if (denseMesh == null) {
+			return;
+		}
+
+		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			var listeners = Instance.listeners;
+			foreach (var listener in listeners) {
+				listener.OnDenseMeshBlocks (denseMesh);
 			}
 		});
 	}
@@ -1425,6 +1475,115 @@ public class LibPlacenote : MonoBehaviour
 		#if !UNITY_EDITOR
 		PNDisableDenseMapping ();
 		#endif
+	}
+		
+
+	/// <summary>
+	/// Return the dense mesh created by a mapping session, or the current map used by a localization session
+	/// </summary>
+	/// <returns>
+	/// The mesh array that contains all mesh created by a mapping session,
+	/// or contained in a loaded map during a localization session
+	/// </returns>
+	public Dictionary<PNMeshBlockIndex, Mesh> GetDenseMesh ()
+	{
+		int blockSize = 0;
+		PNMeshBlockInfoUnity[] blocks = new PNMeshBlockInfoUnity [1];
+		#if !UNITY_EDITOR
+		blockSize = PNGetUpdatedMeshBlocks (blocks, 0);
+		#endif
+		Debug.Log ("block size == " + blockSize);
+
+		if (blockSize == 0) {
+			Debug.Log ("No updated blocks, probably tried to fail");
+			return null;
+		}
+
+		#if !UNITY_EDITOR
+		Array.Resize (ref blocks, blockSize);
+		PNGetUpdatedMeshBlocks (blocks, blockSize);
+		#endif
+
+		int triSize = 0;
+		PNTriangleUnity[] triangles = new PNTriangleUnity [1];
+		#if !UNITY_EDITOR
+		triSize = PNGetMeshTriangles (triangles, 0);
+		#endif
+
+		if (triSize == 0) {
+			Debug.Log ("No triangles found");
+			return null;
+		}
+
+		#if !UNITY_EDITOR
+		Array.Resize (ref triangles, triSize);
+		PNGetMeshTriangles (triangles, triSize);
+		#endif
+
+		int blockIdx = 0;
+		int triIdx = 0;
+		Dictionary<PNMeshBlockIndex, Mesh> meshBlocks = new Dictionary<PNMeshBlockIndex, Mesh> ();
+		foreach (var block in blocks) {
+			Mesh mesh = new Mesh ();
+			PNMeshBlockIndex block3dIdx;
+			block3dIdx.x = block.x;
+			block3dIdx.y = block.y;
+			block3dIdx.z = block.z;
+
+			if (block.triCount == 0) {
+				meshBlocks.Add (block3dIdx, mesh);
+				blockIdx++;
+				continue;
+			}
+
+			int arraySize = block.triCount * 3;
+			Vector3[] vertices = new Vector3 [arraySize];
+			Color[] colors = new Color [arraySize];
+			int[] indices = new int [arraySize];
+
+			for (int i = 0; i < block.triCount; i++) {
+				PNTriangleUnity tri = triangles[triIdx];
+				if (tri.idx != blockIdx) {
+					Debug.LogError(String.Format("Triangle and block index mismatch tri.idx {0} blockIdx {1}", tri.idx, blockIdx));
+				}
+
+				int vertIdx = i*3;
+				int pt1Idx = vertIdx;
+				int pt2Idx = vertIdx + 1;
+				int pt3Idx = vertIdx + 2;
+				vertices[pt1Idx] = new Vector3(tri.point1.x, tri.point1.y, -tri.point1.z);
+				vertices[pt2Idx] = new Vector3(tri.point2.x, tri.point2.y, -tri.point2.z);
+				vertices[pt3Idx] = new Vector3(tri.point3.x, tri.point3.y, -tri.point3.z);
+				colors[pt1Idx]   = new Color(tri.color1.x/255f, tri.color1.y/255f, tri.color1.z/255f, 1f);
+				colors[pt2Idx]   = new Color(tri.color2.x/255f, tri.color2.y/255f, tri.color2.z/255f, 1f);
+				colors[pt3Idx]   = new Color(tri.color3.x/255f, tri.color3.y/255f, tri.color3.z/255f, 1f);
+
+				Vector3 P1toP2 = vertices [pt2Idx] - vertices [pt1Idx];
+				Vector3 P1toP3 = vertices [pt3Idx] - vertices [pt1Idx];
+				Vector3 triNormal = Vector3.Cross (P1toP2, P1toP3);
+				double projection = Vector3.Dot (Camera.main.transform.forward, triNormal);
+
+				if (projection < 0) {
+					indices [pt1Idx] = pt1Idx;
+					indices [pt2Idx] = pt2Idx;
+					indices [pt3Idx] = pt3Idx;
+				} else {
+					indices [pt1Idx] = pt2Idx;
+					indices [pt2Idx] = pt1Idx;
+					indices [pt3Idx] = pt3Idx;
+				}
+				triIdx++;
+			}
+
+			mesh.vertices = vertices;
+			mesh.colors = colors;
+			mesh.SetIndices(indices, MeshTopology.Triangles, 0);
+
+			meshBlocks.Add (block3dIdx, mesh);
+			blockIdx++;
+		}
+
+		return meshBlocks;
 	}
 
 
@@ -1574,6 +1733,14 @@ public class LibPlacenote : MonoBehaviour
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNGetDenseMap ([In, Out] PNFeaturePointUnity[] lmArrayPtr, int lmSize);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNGetMeshTriangles ([In, Out] PNTriangleUnity[] triArrayPtr, int triSize);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNGetUpdatedMeshBlocks ([In, Out] PNMeshBlockInfoUnity[] blockArrayPtr, int blockSize);
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]

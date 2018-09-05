@@ -9,27 +9,6 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-[System.Serializable]
-public class ShapeInfo
-{
-	public float px;
-	public float py;
-	public float pz;
-	public float qx;
-	public float qy;
-	public float qz;
-	public float qw;
-	public int shapeType;
-}
-
-
-[System.Serializable]
-public class ShapeList
-{
-	public ShapeInfo[] shapes;
-}
-
-
 public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 {
 	[SerializeField] GameObject mMapSelectedPanel;
@@ -42,7 +21,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] ToggleGroup mToggleGroup;
 	[SerializeField] GameObject mPlaneDetectionToggle;
 	[SerializeField] Text mLabelText;
-	[SerializeField] Material mShapeMaterial;
 	[SerializeField] PlacenoteARGeneratePlane mPNPlaneManager;
 	[SerializeField] Slider mRadiusSlider;
 	[SerializeField] float mMaxRadiusSearch;
@@ -53,9 +31,11 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	private UnityARImageFrameData mImage = null;
 	private UnityARCamera mARCamera;
 	private bool mARKitInit = false;
-	private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
-	private List<GameObject> shapeObjList = new List<GameObject> ();
-	private LibPlacenote.MapMetadataSettable mCurrMapDetails;
+
+	//private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
+	//private List<GameObject> shapeObjList = new List<GameObject> ();
+	
+    private LibPlacenote.MapMetadataSettable mCurrMapDetails;
 
 	private bool mReportDebug = false;
 
@@ -215,6 +195,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mInitButtonPanel.SetActive (true);
 		mExitButton.SetActive (false);
 		mPlaneDetectionToggle.SetActive (false);
+		mMappingButtonPanel.SetActive (false);
 
 		//clear all existing planes
 		mPNPlaneManager.ClearPlanes ();
@@ -260,10 +241,11 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mMapSelectedPanel.SetActive (false);
 					mMapListPanel.SetActive (false);
 					mInitButtonPanel.SetActive (false);
+					mMappingButtonPanel.SetActive(true);
 					mExitButton.SetActive (true);
 					mPlaneDetectionToggle.SetActive(true);
 
-					LibPlacenote.Instance.StartSession ();
+					LibPlacenote.Instance.StartSession (true);
 
 					if (mReportDebug) {
 						LibPlacenote.Instance.StartRecordDataset (
@@ -399,6 +381,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				mSaveMapId = mapId;
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
+				mExitButton.SetActive(false);
 				mPlaneDetectionToggle.SetActive (false);
 
 				//clear all existing planes
@@ -412,7 +395,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				JObject userdata = new JObject ();
 				metadata.userdata = userdata;
 
-				JObject shapeList = Shapes2JSON();
+                JObject shapeList = GetComponent<ShapeManager>().Shapes2JSON();
+
 				userdata["shapeList"] = shapeList;
 
 				if (useLocation) {
@@ -438,102 +422,26 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			}
 		);
 	}
-
-
-	public void OnDropShapeClick ()
-	{
-		Vector3 shapePosition = Camera.main.transform.position + Camera.main.transform.forward * 0.3f;
-		Quaternion shapeRotation = Camera.main.transform.rotation;
-
-		System.Random rnd = new System.Random ();
-		PrimitiveType type = (PrimitiveType) rnd.Next(0, 3);
-
-		ShapeInfo shapeInfo = new ShapeInfo ();
-		shapeInfo.px = shapePosition.x;
-		shapeInfo.py = shapePosition.y;
-		shapeInfo.pz = shapePosition.z;
-		shapeInfo.qx = shapeRotation.x;
-		shapeInfo.qy = shapeRotation.y;
-		shapeInfo.qz = shapeRotation.z;
-		shapeInfo.qw = shapeRotation.w;
-		shapeInfo.shapeType = type.GetHashCode ();
-		shapeInfoList.Add(shapeInfo);
-
-		GameObject shape = ShapeFromInfo(shapeInfo);
-		shapeObjList.Add(shape);
-	}
-
-
-	private GameObject ShapeFromInfo(ShapeInfo info)
-	{
-		GameObject shape = GameObject.CreatePrimitive ((PrimitiveType)info.shapeType);
-		shape.transform.position = new Vector3(info.px, info.py, info.pz);
-		shape.transform.rotation = new Quaternion(info.qx, info.qy, info.qz, info.qw);
-		shape.transform.localScale = new Vector3 (0.05f, 0.05f, 0.05f);
-		shape.GetComponent<MeshRenderer> ().material = mShapeMaterial;
-
-		return shape;
-	}
-
-
-	private void ClearShapes () {
-		foreach (var obj in shapeObjList) {
-			Destroy (obj);
-		}
-		shapeObjList.Clear ();
-		shapeInfoList.Clear ();
-	}
-
-	private JObject Shapes2JSON ()
-	{
-		ShapeList shapeList = new ShapeList ();
-		shapeList.shapes = new ShapeInfo[shapeInfoList.Count];
-		for (int i = 0; i < shapeInfoList.Count; i++) {
-			shapeList.shapes [i] = shapeInfoList [i];
-		}
-
-		return JObject.FromObject (shapeList);
-	}
-
-
-	private void LoadShapesJSON (JToken mapMetadata)
-	{
-		ClearShapes ();
-
-		if (mapMetadata is JObject && mapMetadata ["shapeList"] is JObject) {
-			ShapeList shapeList = mapMetadata ["shapeList"].ToObject<ShapeList> ();
-			if (shapeList.shapes == null) {
-				Debug.Log ("no shapes dropped");
-				return;
-			}
-
-			foreach (var shapeInfo in shapeList.shapes) {
-				shapeInfoList.Add (shapeInfo);
-				GameObject shape = ShapeFromInfo(shapeInfo);
-				shapeObjList.Add(shape);
-			}
-		}
-	}
-
+		
 
 	public void OnInitialized (bool success, string errMsg) {}
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose) {}
 	public void OnDensePointcloud (LibPlacenote.PNFeaturePointUnity[] ptcloud) {}
-
+	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, Mesh> meshBlocks) {}
 
 	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
 	{
 		Debug.Log ("prevStatus: " + prevStatus.ToString() + " currStatus: " + currStatus.ToString());
 		if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.LOST) {
 			mLabelText.text = "Localized";
-			LoadShapesJSON (mSelectedMapInfo.metadata.userdata);
+            GetComponent<ShapeManager>().LoadShapesJSON (mSelectedMapInfo.metadata.userdata);
 		} else if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.WAITING) {
 			mLabelText.text = "Mapping";
 		} else if (currStatus == LibPlacenote.MappingStatus.LOST) {
 			mLabelText.text = "Searching for position lock";
 		} else if (currStatus == LibPlacenote.MappingStatus.WAITING) {
-			if (shapeObjList.Count != 0) {
-				ClearShapes ();
+            if (GetComponent<ShapeManager>().shapeObjList.Count != 0) {
+                GetComponent<ShapeManager>().ClearShapes ();
 			}
 		}
 	}
