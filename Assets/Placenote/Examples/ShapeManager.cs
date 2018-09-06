@@ -43,7 +43,7 @@ public class ShapeManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		
+
 	}
 
     //-----------------------------------
@@ -61,9 +61,15 @@ public class ShapeManager : MonoBehaviour {
 
                 Debug.Log("Got hit!");
 
-                // get hit test position
-                Vector3 hitPosition = UnityARMatrixOps.GetPosition(hitResult.worldTransform);
-                Quaternion hitRotation = UnityARMatrixOps.GetRotation(hitResult.worldTransform);
+                Vector3 position = UnityARMatrixOps.GetPosition(hitResult.worldTransform);
+                Quaternion rotation = UnityARMatrixOps.GetRotation(hitResult.worldTransform);
+
+                //Transform to placenote frame of reference (planes are detected in ARKit frame of reference)
+                Matrix4x4 worldTransform = Matrix4x4.TRS(position, rotation, Vector3.one);
+                Matrix4x4? placenoteTransform = LibPlacenote.Instance.ProcessPose(worldTransform);
+
+                Vector3 hitPosition = PNUtility.MatrixOps.GetPosition(placenoteTransform.Value);
+                Quaternion hitRotation = PNUtility.MatrixOps.GetRotation(placenoteTransform.Value);
 
                 // add shape
                 AddShape(hitPosition, hitRotation);
@@ -74,7 +80,7 @@ public class ShapeManager : MonoBehaviour {
         }
         return false;
     }
-	
+
 
     //-----------------------------------
     // Update function checks for hittest
@@ -106,7 +112,7 @@ public class ShapeManager : MonoBehaviour {
 
                     // prioritize reults types
                     ARHitTestResultType[] resultTypes = {
-                        //ARHitTestResultType.ARHitTestResultTypeExistingPlaneUsingExtent, 
+                        //ARHitTestResultType.ARHitTestResultTypeExistingPlaneUsingExtent,
                         //ARHitTestResultType.ARHitTestResultTypeExistingPlane,
                         //ARHitTestResultType.ARHitTestResultTypeEstimatedHorizontalPlane,
                         //ARHitTestResultType.ARHitTestResultTypeEstimatedVerticalPlane,

@@ -445,4 +445,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			}
 		}
 	}
+
+	void OnApplicationQuit()
+	{
+		LibPlacenote.Instance.Shutdown();
+	}
 }
