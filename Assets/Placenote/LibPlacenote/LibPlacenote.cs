@@ -887,16 +887,46 @@ public class LibPlacenote : MonoBehaviour
 		#endif
 	}
 
+
+	/// <summary>
+	/// Callback to indicate success of a <see cref="SetMetadata"/> function call.
+	/// </summary>
+	/// <param name="result">
+	/// Result that contains a boolean that indicates if SetMetadata call is successful.
+	/// If not successful, it returns the error message via <see cref="PNCallbackResultUnity"/>
+	/// </param>
+	/// <param name="context">Context.</param>
+	[MonoPInvokeCallback (typeof(PNResultCallback))]
+	static void OnSetMetadata (ref PNCallbackResultUnity result, IntPtr context)
+	{
+		GCHandle handle = GCHandle.FromIntPtr (context);
+		Action<bool> metadataSavedCb = handle.Target as Action<bool>;
+
+		PNCallbackResultUnity resultClone = result;
+		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			if (resultClone.success) {
+				metadataSavedCb (true);
+			} else {
+				Debug.LogError ("Failed to fetch map list, error: " + resultClone.msg);
+				metadataSavedCb (false);
+			}
+
+			handle.Free ();
+		});
+	}
+
 	/// <summary>
 	/// Set the metadata for the given map, which will be returned in the MapList when
 	/// you call <see cref="ListMaps"/> or <see cref="SearchMaps"/>.
 	/// </summary>
 	/// <param name="mapId">ID of the map</param>
 	/// <param name="metadata">Map metadata</param>
-	public bool SetMetadata (string mapId, MapMetadataSettable metadata)
+	public bool SetMetadata (string mapId, MapMetadataSettable metadata, Action<bool> metaDataSavedCb = null)
 	{
 		#if !UNITY_EDITOR
-		return PNSetMetadata (mapId, JsonConvert.SerializeObject (metadata)) == 0;
+		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (metaDataSavedCb));
+		int retCode = PNSetMetadata (mapId, JsonConvert.SerializeObject (metadata), OnSetMetadata, cSharpContext);
+		return retCode == 0;
 		#else
 		return true;
 		#endif
@@ -1410,5 +1440,5 @@ public class LibPlacenote : MonoBehaviour
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
-	private static extern int PNSetMetadata (string mapId, string metadataJson);
+	private static extern int PNSetMetadata (string mapId, string metadataJson, PNResultCallback cb, IntPtr context);
 }

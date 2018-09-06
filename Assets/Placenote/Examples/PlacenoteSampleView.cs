@@ -404,7 +404,13 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					metadata.location.longitude = locationInfo.longitude;
 					metadata.location.altitude = locationInfo.altitude;
 				}
-				LibPlacenote.Instance.SetMetadata (mapId, metadata);
+				LibPlacenote.Instance.SetMetadata (mapId, metadata, (success) => {
+					if (success) {
+						Debug.Log("Meta data successfully saved");
+					} else {
+						Debug.Log("Meta data failed to save");
+					}
+				});
 				mCurrMapDetails = metadata;
 			},
 			(completed, faulted, percentage) => {
