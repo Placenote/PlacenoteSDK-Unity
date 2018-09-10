@@ -187,7 +187,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			if (mr == null) {
 				mr = meshObj.AddComponent<MeshRenderer> ();
 			} 
-			mr.material = mPtCloudMat;
+			mr.material = mMeshMat;
 
 			if (mMeshBlocks.ContainsKey (entry.Key)) {
 				GameObject.Destroy (mMeshBlocks [entry.Key]);

@@ -1578,6 +1578,9 @@ public class LibPlacenote : MonoBehaviour
 			mesh.vertices = vertices;
 			mesh.colors = colors;
 			mesh.SetIndices(indices, MeshTopology.Triangles, 0);
+			mesh.RecalculateNormals ();
+
+			Debug.Log ("normals length " + mesh.normals.Length);
 
 			meshBlocks.Add (block3dIdx, mesh);
 			blockIdx++;
