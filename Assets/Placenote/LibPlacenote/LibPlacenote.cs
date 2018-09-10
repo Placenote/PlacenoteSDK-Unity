@@ -972,7 +972,9 @@ public class LibPlacenote : MonoBehaviour
 			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
 			foreach (var mapInfo in mapList) {
 				if (mapInfo.placeId == mapId) {
-					mapInfo.metadata = metadata;
+					mapInfo.metadata.location = metadata.location;
+					mapInfo.metadata.name = metadata.name;
+					mapInfo.metadata.userdata = metadata.userdata;
 					var convertedJson = JsonConvert.SerializeObject(mapList);
 					File.WriteAllText(Application.dataPath + simMapFileName, convertedJson );
 					metaDataSavedCb(true);
