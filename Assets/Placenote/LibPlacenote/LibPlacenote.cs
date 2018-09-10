@@ -900,7 +900,24 @@ public class LibPlacenote : MonoBehaviour
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (metadataCb));
 		return PNGetMetadata (mapId, OnGetMetadata, cSharpContext) == 0;
 		#else
-		return true;
+
+		/// If the file does not exist
+		if (!File.Exists(Application.dataPath + simMapFileName)) {
+			Debug.Log("There are no maps. Please create a new map to setMetadata.");
+		} else {
+			/// Reads maps from file as JSON
+			string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
+			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
+			foreach (var mapInfo in mapList) {
+				if (mapInfo.placeId == mapId) {
+					metadataCb(mapInfo.metadata);
+					return true;
+				}
+			}
+		}
+
+		metadataCb(null);
+		return false;
 		#endif
 	}
 
@@ -945,7 +962,27 @@ public class LibPlacenote : MonoBehaviour
 		int retCode = PNSetMetadata (mapId, JsonConvert.SerializeObject (metadata), OnSetMetadata, cSharpContext);
 		return retCode == 0;
 		#else
-		return true;
+
+		/// If the file does not exist
+		if (!File.Exists(Application.dataPath + simMapFileName)) {
+			Debug.Log("There are no maps. Please create a new map to setMetadata.");
+		} else {
+			/// Reads maps from file as JSON
+			string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
+			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
+			foreach (var mapInfo in mapList) {
+				if (mapInfo.placeId == mapId) {
+					mapInfo.metadata = metadata;
+					var convertedJson = JsonConvert.SerializeObject(mapList);
+					File.WriteAllText(Application.dataPath + simMapFileName, convertedJson );
+					metaDataSavedCb(true);
+					return true;
+				}
+			}
+		}
+
+		metaDataSavedCb(false);
+		return false;
 		#endif
 	}
 
