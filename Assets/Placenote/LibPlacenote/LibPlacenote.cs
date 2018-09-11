@@ -271,6 +271,10 @@ public class LibPlacenote : MonoBehaviour
 		/// Arbitrary user data, in JSON form.
 		/// </summary>
 		public JToken userdata;
+
+		#if UNITY_EDITOR
+		public SimCameraPoses simulatedMap;
+		#endif
 	}
 
 	private static DateTime EPOCH = new DateTime(1970, 1, 1);
@@ -378,7 +382,7 @@ public class LibPlacenote : MonoBehaviour
 	/// Unity camera poses.
 	/// </summary>
 	[System.Serializable]
-	private struct SimCameraPoses
+	public struct SimCameraPoses
 	{
 		public List<PNTransformUnity> cameraPoses;
 	}
@@ -972,9 +976,11 @@ public class LibPlacenote : MonoBehaviour
 			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
 			foreach (var mapInfo in mapList) {
 				if (mapInfo.placeId == mapId) {
+
 					mapInfo.metadata.location = metadata.location;
 					mapInfo.metadata.name = metadata.name;
 					mapInfo.metadata.userdata = metadata.userdata;
+
 					var convertedJson = JsonConvert.SerializeObject(mapList);
 					File.WriteAllText(Application.dataPath + simMapFileName, convertedJson );
 					metaDataSavedCb(true);
@@ -1219,7 +1225,7 @@ public class LibPlacenote : MonoBehaviour
 		/// Setting map Id
 		simMap.placeId =  Guid.NewGuid().ToString();
 		/// Setting saved camera poses
-		simMap.metadata.userdata = JsonConvert.SerializeObject(simCameraPoses.cameraPoses);
+		simMap.metadata.simulatedMap = simCameraPoses;
 		string jsonMap = JsonConvert.SerializeObject(simMap);
 
 		/// The file does not exist yet OR The file exists but does not contain '[]'
@@ -1295,9 +1301,11 @@ public class LibPlacenote : MonoBehaviour
 			if (mapId == mapList[i].placeId)
 				simMap = mapList[i];
 		}
-		simCameraPoses.cameraPoses = JsonConvert.DeserializeObject<List<PNTransformUnity>> (simMap.metadata.userdata.ToString() );
+
+		simCameraPoses = simMap.metadata.simulatedMap;
 		loadProgressCb (true, false, 1.0f);
 		#endif
+
 	}
 
 
@@ -1357,6 +1365,7 @@ public class LibPlacenote : MonoBehaviour
 					break;
 				}
 			}
+
 			/// Resaving map
 			var convertedJson = JsonConvert.SerializeObject(mapList);
 			File.WriteAllText(Application.dataPath + simMapFileName, convertedJson);
