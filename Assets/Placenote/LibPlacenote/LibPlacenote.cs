@@ -318,7 +318,7 @@ public class LibPlacenote : MonoBehaviour
 	/// Class as a container for the JSON that contains information for a list of maps
 	/// </summary>
 	[System.Serializable]
-	private class MapList
+	public class MapList
 	{
 		public MapInfo[] places = null;
 	}
