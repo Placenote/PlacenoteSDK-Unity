@@ -14,6 +14,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] GameObject mMapSelectedPanel;
 	[SerializeField] GameObject mInitButtonPanel;
 	[SerializeField] GameObject mMappingButtonPanel;
+	[SerializeField] GameObject mSimulatorAddShapeButton;
 	[SerializeField] GameObject mMapListPanel;
 	[SerializeField] GameObject mExitButton;
 	[SerializeField] GameObject mListElement;
@@ -66,6 +67,13 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		FeaturesVisualizer.EnablePointcloud ();
 		LibPlacenote.Instance.RegisterListener (this);
 		ResetSlider ();
+
+		// for simulator
+		#if UNITY_EDITOR
+		mSimulatorAddShapeButton.SetActive(true);
+		mPlaneDetectionToggle.SetActive(false);
+		#endif
+
 	}
 
 
@@ -193,7 +201,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		mInitButtonPanel.SetActive (true);
 		mExitButton.SetActive (false);
-		mPlaneDetectionToggle.SetActive (false);
+		//mPlaneDetectionToggle.SetActive (false);
 		mMappingButtonPanel.SetActive (false);
 
 		//clear all existing planes
@@ -242,7 +250,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mInitButtonPanel.SetActive (false);
 					mMappingButtonPanel.SetActive(true);
 					mExitButton.SetActive (true);
-					mPlaneDetectionToggle.SetActive(true);
+					//mPlaneDetectionToggle.SetActive(true);
 
 					LibPlacenote.Instance.StartSession (true);
 
@@ -304,7 +312,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		mInitButtonPanel.SetActive (false);
 		mMappingButtonPanel.SetActive (true);
-		mPlaneDetectionToggle.SetActive (true);
+
+		//mPlaneDetectionToggle.SetActive (true);
+
 		Debug.Log ("Started Session");
 		LibPlacenote.Instance.StartSession ();
 
@@ -330,9 +340,11 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	private void StartARKit ()
 	{
+		#if !UNITY_EDITOR
 		mLabelText.text = "Initializing ARKit";
 		Application.targetFrameRate = 60;
 		ConfigureSession (false);
+		#endif
 	}
 
 
@@ -381,7 +393,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
 				mExitButton.SetActive(false);
-				mPlaneDetectionToggle.SetActive (false);
+				//mPlaneDetectionToggle.SetActive (false);
 
 				//clear all existing planes
 				mPNPlaneManager.ClearPlanes ();

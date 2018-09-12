@@ -1385,18 +1385,18 @@ public class LibPlacenote : MonoBehaviour
 	/// </returns>
 	public PNFeaturePointUnity[] GetMap ()
 	{
-		int lmSize = 0;
+		
 		PNFeaturePointUnity[] map = new PNFeaturePointUnity [1];
+
 		#if !UNITY_EDITOR
+		int lmSize = 0;
 		lmSize = PNGetAllLandmarks (map, 0);
-		#endif
 
 		if (lmSize == 0) {
 			Debug.Log ("Empty landmarks, probably tried to fail");
 			return null;
 		}
 
-		#if !UNITY_EDITOR
 		Array.Resize (ref map, lmSize);
 		PNGetAllLandmarks (map, lmSize);
 		#endif
