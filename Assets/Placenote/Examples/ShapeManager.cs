@@ -41,6 +41,7 @@ public class ShapeManager : MonoBehaviour {
     public List<GameObject> shapeObjList = new List<GameObject>();
     public Material mShapeMaterial;
 
+
 	// Use this for initialization
 	void Start () {
 
@@ -132,6 +133,14 @@ public class ShapeManager : MonoBehaviour {
         }
     }
 
+	public void OnSimulatorDropShape()
+	{
+		Vector3 dropPosition = Camera.main.transform.position + Camera.main.transform.forward * 0.3f;
+		Quaternion dropRotation = Camera.main.transform.rotation;
+
+		AddShape(dropPosition, dropRotation);
+
+	}
 
     //-------------------------------------------------
     // All shape management functions (add shapes, save shapes to metadata etc.
@@ -165,7 +174,7 @@ public class ShapeManager : MonoBehaviour {
         shape.transform.rotation = new Quaternion(info.qx, info.qy, info.qz, info.qw);
         shape.transform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
         shape.GetComponent<MeshRenderer>().material = mShapeMaterial;
-
+		shape.GetComponent<MeshRenderer> ().material.color = Color.yellow;
         return shape;
     }
 
