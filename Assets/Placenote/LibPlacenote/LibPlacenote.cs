@@ -419,6 +419,13 @@ public class LibPlacenote : MonoBehaviour
 	// Fill in API Key here
 	public String apiKey;
 
+	// Variables to send frames to Placenote
+	private bool mFrameUpdated = false;
+	private UnityARImageFrameData mImage = null;
+	private UnityARCamera mARCamera;
+	private UnityARSessionNativeInterface mSession;
+	private bool libPlacenoteSessionRunning = false;
+
 	/// <summary>
 	/// Get accessor for the LibPlacenote singleton
 	/// </summary>
@@ -434,8 +441,62 @@ public class LibPlacenote : MonoBehaviour
 		sInstance = this;
 
 		Init ();
+
+		mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface();
+		UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
+
 	}
 
+	// Function is called when each frame from ARKit becomes available
+	private void ARFrameUpdated (UnityARCamera camera)
+	{
+		
+		mFrameUpdated = true;
+		mARCamera = camera;
+	}
+
+	// Update function sends a camera frame from Arkit to Placenote
+	void Update () {
+
+		if (mFrameUpdated && libPlacenoteSessionRunning) {
+			mFrameUpdated = false;
+			if (mImage == null) {
+				InitARFrameBuffer ();
+			}
+
+			if (mARCamera.trackingState == ARTrackingState.ARTrackingStateNotAvailable) {
+				// ARKit pose is not yet initialized
+				return;
+			}
+
+			Matrix4x4 matrix = mSession.GetCameraPose ();
+			Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition (matrix);
+			Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation (matrix);
+
+			LibPlacenote.Instance.SendARFrame (mImage, arkitPosition, arkitQuat, mARCamera.videoParams.screenOrientation);
+		}
+	}
+
+	// Function to actually copy the frame buffer and make it available for Placenote
+	private void InitARFrameBuffer ()
+	{
+		mImage = new UnityARImageFrameData ();
+
+		int yBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yHeight;
+		mImage.y.data = Marshal.AllocHGlobal (yBufSize);
+		mImage.y.width = (ulong)mARCamera.videoParams.yWidth;
+		mImage.y.height = (ulong)mARCamera.videoParams.yHeight;
+		mImage.y.stride = (ulong)mARCamera.videoParams.yWidth;
+
+		// This does assume the YUV_NV21 format
+		int vuBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yWidth/2;
+		mImage.vu.data = Marshal.AllocHGlobal (vuBufSize);
+		mImage.vu.width = (ulong)mARCamera.videoParams.yWidth/2;
+		mImage.vu.height = (ulong)mARCamera.videoParams.yHeight/2;
+		mImage.vu.stride = (ulong)mARCamera.videoParams.yWidth;
+
+		mSession.SetCapturePixelData (true, mImage.y.data, mImage.vu.data);
+	}
 
 	/// <summary>
 	/// Register a listener to events published by LibPlacenote
@@ -697,6 +758,7 @@ public class LibPlacenote : MonoBehaviour
 	{
 		#if !UNITY_EDITOR
 		PNStartSession (OnPose, extend, IntPtr.Zero);
+		libPlacenoteSessionRunning = true;
 		#else
 
 		if(mLocalization) {
@@ -808,6 +870,7 @@ public class LibPlacenote : MonoBehaviour
 		mCurrentTransform = null; //transform is again, meaningless
 		#if !UNITY_EDITOR
 		PNStopSession ();
+		libPlacenoteSessionRunning = false;
 		#else
 		/// Stops the current OnPose coroutine
 		StopCoroutine(OnPoseInvokeRepeat());
