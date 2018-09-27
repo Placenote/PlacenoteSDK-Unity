@@ -450,7 +450,6 @@ public class LibPlacenote : MonoBehaviour
 	// Function is called when each frame from ARKit becomes available
 	private void ARFrameUpdated (UnityARCamera camera)
 	{
-		
 		mFrameUpdated = true;
 		mARCamera = camera;
 	}
@@ -566,7 +565,7 @@ public class LibPlacenote : MonoBehaviour
 	/// <summary>
 	/// Shutdown the Placenote SDK, especially all mapping threads
 	/// </summary>
-	public void Shutdown ()
+	private void Shutdown ()
 	{
 		#if UNITY_EDITOR
 		mInitialized = false;
@@ -1467,6 +1466,11 @@ public class LibPlacenote : MonoBehaviour
 		return map;
 	}
 
+	// Shutdown all placenote functions when application quits
+	void OnApplicationQuit()
+	{
+		Shutdown();
+	}
 
 	/// <summary>
 	/// Return an array of feature points measured by the mapping/localization session.

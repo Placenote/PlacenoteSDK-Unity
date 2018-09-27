@@ -69,7 +69,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mSimulatorAddShapeButton.SetActive(true);
 		mPlaneDetectionToggle.SetActive(false);
 		#endif
-
 	}
 		
 	void Update ()
@@ -79,8 +78,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			mLabelText.text = "Ready to Start!";
 		}
 	}
-
-
 
 	public void OnListMapClick ()
 	{
@@ -402,10 +399,5 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
                 GetComponent<ShapeManager>().ClearShapes ();
 			}
 		}
-	}
-
-	void OnApplicationQuit()
-	{
-		LibPlacenote.Instance.Shutdown();
 	}
 }
