@@ -37,6 +37,8 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	[SerializeField] Material mMeshMat;
 	[SerializeField] GameObject mMap;
 	[SerializeField] GameObject mPointCloud;
+	[SerializeField] bool mEnableMapPoints = false;
+	[SerializeField] bool mEnableMesh = true;
 
 	void Awake ()
 	{
@@ -67,8 +69,10 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
-		sInstance.InvokeRepeating ("DrawMap", 0f, 0.1f);
-		if (LibPlacenote.Instance.Initialized()) {
+		if (mEnableMapPoints) {
+			sInstance.InvokeRepeating ("DrawMap", 0f, 0.1f);
+		}
+		if (LibPlacenote.Instance.Initialized() && mEnableMesh) {
 			LibPlacenote.Instance.EnableDenseMapping ();
 		}
 		sInstance.mEnabled = true;
@@ -107,7 +111,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
-		if (mEnabled) {
+		if (mEnabled && mEnableMesh) {
 			LibPlacenote.Instance.EnableDenseMapping ();
 		}
 	}

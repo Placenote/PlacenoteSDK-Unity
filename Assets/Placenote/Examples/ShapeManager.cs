@@ -41,9 +41,10 @@ public class ShapeManager : MonoBehaviour {
     public List<GameObject> shapeObjList = new List<GameObject>();
     public Material mShapeMaterial;
 
+
 	// Use this for initialization
 	void Start () {
-		
+
 	}
 
     //-----------------------------------
@@ -61,9 +62,15 @@ public class ShapeManager : MonoBehaviour {
 
                 Debug.Log("Got hit!");
 
-                // get hit test position
-                Vector3 hitPosition = UnityARMatrixOps.GetPosition(hitResult.worldTransform);
-                Quaternion hitRotation = UnityARMatrixOps.GetRotation(hitResult.worldTransform);
+                Vector3 position = UnityARMatrixOps.GetPosition(hitResult.worldTransform);
+                Quaternion rotation = UnityARMatrixOps.GetRotation(hitResult.worldTransform);
+
+                //Transform to placenote frame of reference (planes are detected in ARKit frame of reference)
+                Matrix4x4 worldTransform = Matrix4x4.TRS(position, rotation, Vector3.one);
+                Matrix4x4? placenoteTransform = LibPlacenote.Instance.ProcessPose(worldTransform);
+
+                Vector3 hitPosition = PNUtility.MatrixOps.GetPosition(placenoteTransform.Value);
+                Quaternion hitRotation = PNUtility.MatrixOps.GetRotation(placenoteTransform.Value);
 
                 // add shape
                 AddShape(hitPosition, hitRotation);
@@ -74,7 +81,7 @@ public class ShapeManager : MonoBehaviour {
         }
         return false;
     }
-	
+
 
     //-----------------------------------
     // Update function checks for hittest
@@ -106,7 +113,7 @@ public class ShapeManager : MonoBehaviour {
 
                     // prioritize reults types
                     ARHitTestResultType[] resultTypes = {
-                        //ARHitTestResultType.ARHitTestResultTypeExistingPlaneUsingExtent, 
+                        //ARHitTestResultType.ARHitTestResultTypeExistingPlaneUsingExtent,
                         //ARHitTestResultType.ARHitTestResultTypeExistingPlane,
                         //ARHitTestResultType.ARHitTestResultTypeEstimatedHorizontalPlane,
                         //ARHitTestResultType.ARHitTestResultTypeEstimatedVerticalPlane,
@@ -126,6 +133,14 @@ public class ShapeManager : MonoBehaviour {
         }
     }
 
+	public void OnSimulatorDropShape()
+	{
+		Vector3 dropPosition = Camera.main.transform.position + Camera.main.transform.forward * 0.3f;
+		Quaternion dropRotation = Camera.main.transform.rotation;
+
+		AddShape(dropPosition, dropRotation);
+
+	}
 
     //-------------------------------------------------
     // All shape management functions (add shapes, save shapes to metadata etc.
@@ -159,7 +174,7 @@ public class ShapeManager : MonoBehaviour {
         shape.transform.rotation = new Quaternion(info.qx, info.qy, info.qz, info.qw);
         shape.transform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
         shape.GetComponent<MeshRenderer>().material = mShapeMaterial;
-
+		shape.GetComponent<MeshRenderer> ().material.color = Color.yellow;
         return shape;
     }
 

@@ -37,7 +37,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	
     private LibPlacenote.MapMetadataSettable mCurrMapDetails;
 
-	private bool mReportDebug = false;
+	private bool mReportDebug = true;
 
 	private LibPlacenote.MapInfo mSelectedMapInfo;
 	private string mSelectedMapId {
@@ -129,7 +129,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
-			ToastManager.ShowToast ("SDK not yet initialized", 2f);
 			return;
 		}
 
@@ -229,7 +228,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
-			ToastManager.ShowToast ("SDK not yet initialized", 2f);
 			return;
 		}
 
@@ -276,7 +274,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
-			ToastManager.ShowToast ("SDK not yet initialized", 2f);
 			return;
 		}
 
@@ -367,7 +364,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
-			ToastManager.ShowToast ("SDK not yet initialized", 2f);
 			return;
 		}
 
