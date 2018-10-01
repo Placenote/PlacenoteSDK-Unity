@@ -28,13 +28,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] Text mRadiusLabel;
 
 	private UnityARSessionNativeInterface mSession;
-	private bool mFrameUpdated = false;
-	private UnityARImageFrameData mImage = null;
-	private UnityARCamera mARCamera;
-	private bool mARKitInit = false;
 
-	//private List<ShapeInfo> shapeInfoList = new List<ShapeInfo> ();
-	//private List<GameObject> shapeObjList = new List<GameObject> ();
+	private bool mARInit = false;
+
 	
     private LibPlacenote.MapMetadataSettable mCurrMapDetails;
 
@@ -62,7 +58,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mMapListPanel.SetActive (false);
 
 		mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface ();
-		UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
+
 		StartARKit ();
 		FeaturesVisualizer.EnablePointcloud ();
 		LibPlacenote.Instance.RegisterListener (this);
@@ -73,64 +69,15 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mSimulatorAddShapeButton.SetActive(true);
 		mPlaneDetectionToggle.SetActive(false);
 		#endif
-
 	}
-
-
-	private void ARFrameUpdated (UnityARCamera camera)
-	{
-		mFrameUpdated = true;
-		mARCamera = camera;
-	}
-
-
-	private void InitARFrameBuffer ()
-	{
-		mImage = new UnityARImageFrameData ();
-
-		int yBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yHeight;
-		mImage.y.data = Marshal.AllocHGlobal (yBufSize);
-		mImage.y.width = (ulong)mARCamera.videoParams.yWidth;
-		mImage.y.height = (ulong)mARCamera.videoParams.yHeight;
-		mImage.y.stride = (ulong)mARCamera.videoParams.yWidth;
-
-		// This does assume the YUV_NV21 format
-		int vuBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yWidth/2;
-		mImage.vu.data = Marshal.AllocHGlobal (vuBufSize);
-		mImage.vu.width = (ulong)mARCamera.videoParams.yWidth/2;
-		mImage.vu.height = (ulong)mARCamera.videoParams.yHeight/2;
-		mImage.vu.stride = (ulong)mARCamera.videoParams.yWidth;
-
-		mSession.SetCapturePixelData (true, mImage.y.data, mImage.vu.data);
-	}
-
-
-	// Update is called once per frame
+		
 	void Update ()
 	{
-		if (mFrameUpdated) {
-			mFrameUpdated = false;
-			if (mImage == null) {
-				InitARFrameBuffer ();
-			}
-
-			if (mARCamera.trackingState == ARTrackingState.ARTrackingStateNotAvailable) {
-				// ARKit pose is not yet initialized
-				return;
-			} else if (!mARKitInit && LibPlacenote.Instance.Initialized()) {
-				mARKitInit = true;
-				mLabelText.text = "ARKit Initialized";
-			}
-
-			Matrix4x4 matrix = mSession.GetCameraPose ();
-
-			Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition (matrix);
-			Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation (matrix);
-
-			LibPlacenote.Instance.SendARFrame (mImage, arkitPosition, arkitQuat, mARCamera.videoParams.screenOrientation);
+		if (!mARInit && LibPlacenote.Instance.Initialized()) {
+			mARInit = true;
+			mLabelText.text = "Ready to Start!";
 		}
 	}
-
 
 	public void OnListMapClick ()
 	{
@@ -444,7 +391,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			mLabelText.text = "Localized";
             GetComponent<ShapeManager>().LoadShapesJSON (mSelectedMapInfo.metadata.userdata);
 		} else if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.WAITING) {
-			mLabelText.text = "Mapping";
+			mLabelText.text = "Mapping: Tap to add Shapes";
 		} else if (currStatus == LibPlacenote.MappingStatus.LOST) {
 			mLabelText.text = "Searching for position lock";
 		} else if (currStatus == LibPlacenote.MappingStatus.WAITING) {
@@ -452,10 +399,5 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
                 GetComponent<ShapeManager>().ClearShapes ();
 			}
 		}
-	}
-
-	void OnApplicationQuit()
-	{
-		LibPlacenote.Instance.Shutdown();
 	}
 }
