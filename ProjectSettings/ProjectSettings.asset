@@ -141,7 +141,7 @@ PlayerSettings:
   protectGraphicsMemory: 0
   useHDRDisplay: 0
   applicationIdentifier:
-    iOS: ai.vertical.libplacenotesample
+    iOS: com.placenote.sdksamples
   buildNumber: {}
   AndroidBundleVersionCode: 1
   AndroidMinSdkVersion: 16
@@ -188,7 +188,6 @@ PlayerSettings:
   tvOSSmallIconLayers: []
   tvOSSmallIconLayers2x: []
   tvOSLargeIconLayers: []
-  tvOSLargeIconLayers2x: []
   tvOSTopShelfImageLayers: []
   tvOSTopShelfImageLayers2x: []
   tvOSTopShelfImageWideLayers: []
@@ -266,7 +265,7 @@ PlayerSettings:
   enableInternalProfiler: 0
   logObjCUncaughtExceptions: 1
   enableCrashReportAPI: 0
-  cameraUsageDescription: PlaceNote needs camera access to display AR content
+  cameraUsageDescription: Placenote needs camera access to display AR content
   locationUsageDescription: Geolocation of Places
   microphoneUsageDescription: 
   switchNetLibKey: 
