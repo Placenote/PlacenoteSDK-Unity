@@ -69,10 +69,10 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
-		if (mEnableMapPoints) {
+		if (sInstance.mEnableMapPoints) {
 			sInstance.InvokeRepeating ("DrawMap", 0f, 0.1f);
 		}
-		if (LibPlacenote.Instance.Initialized() && mEnableMesh) {
+		if (LibPlacenote.Instance.Initialized() && sInstance.mEnableMesh) {
 			LibPlacenote.Instance.EnableDenseMapping ();
 		}
 		sInstance.mEnabled = true;
@@ -111,7 +111,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
-		if (mEnabled && mEnableMesh) {
+		if (sInstance.mEnabled && sInstance.mEnableMesh) {
 			LibPlacenote.Instance.EnableDenseMapping ();
 		}
 	}
