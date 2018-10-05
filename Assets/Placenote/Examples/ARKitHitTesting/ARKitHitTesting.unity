@@ -491,7 +491,7 @@ Prefab:
     - target: {fileID: 114906711766776928, guid: e19a1438a65c942e79c50c51765da920,
         type: 2}
       propertyPath: apiKey
-      value: 03c7snjpakkkmjqiwh7sicscnj0ag8t6rxvxylp95w89boe9yc0ohu7i99nni5fei7u8edax5t74rz81v0q74v2sjxnr31amfo4z
+      value: Enter API key here
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: e19a1438a65c942e79c50c51765da920, type: 2}
