@@ -6,7 +6,7 @@ using UnityEngine.XR.iOS;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace ARKitFunctionality
+namespace ARKitHitTesting
 {
     /*========================================
     * Classes to hold model information

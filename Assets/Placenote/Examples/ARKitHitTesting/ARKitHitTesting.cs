@@ -8,9 +8,9 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using UnityEngine.XR.iOS; // Import ARKit Library
 
-namespace ARKitFunctionality
+namespace ARKitHitTesting
 {
-    public class ARKitFunctionality : MonoBehaviour, PlacenoteListener
+    public class ARKitHitTesting : MonoBehaviour, PlacenoteListener
     {
         // Unity ARKit Session handler
         private UnityARSessionNativeInterface mSession;

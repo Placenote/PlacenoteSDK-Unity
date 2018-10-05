@@ -20,9 +20,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] GameObject mListElement;
 	[SerializeField] RectTransform mListContentParent;
 	[SerializeField] ToggleGroup mToggleGroup;
-	[SerializeField] GameObject mPlaneDetectionToggle;
 	[SerializeField] Text mLabelText;
-	[SerializeField] PlacenoteARGeneratePlane mPNPlaneManager;
 	[SerializeField] Slider mRadiusSlider;
 	[SerializeField] float mMaxRadiusSearch;
 	[SerializeField] Text mRadiusLabel;
@@ -67,7 +65,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		// for simulator
 		#if UNITY_EDITOR
 		mSimulatorAddShapeButton.SetActive(true);
-		mPlaneDetectionToggle.SetActive(false);
 		#endif
 	}
 		
@@ -147,12 +144,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		mInitButtonPanel.SetActive (true);
 		mExitButton.SetActive (false);
-		//mPlaneDetectionToggle.SetActive (false);
 		mMappingButtonPanel.SetActive (false);
-
-		//clear all existing planes
-		mPNPlaneManager.ClearPlanes ();
-		mPlaneDetectionToggle.GetComponent<Toggle>().isOn = false;
 
 		LibPlacenote.Instance.StopSession ();
 	}
@@ -178,7 +170,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	public void OnLoadMapClicked ()
 	{
-		ConfigureSession (false);
+		ConfigureSession ();
 
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
@@ -195,7 +187,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mInitButtonPanel.SetActive (false);
 					mMappingButtonPanel.SetActive(true);
 					mExitButton.SetActive (true);
-					//mPlaneDetectionToggle.SetActive(true);
 
 					LibPlacenote.Instance.StartSession (true);
 
@@ -247,7 +238,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	public void OnNewMapClick ()
 	{
-		ConfigureSession (false);
+		ConfigureSession ();
 
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
@@ -256,8 +247,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		mInitButtonPanel.SetActive (false);
 		mMappingButtonPanel.SetActive (true);
-
-		//mPlaneDetectionToggle.SetActive (true);
 
 		Debug.Log ("Started Session");
 		LibPlacenote.Instance.StartSession ();
@@ -278,41 +267,23 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	}
 
-	public void OnTogglePlaneDetection() {
-		ConfigureSession (true);
-	}
-
 	private void StartARKit ()
 	{
 		#if !UNITY_EDITOR
 		mLabelText.text = "Initializing ARKit";
 		Application.targetFrameRate = 60;
-		ConfigureSession (false);
+		ConfigureSession ();
 		#endif
 	}
 
 
-	private void ConfigureSession(bool clearPlanes) {
+	private void ConfigureSession() {
  		#if !UNITY_EDITOR
 		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
-
-		if (mPlaneDetectionToggle.GetComponent<Toggle>().isOn) {
-			if (UnityARSessionNativeInterface.IsARKit_1_5_Supported ()) {
-				config.planeDetection = UnityARPlaneDetection.HorizontalAndVertical;
-			} else {
-				config.planeDetection = UnityARPlaneDetection.Horizontal;
-			}
-			mPNPlaneManager.StartPlaneDetection ();
-		} else {
-			config.planeDetection = UnityARPlaneDetection.None;
-			if (clearPlanes) {
-				mPNPlaneManager.ClearPlanes ();
-			}
-		}
-
 		config.alignment = UnityARAlignment.UnityARAlignmentGravity;
 		config.getPointCloudData = true;
 		config.enableLightEstimation = true;
+        config.planeDetection = UnityARPlaneDetection.Horizontal;
 		mSession.RunWithConfig (config);
  		#endif
 	}
@@ -336,11 +307,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
 				mExitButton.SetActive(false);
-				//mPlaneDetectionToggle.SetActive (false);
-
-				//clear all existing planes
-				mPNPlaneManager.ClearPlanes ();
-				mPlaneDetectionToggle.GetComponent<Toggle>().isOn = false;
 
 				LibPlacenote.MapMetadataSettable metadata = new LibPlacenote.MapMetadataSettable();
 				metadata.name = RandomName.Get ();
