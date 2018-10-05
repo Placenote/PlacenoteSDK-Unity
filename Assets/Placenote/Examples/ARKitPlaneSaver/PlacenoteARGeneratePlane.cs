@@ -37,12 +37,7 @@ namespace UnityEngine.XR.iOS
         void Start()
         {
             loadedPlaneList = new LinkedList<GameObject>();
-            //StartPlaneDetection();
-        }
 
-        public void StartPlaneDetection()
-        {
-            
             if (UnityARSessionNativeInterface.IsARKit_1_5_Supported())
             {
                 PlacenotePlaneUtility.InitializePlanePrefab(meshPrefab);
@@ -51,7 +46,10 @@ namespace UnityEngine.XR.iOS
             {
                 PlacenotePlaneUtility.InitializePlanePrefab(planePrefab);
             }
+        }
 
+        public void StartPlaneDetection()
+        {
             placenoteARAnchorManager = new PlacenoteARAnchorManager();
         }
 
@@ -130,15 +128,20 @@ namespace UnityEngine.XR.iOS
 
         public void ClearPlanes()
         {
+            // cleaning planes that were loaded as gameobjects
             if (loadedPlaneList.Count > 0)
             {
                 foreach (var plane in loadedPlaneList)
                 {
-                    GameObject.Destroy(plane);
+                    Destroy(plane);
                 }
             }
 
-            placenoteARAnchorManager.Destroy();
+            // cleaning plane anchors generated during detection
+            if (placenoteARAnchorManager != null)
+            {
+                placenoteARAnchorManager.Destroy();
+            }
         }
 
 

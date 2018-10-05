@@ -27,10 +27,12 @@ public class ARKitPlaneSaver : MonoBehaviour, PlacenoteListener
     private UnityARImageFrameData mImage = null;
     private UnityARCamera mARCamera;
     private bool mARKitInit = false;
+    private bool localizedFirstTime = false;
 
     // Use this for initialization
     void Start()
     {
+        downloadedMetaData = new LibPlacenote.MapMetadata();
         Input.location.Start();
         mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface();
         StartARKit();
@@ -43,73 +45,15 @@ public class ARKitPlaneSaver : MonoBehaviour, PlacenoteListener
         mInitButtonPanel.SetActive(true);
         localizedPanel.SetActive(false);
         LibPlacenote.Instance.StopSession();
-        mPlaneGenerator.ClearPlanes();
-        ConfigureSession(false, false);
+        FeaturesVisualizer.DisablePointcloud();
+        FeaturesVisualizer.clearPointcloud();
+
+        ConfigureSession(false, true); // stop detection and delete existing planes
+
+        localizedFirstTime = false;
+        mLabelText.text = "Exited: Click New Map or Load Map";
     }
 
-    /*
-    public void OnLoadMapClicked()
-    {
-        if (!LibPlacenote.Instance.Initialized())
-        {
-            Debug.Log("SDK not yet initialized");
-            return;
-        }
-
-        mCurrMapId = LoadMapIDFromFile();
-        if (mCurrMapId == null)
-        {
-            Debug.Log("No map available");
-            return;
-        }
-        mCurrMapInfo = null;
-
-
-        LibPlacenote.Instance.ListMaps((mapList) => {
-            // render the map list!
-            foreach (LibPlacenote.MapInfo mapId in mapList)
-            {
-                if (mapId.userData != null)
-                {
-                    if (mapId.placeId == mCurrMapId)
-                    {
-                        Debug.Log("Got map meta data");
-                        mCurrMapInfo = mapId;
-                        break;
-                    }
-                }
-                else
-                {
-                }
-            }
-
-            if (mCurrMapInfo == null)
-            {
-                Debug.LogError("MapId not on map List. Click 'New Map'");
-                return;
-            }
-
-
-            mLabelText.text = "Loading Map ID: " + mCurrMapId;
-            LibPlacenote.Instance.LoadMap(mCurrMapId,
-                (completed, faulted, percentage) => {
-                    if (completed)
-                    {
-                        mInitButtonPanel.SetActive(false);
-                        mExitButton.SetActive(true);
-
-                        LibPlacenote.Instance.StartSession();
-                        mLabelText.text = "Loaded ID: " + mCurrMapId;
-                    }
-                    else if (faulted)
-                    {
-                        mLabelText.text = "Failed to load ID: " + mCurrMapId;
-                    }
-                }
-            );
-        });
-    }
-    */
 
     // Load map and relocalize. Check OnStatusChange function for behaviour upon relocalization
     public void OnLoadMapClicked()
@@ -141,6 +85,10 @@ public class ARKitPlaneSaver : MonoBehaviour, PlacenoteListener
                     if (obj != null)
                     {
                         downloadedMetaData = obj;
+
+                        // Now try to localize the map
+                        mLabelText.text = "Trying to Localize Map: " + mCurrMapId;
+                        LibPlacenote.Instance.StartSession();
                     }
                     else
                     {
@@ -149,9 +97,6 @@ public class ARKitPlaneSaver : MonoBehaviour, PlacenoteListener
                     }
                 });
 
-                // Now try to localize the map
-                LibPlacenote.Instance.StartSession();
-                mLabelText.text = "Trying to Localize Map: " + mCurrMapId;
             }
             else if (faulted)
             {
@@ -199,13 +144,13 @@ public class ARKitPlaneSaver : MonoBehaviour, PlacenoteListener
         mInitButtonPanel.SetActive(false);
         mMappingButtonPanel.SetActive(true);
 
+
         // start plane detection
-        ConfigureSession(true, false);
+        ConfigureSession(true, true);
         mPlaneGenerator.StartPlaneDetection();
 
         FeaturesVisualizer.EnablePointcloud();
         LibPlacenote.Instance.StartSession();
-
 
     }
 
@@ -401,19 +346,24 @@ public class ARKitPlaneSaver : MonoBehaviour, PlacenoteListener
         Debug.Log("prevStatus: " + prevStatus.ToString() + " currStatus: " + currStatus.ToString());
         if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.LOST)
         {
-            mLabelText.text = "Localized";
+            mLabelText.text = "Localized State!";
 
-
-            if (mPlaneGenerator != null)
+            if (!localizedFirstTime)
             {
-                JToken planeData = downloadedMetaData.userdata;
-                mPlaneGenerator.LoadPlaneList(planeData);
-            }
-            else
-            {
-                Debug.Log("No plane generator object, not saving planes");
-            }
+                localizedFirstTime = true;
 
+                mLabelText.text = "Localized: loaded shapes";
+
+                if (mPlaneGenerator != null)
+                {
+                    JToken planeData = downloadedMetaData.userdata;
+                    mPlaneGenerator.LoadPlaneList(planeData);
+                }
+                else
+                {
+                    Debug.Log("No plane generator object, not saving planes");
+                }
+            }
         }
         else if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.WAITING)
         {

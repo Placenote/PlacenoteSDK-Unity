@@ -43,6 +43,7 @@ namespace UnityEngine.XR.iOS
             if (planePrefab != null)
             {
                 plane = GameObject.Instantiate(planePrefab);
+
             }
             else
             {

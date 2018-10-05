@@ -318,6 +318,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
                 JObject shapeList = GetComponent<ShapeManager>().Shapes2JSON();
 
 				userdata["shapeList"] = shapeList;
+                GetComponent<ShapeManager>().ClearShapes();
 
 				if (useLocation) {
 					metadata.location = new LibPlacenote.MapLocation();
