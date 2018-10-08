@@ -113,7 +113,6 @@ namespace SaveMetaData
 
         public void LoadModelsFromJSON(JToken mapMetadata)
         {
-            Debug.Log("-------------Loading models started");
             ClearModels();
 
             if (mapMetadata is JObject && mapMetadata["modelList"] is JObject)
@@ -131,7 +130,6 @@ namespace SaveMetaData
                 }
             }
 
-            Debug.Log("------------Loading models ended");
         }
 
 

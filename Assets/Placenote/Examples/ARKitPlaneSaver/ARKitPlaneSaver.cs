@@ -236,7 +236,6 @@ public class ARKitPlaneSaver : MonoBehaviour, PlacenoteListener
 
                 LibPlacenote.MapMetadataSettable metadata = CreateMetaDataObject();
 
-
                 LibPlacenote.Instance.SetMetadata(mapId, metadata, (success) =>
                 {
                     if (success)

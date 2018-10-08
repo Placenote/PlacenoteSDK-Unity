@@ -13,7 +13,6 @@ public class PlacenotePlaneMeshRender : MonoBehaviour
     [SerializeField]
     private Material placenoteMaterial;
 
-
     private Mesh planeMesh;
 
     public void InitiliazeMesh(ARPlaneAnchor arPlaneAnchor)

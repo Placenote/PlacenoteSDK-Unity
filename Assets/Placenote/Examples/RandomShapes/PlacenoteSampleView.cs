@@ -93,11 +93,11 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mRadiusSlider.gameObject.SetActive (true);
 		LibPlacenote.Instance.ListMaps ((mapList) => {
 			// render the map list!
-			foreach (LibPlacenote.MapInfo mapId in mapList) {
-				if (mapId.metadata.userdata != null) {
-					Debug.Log(mapId.metadata.userdata.ToString (Formatting.None));
+			foreach (LibPlacenote.MapInfo mapInfoItem in mapList) {
+                if (mapInfoItem.metadata.userdata != null) {
+                    Debug.Log(mapInfoItem.metadata.userdata.ToString (Formatting.None));
 				}
-				AddMapToList (mapId);
+                AddMapToList (mapInfoItem);
 			}
 		});
 	}

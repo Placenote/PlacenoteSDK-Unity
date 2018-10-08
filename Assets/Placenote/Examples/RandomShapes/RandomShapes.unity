@@ -637,7 +637,7 @@ Prefab:
     - target: {fileID: 114906711766776928, guid: e19a1438a65c942e79c50c51765da920,
         type: 2}
       propertyPath: apiKey
-      value: 075ybz4tfvg8zasw8nw04vghri2s6smw5ez4sc6s5w4vmbubhbbmldgw3kemx771r6ku267dezszcbf5wjvxm4hzy3ihifpobcfp
+      value: Enter API Key here
       objectReference: {fileID: 0}
     - target: {fileID: 114438988695418122, guid: e19a1438a65c942e79c50c51765da920,
         type: 2}

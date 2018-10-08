@@ -1402,7 +1402,7 @@ public class LibPlacenote : MonoBehaviour
 			if (deleted) {
 				deletedCb (true, "Success");
 			} else {
-				deletedCb (true, "Failed to delete, error: " + errorMsg);
+				deletedCb (false, "Failed to delete, error: " + errorMsg);
 			}
 
 			handle.Free ();
