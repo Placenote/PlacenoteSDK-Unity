@@ -105,6 +105,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	public void OnRadiusSelect ()
 	{
 		Debug.Log ("Map search:" + mRadiusSlider.value.ToString("F2"));
+        mLabelText.text = "Filtering maps by GPS location";
+
 		LocationInfo locationInfo = Input.location.lastData;
 
 
@@ -123,6 +125,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				}
 				AddMapToList (mapId);
 			}
+
+            mLabelText.text = "Map List Complete";
 		});
 	}
 
@@ -147,6 +151,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mMappingButtonPanel.SetActive (false);
 
 		LibPlacenote.Instance.StopSession ();
+        FeaturesVisualizer.clearPointcloud();
+        GetComponent<ShapeManager>().ClearShapes();
+
 	}
 
 
@@ -303,6 +310,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		LibPlacenote.Instance.SaveMap (
 			(mapId) => {
 				LibPlacenote.Instance.StopSession ();
+                FeaturesVisualizer.clearPointcloud();
+
 				mSaveMapId = mapId;
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);

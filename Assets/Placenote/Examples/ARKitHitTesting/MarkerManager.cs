@@ -53,6 +53,33 @@ namespace ARKitHitTesting
             // Check if the screen is touched
             //-----------------------------------
 
+            #if UNITY_EDITOR
+
+            // for simulation in the editor
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                RaycastHit hit;
+                var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+                if (Physics.Raycast(ray, out hit))
+                {
+                 
+                       // create model info object
+                    ModelInfo modelInfo = new ModelInfo();
+                    modelInfo.px = hit.point.x;
+                    modelInfo.py = hit.point.y;
+                    modelInfo.pz = hit.point.z;
+
+                    AddModel(modelInfo);
+
+                }
+            }
+
+            #else
+
+            // for hit testing on the device
+
             if (Input.touchCount > 0)
             {
                 var touch = Input.GetTouch(0);
@@ -91,6 +118,7 @@ namespace ARKitHitTesting
                     }
                 }
             }
+            #endif
         }
 
         //-----------------------------------

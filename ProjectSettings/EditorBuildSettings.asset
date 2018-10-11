@@ -5,7 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
+  - enabled: 1
     path: Assets/Placenote/Examples/RandomShapes/RandomShapes.unity
     guid: 1257efda9ace3439485a7e2c7516465e
   - enabled: 0
@@ -20,6 +20,6 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Placenote/Examples/ARKitHitTesting/ARKitHitTesting.unity
     guid: 7bba42f2fe8e0452bac40db2e2494664
-  - enabled: 1
+  - enabled: 0
     path: Assets/Placenote/Examples/ARKitPlaneSaver/ARKitPlaneSaver.unity
     guid: fb6bd26f419484f8981ef58eade36217

@@ -181,7 +181,7 @@ public class ARKitPlaneSaver : MonoBehaviour, PlacenoteListener
 
         ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
 
-        if (togglePlaneDetection) 
+        if (togglePlaneDetection)
         {
             if (UnityARSessionNativeInterface.IsARKit_1_5_Supported ()) {
                 config.planeDetection = UnityARPlaneDetection.HorizontalAndVertical;

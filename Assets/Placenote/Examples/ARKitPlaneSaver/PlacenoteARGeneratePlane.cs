@@ -88,7 +88,6 @@ namespace UnityEngine.XR.iOS
 
         public void LoadPlaneList(JToken mapMetadata)
         {
-
             //placenoteARAnchorManager = new PlacenoteARAnchorManager ();
 
             if (loadedPlaneList.Count > 0)

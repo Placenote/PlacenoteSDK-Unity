@@ -17,6 +17,7 @@ namespace UnityEngine.XR.iOS
         public static GameObject CreatePlaneInScene(ARPlaneAnchor arPlaneAnchor)
         {
             GameObject plane;
+            
             if (planePrefab != null)
             {
                 plane = GameObject.Instantiate(planePrefab);

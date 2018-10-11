@@ -24,6 +24,8 @@ namespace SaveMetaData
 
         public Text notifications;
 
+        private bool modelsLoaded = false;
+
         // to hold the last saved MapID
         private string savedMapID;
         private LibPlacenote.MapMetadata downloadedMetaData;
@@ -79,6 +81,7 @@ namespace SaveMetaData
                 return;
             }
 
+            // save and upload the map
             LibPlacenote.Instance.SaveMap(
             (mapId) =>
             {
@@ -86,24 +89,27 @@ namespace SaveMetaData
                 LibPlacenote.Instance.StopSession();
                 WriteMapIDToFile(mapId);
 
-                LibPlacenote.MapMetadataSettable metadata = CreateMetaDataObject();
-
-                LibPlacenote.Instance.SetMetadata(mapId, metadata, (success) => {
-                    if (success) {
-                        Debug.Log("Meta data successfully saved");
-                    }
-                    else {
-                        Debug.Log("Meta data failed to save");
-                    }
-                });
-
-                GetComponent<ModelManager>().ClearModels();
-
             },
             (completed, faulted, percentage) =>
             {
                 if (completed) {
                     notifications.text = "Upload Complete:" + savedMapID;
+
+                    // upload meta data
+                    LibPlacenote.MapMetadataSettable metadata = CreateMetaDataObject();
+
+                    LibPlacenote.Instance.SetMetadata(savedMapID, metadata, (success) => {
+                        if (success)
+                        {
+                            notifications.text = "Meta data successfully saved";
+                        }
+                        else
+                        {
+                            notifications.text = "Meta data failed to save";
+                        }
+                    });
+
+                    GetComponent<ModelManager>().ClearModels();
 
                 }
                 else if (faulted) {
@@ -171,6 +177,10 @@ namespace SaveMetaData
                     {
                         if (obj!=null) {
                             downloadedMetaData = obj;
+
+                            // Now try to localize the map
+                            LibPlacenote.Instance.StartSession();
+                            notifications.text = "Trying to Localize Map: " + savedMapID;
                         }
                         else {
                             notifications.text = "Failed to download meta data";
@@ -178,9 +188,6 @@ namespace SaveMetaData
                         }
                     });
 
-                    // Now try to localize the map
-                    LibPlacenote.Instance.StartSession();
-                    notifications.text = "Trying to Localize Map: " + savedMapID;
                 }
                 else if (faulted)
                 {
@@ -201,6 +208,8 @@ namespace SaveMetaData
             FeaturesVisualizer.clearPointcloud();
             GetComponent<ModelManager>().ClearModels();
 
+            modelsLoaded = false;
+
             initPanel.SetActive(true);
             mappingPanel.SetActive(false);
             localizedPanel.SetActive(false);
@@ -217,8 +226,13 @@ namespace SaveMetaData
             {
                 notifications.text = "Localized!";
 
-                JToken modelData = downloadedMetaData.userdata;
-                GetComponent<ModelManager>().LoadModelsFromJSON(modelData);
+                if (!modelsLoaded)
+                {
+                    modelsLoaded = true;
+                    JToken modelData = downloadedMetaData.userdata;
+                    GetComponent<ModelManager>().LoadModelsFromJSON(modelData);
+
+                }
 
                 // Placenote will automatically correct the camera position on localization.
             }
