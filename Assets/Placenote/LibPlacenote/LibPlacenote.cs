@@ -439,12 +439,13 @@ public class LibPlacenote : MonoBehaviour
 
 	public void Awake () {
 		sInstance = this;
-
 		Init ();
+	}
 
-		mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface();
-		UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
-
+	public void Start()
+	{
+        mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface();
+        UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
 	}
 
 	// Function is called when each frame from ARKit becomes available
@@ -472,7 +473,8 @@ public class LibPlacenote : MonoBehaviour
 			Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition (matrix);
 			Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation (matrix);
 
-			LibPlacenote.Instance.SendARFrame (mImage, arkitPosition, arkitQuat, mARCamera.videoParams.screenOrientation);
+            // send image frame to placenote for processing
+			SendARFrame (mImage, arkitPosition, arkitQuat, mARCamera.videoParams.screenOrientation);
 		}
 	}
 
@@ -1349,26 +1351,36 @@ public class LibPlacenote : MonoBehaviour
 	/// <param name="loadProgressCb">
 	/// Callback to publish map download progress event to listeners registered.
 	/// </param>
-	public void LoadMap (String mapId, Action<bool, bool, float> loadProgressCb)
-	{
-		#if !UNITY_EDITOR
-		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (loadProgressCb));
-		PNLoadMap (mapId, OnMapLoaded, cSharpContext);
-		#else
-		mLocalization = true;
-		// Reads maps from file as JSON
-		string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
-		MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
-		for(int i = 0; i < mapList.Length; i++){
-			if (mapId == mapList[i].placeId)
-				simMap = mapList[i];
-		}
-
-		simCameraPoses = simMap.metadata.simulatedMap;
-		loadProgressCb (true, false, 1.0f);
-		#endif
-
-	}
+    public void LoadMap(String mapId, Action<bool, bool, float> loadProgressCb)
+    {
+        #if !UNITY_EDITOR
+        IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (loadProgressCb));
+        PNLoadMap (mapId, OnMapLoaded, cSharpContext);
+        #else
+        mLocalization = true;
+        // Reads maps from file as JSON
+        bool foundMap = false;
+        string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
+        MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]>(mapData);
+        for (int i = 0; i < mapList.Length; i++)
+        {
+            if (mapId == mapList[i].placeId)
+            {
+                simMap = mapList[i];
+                foundMap = true;
+            }
+        }
+        if (foundMap)
+        {
+            simCameraPoses = simMap.metadata.simulatedMap;
+            loadProgressCb(true, false, 1f);
+        }
+        else
+        {
+            loadProgressCb(false, true, 0);
+        }
+        #endif
+    }
 
 
 	/// <summary>
@@ -1390,7 +1402,7 @@ public class LibPlacenote : MonoBehaviour
 			if (deleted) {
 				deletedCb (true, "Success");
 			} else {
-				deletedCb (true, "Failed to delete, error: " + errorMsg);
+				deletedCb (false, "Failed to delete, error: " + errorMsg);
 			}
 
 			handle.Free ();
