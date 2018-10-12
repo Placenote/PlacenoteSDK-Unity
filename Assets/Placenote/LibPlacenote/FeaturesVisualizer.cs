@@ -130,6 +130,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		mr.material = mPtCloudMat;
 	}
 
+	#if UNITY_EDITOR 
 	public static void DrawMapEditor(SpatialCapture.PNLandmark[] map, Transform parent) {
 	//public static void DrawMapEditor(UnityEngine.XR.iOS.SpatialCapture.PNLandmark[] map, Transform parent) {
 		GameObject[] points = new GameObject[map.Length];
@@ -161,5 +162,6 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			}
 		}
 	}
+	#endif
 
 }
