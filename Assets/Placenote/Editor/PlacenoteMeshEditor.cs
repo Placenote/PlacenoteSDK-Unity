@@ -1,15 +1,13 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+using UnityEngine;
 using System.Collections;
 using System.IO;
 using UnityEditor;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-
-
 namespace EditorCoroutines 
 {
-
 	[System.Serializable]
 	public class Pose {
 		public Vector3 position;
@@ -44,12 +42,10 @@ namespace EditorCoroutines
 	public class ColorizedDensePointCloud {
 		public Point point;
 	}
-
-
+		
 	[CustomEditor(typeof(PlaceMesh))]
 	public class PlaceMeshEditor : Editor
 	{
-
 		PlacenoteWebAPI mWebAPI = new PlacenoteWebAPI();
 
 		override public void OnInspectorGUI()
@@ -74,12 +70,7 @@ namespace EditorCoroutines
 				}
 				mWebAPI.AddMesh (mesh.APIKey, mesh.MapID, mesh.planePrefab, mesh.transform);
 			}
-				
-
-
-		
 		}
 	}
 }
-		
-
+#endif
