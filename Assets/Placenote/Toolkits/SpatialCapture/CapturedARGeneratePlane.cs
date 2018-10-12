@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace UnityEngine.XR.iOS
+namespace UnityEngine.XR.iOS.SpatialCapture
 {
 
     [System.Serializable]
@@ -29,16 +29,14 @@ namespace UnityEngine.XR.iOS
 		public Vector3 point;
 	}
 
-
-    [System.Serializable]
-    public class PlaneMeshList
-    {
-        public ARPlaneMesh[] meshList;
+	[System.Serializable]
+	public class PlaneMeshList
+	{
+		public ARPlaneMesh[] meshList;
 		public PNLandmark[] landmarkList;
+	}
 
-    }
-
-    public class PlacenoteARGeneratePlane : MonoBehaviour
+    public class CapturedARGeneratePlane : MonoBehaviour
     {
         public GameObject planePrefab;
         public GameObject meshPrefab;
@@ -123,7 +121,7 @@ namespace UnityEngine.XR.iOS
                 Debug.Log("Loading + " + planeList.meshList.Length.ToString() + " planes");
                 foreach (var plane in planeList.meshList)
                 {
-                    GameObject go = PlacenotePlaneUtility.CreatePlaneInScene(plane);
+					GameObject go = CapturedPlaneUtility.CreatePlaneInScene(plane);
                     go.AddComponent<DontDestroyOnLoad>();  //this is so these GOs persist across scene loads
                     loadedPlaneList.AddLast(go);
                 }
