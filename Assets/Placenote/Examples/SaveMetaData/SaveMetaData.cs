@@ -154,10 +154,6 @@ namespace SaveMetaData
         // Load map and relocalize. Check OnStatusChange function for behaviour upon relocalization
         public void OnLoadMapClicked()
         {
-            initPanel.SetActive(false);
-            mappingPanel.SetActive(false);
-            localizedPanel.SetActive(true);
-
             if (!LibPlacenote.Instance.Initialized())
             {
                 notifications.text = "SDK not yet initialized";
@@ -166,6 +162,17 @@ namespace SaveMetaData
 
             // Reading the last saved MapID from file
             savedMapID = ReadMapIDFromFile();
+
+            if (savedMapID == null)
+            {
+                notifications.text = "You haven't saved a map yet";
+                return;
+            }
+
+            initPanel.SetActive(false);
+            mappingPanel.SetActive(false);
+            localizedPanel.SetActive(true);
+
 
             LibPlacenote.Instance.LoadMap(savedMapID,
             (completed, faulted, percentage) =>
@@ -250,12 +257,24 @@ namespace SaveMetaData
         private string ReadMapIDFromFile()
         {
             string path = Application.persistentDataPath + "/mapID.txt";
-            StreamReader reader = new StreamReader(path);
-            string returnValue = reader.ReadLine();
-            Debug.Log(returnValue);
-            reader.Close();
+            Debug.Log(path);
 
-            return returnValue;
+            if (System.IO.File.Exists(path))
+            {
+                StreamReader reader = new StreamReader(path);
+                string returnValue = reader.ReadLine();
+
+                Debug.Log(returnValue);
+                reader.Close();
+
+                return returnValue;
+            }
+            else
+            {
+                return null;
+            }
+
+
         }
 
     }

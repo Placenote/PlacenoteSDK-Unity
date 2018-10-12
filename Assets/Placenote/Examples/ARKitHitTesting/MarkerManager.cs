@@ -8,9 +8,8 @@ using Newtonsoft.Json;
 
 namespace ARKitHitTesting
 {
-    /*========================================
-    * Classes to hold model information
-    ======================================== */
+
+    // Classes to hold model information
 
     [System.Serializable]
     public class ModelInfo
@@ -27,9 +26,7 @@ namespace ARKitHitTesting
     }
 
 
-    /*========================================
-     * Main Class for Managing Models
-    ======================================== */
+     // Main Class for Managing Models
 
     public class MarkerManager : MonoBehaviour
     {
@@ -39,19 +36,15 @@ namespace ARKitHitTesting
         public List<ModelInfo> ModelInfoList = new List<ModelInfo>();
         public List<GameObject> ModelObjList = new List<GameObject>();
 
-        /*====================================================
-        * Functions for adding and deleting models
-        ==================================================== */
 
-        //-----------------------------------
+        // Functions for adding and deleting models
+
         // Update function checks for hittest
-        //-----------------------------------
 
         void Update()
         {
 
             // Check if the screen is touched
-            //-----------------------------------
 
             #if UNITY_EDITOR
 
@@ -121,9 +114,7 @@ namespace ARKitHitTesting
             #endif
         }
 
-        //-----------------------------------
         // The HitTest to Add a Marker
-        //-----------------------------------
 
         bool HitTestWithResultType(ARPoint point, ARHitTestResultType resultTypes)
         {
@@ -182,9 +173,8 @@ namespace ARKitHitTesting
             ModelInfoList.Clear();
         }
 
-        /*====================================================
-        * Helper Functions to convert models to and from JSON
-        ==================================================== */
+
+        // Helper Functions to convert models to and from JSON
 
         public JObject Models2JSON()
         {
