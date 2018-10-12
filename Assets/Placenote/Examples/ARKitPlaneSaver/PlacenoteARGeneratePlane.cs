@@ -1,10 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Linq;
+using Collections.Hybrid.Generic;
+using UnityEngine.XR.iOS;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
+using System.Runtime.InteropServices;
+using System.IO;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace UnityEngine.XR.iOS
+namespace ARKitPlaneSaver
 {
 
     [System.Serializable]
@@ -20,10 +27,22 @@ namespace UnityEngine.XR.iOS
         public string id;
     }
 
+	[System.Serializable]
+	public class PNLandmark{
+		//PNFeaturePointUnity but unwrapped so they can be serialized (JSON.NET had trouble de-serializing PNFeaturePointUnity)
+		public int idx;
+		public int measCount;
+		public float maxViewAngle;
+		public Vector3 point;
+	}
+
+
     [System.Serializable]
     public class PlaneMeshList
     {
         public ARPlaneMesh[] meshList;
+		public PNLandmark[] landmarkList;
+
     }
 
     public class PlacenoteARGeneratePlane : MonoBehaviour
