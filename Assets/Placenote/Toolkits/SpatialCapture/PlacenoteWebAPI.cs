@@ -106,11 +106,14 @@ namespace EditorCoroutines {
 			Debug.Log ("Extracting planes from " + mMapID);
 
 			//UnityEngine.XR.iOS.SpatialCapture.CapturedPlaneUtility.InitializePlanePrefab (PlaneMesh);
-			UnityEngine.XR.iOS.PlacenotePlaneUtility.InitializePlanePrefab (PlaneMesh);
+			//UnityEngine.XR.iOS.PlacenotePlaneUtility.InitializePlanePrefab (PlaneMesh);
+			SpatialCapture.CapturedPlaneUtility.InitializePlanePrefab (PlaneMesh);
 
 			JToken planeMetaData = mMapIDList.places [m_index].metadata.userdata ["planes"];
 			//UnityEngine.XR.iOS.SpatialCapture.PlaneMeshList meshList = planeMetaData.ToObject<UnityEngine.XR.iOS.SpatialCapture.PlaneMeshList> ();
-			UnityEngine.XR.iOS.PlaneMeshList meshList = planeMetaData.ToObject<UnityEngine.XR.iOS.PlaneMeshList> ();
+			//UnityEngine.XR.iOS.PlaneMeshList meshList = planeMetaData.ToObject<UnityEngine.XR.iOS.PlaneMeshList> ();
+			SpatialCapture.PlaneMeshList meshList = planeMetaData.ToObject<SpatialCapture.PlaneMeshList> ();
+			Debug.Log ("first mesh center: " + meshList.meshList [1].center.ToString("F6"));
 
 			GameObject MeshParent;
 			MeshParent = new GameObject ("Mesh");
@@ -122,7 +125,8 @@ namespace EditorCoroutines {
 			int planeNum=0;
 			foreach (var mesh in meshList.meshList) {
 				//GameObject plane = UnityEngine.XR.iOS.SpatialCapture.CapturedPlaneUtility.CreatePlaneInScene (mesh);
-				GameObject plane = UnityEngine.XR.iOS.PlacenotePlaneUtility.CreatePlaneInScene (mesh);
+				//GameObject plane = UnityEngine.XR.iOS.PlacenotePlaneUtility.CreatePlaneInScene (mesh);
+				GameObject plane = SpatialCapture.CapturedPlaneUtility.CreatePlaneInScene (mesh);
 				plane.transform.SetParent (MeshParent.transform);
 				plane.name = "Plane " + planeNum.ToString ();
 				planeNum++;
