@@ -2,8 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using Collections.Hybrid.Generic;
-
-namespace UnityEngine.XR.iOS
+using UnityEngine.XR.iOS;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
+using System.Runtime.InteropServices;
+using System.IO;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+                 
+namespace ARKitPlaneSaver
 {
     public class PlacenoteARAnchorManager
     {

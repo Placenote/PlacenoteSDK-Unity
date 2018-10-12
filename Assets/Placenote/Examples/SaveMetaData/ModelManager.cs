@@ -8,9 +8,8 @@ using Newtonsoft.Json;
 
 namespace SaveMetaData
 {
-    /*========================================
-    * Classes to hold model information
-    ======================================== */
+
+    // Classes to hold model information
 
     [System.Serializable]
     public class ModelInfo
@@ -32,9 +31,7 @@ namespace SaveMetaData
     }
 
 
-    /*========================================
-     * Main Class for Managing Models
-    ======================================== */
+     // Main Class for Managing Models
 
     public class ModelManager : MonoBehaviour
     {
@@ -44,9 +41,7 @@ namespace SaveMetaData
         public List<ModelInfo> ModelInfoList = new List<ModelInfo>();
         public List<GameObject> ModelObjList = new List<GameObject>();
 
-        /*====================================================
-        * Functions for adding and deleting models
-        ==================================================== */
+        // Functions for adding and deleting models
 
         public void OnAddShapeClicked()
         {
@@ -95,9 +90,7 @@ namespace SaveMetaData
             ModelInfoList.Clear();
         }
 
-        /*====================================================
-        * Helper Functions to convert models to and from JSON
-        ==================================================== */
+        // Helper Functions to convert models to and from JSON
 
         public JObject Models2JSON()
         {

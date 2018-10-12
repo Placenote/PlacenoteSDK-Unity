@@ -6,9 +6,7 @@ using UnityEngine.XR.iOS;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-/*========================================
- * Classes to hold shape information
-======================================== */
+ // Classes to hold shape information
 
 [System.Serializable]
 public class ShapeInfo
@@ -32,9 +30,8 @@ public class ShapeList
 }
 
 
-/*========================================
- * Main Class for Managing Markers
-======================================== */
+
+ // Main Class for Managing Markers
 
 public class ShapeManager : MonoBehaviour {
 
@@ -48,9 +45,7 @@ public class ShapeManager : MonoBehaviour {
 
 	}
 
-    //-----------------------------------
     // The HitTest to Add a Marker
-    //-----------------------------------
 
     bool HitTestWithResultType(ARPoint point, ARHitTestResultType resultTypes)
     {
@@ -84,15 +79,12 @@ public class ShapeManager : MonoBehaviour {
     }
 
 
-    //-----------------------------------
     // Update function checks for hittest
-    //-----------------------------------
 
     void Update()
     {
 
         // Check if the screen is touched
-        //-----------------------------------
 
         if (Input.touchCount > 0)
         {
@@ -143,9 +135,8 @@ public class ShapeManager : MonoBehaviour {
 
 	}
 
-    //-------------------------------------------------
+
     // All shape management functions (add shapes, save shapes to metadata etc.
-    //-------------------------------------------------
 
     public void AddShape(Vector3 shapePosition, Quaternion shapeRotation)
     {

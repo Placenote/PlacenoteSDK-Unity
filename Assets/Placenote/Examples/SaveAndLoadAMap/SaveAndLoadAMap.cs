@@ -95,11 +95,6 @@ public class SaveAndLoadAMap : MonoBehaviour, PlacenoteListener
     // Load map and relocalize. Check OnStatusChange function for behaviour upon relocalization
     public void OnLoadMapClicked()
     {
-        newMapButton.SetActive(false);
-        saveMapButton.SetActive(false);
-
-
-
         if (!LibPlacenote.Instance.Initialized())
         {
             notifications.text = "SDK not yet initialized";
@@ -108,6 +103,15 @@ public class SaveAndLoadAMap : MonoBehaviour, PlacenoteListener
 
         // Reading the last saved MapID from file
         savedMapID = ReadMapIDFromFile();
+
+        if (savedMapID == null)
+        {
+            notifications.text = "You haven't saved a map yet";
+            return;
+        }
+
+        newMapButton.SetActive(false);
+        saveMapButton.SetActive(false);
 
         LibPlacenote.Instance.LoadMap(savedMapID, 
         (completed, faulted, percentage) =>    
@@ -152,13 +156,24 @@ public class SaveAndLoadAMap : MonoBehaviour, PlacenoteListener
     private string ReadMapIDFromFile()
     {
         string path = Application.persistentDataPath + "/mapID.txt";
-        StreamReader reader = new StreamReader(path);
-        string returnValue = reader.ReadLine();
-        Debug.Log(returnValue);
-        reader.Close();
+        Debug.Log(path);
 
-        return returnValue;
+        if (System.IO.File.Exists(path))
+        {
+            StreamReader reader = new StreamReader(path);
+            string returnValue = reader.ReadLine();
+
+            Debug.Log(returnValue);
+            reader.Close();
+
+            return returnValue;
+        }
+        else
+        {
+            return null;
+        }
+
+
     }
-
 }
 
