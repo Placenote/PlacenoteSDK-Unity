@@ -82,6 +82,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 
 		LibPlacenote.PNFeaturePointUnity[] map = LibPlacenote.Instance.GetMap ();
+
 		if (map == null) {
 			return;
 		}
@@ -111,23 +112,20 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 
 		// Create GameObject container with mesh components for the loaded mesh.
-		Mesh mesh = new Mesh ();
-		mesh.vertices = points;
-		mesh.colors = colors;
-		mesh.SetIndices (indices, MeshTopology.Points, 0);
-
 		MeshFilter mf = mMap.GetComponent<MeshFilter> ();
 		if (mf == null) {
 			mf = mMap.AddComponent<MeshFilter> ();
-		} 
-		mf.mesh = mesh;
+			mf.mesh = new Mesh ();
+		}
+		mf.mesh.vertices = points;
+		mf.mesh.colors = colors;
+		mf.mesh.SetIndices (indices, MeshTopology.Points, 0);
 
 		MeshRenderer mr = mMap.GetComponent<MeshRenderer> ();
 		if (mr == null) {
 			mr = mMap.AddComponent<MeshRenderer> ();
+			mr.material = mPtCloudMat;
 		} 
-
-		mr.material = mPtCloudMat;
 	}
 
 	#if UNITY_EDITOR 
