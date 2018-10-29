@@ -1546,8 +1546,8 @@ public class LibPlacenote : MonoBehaviour
 			}
 		});
 		*/
-		Dictionary<PNMeshBlockIndex, PNMeshBlock> denseMesh = LibPlacenote.Instance.GetDenseMesh ();
 		MainThreadTaskQueue.InvokeOnMainThread (() => {
+			Dictionary<PNMeshBlockIndex, PNMeshBlock> denseMesh = LibPlacenote.Instance.GetDenseMesh ();
 			if (denseMesh == null) {
 				return;
 			}

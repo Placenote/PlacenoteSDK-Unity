@@ -179,7 +179,14 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		foreach(KeyValuePair<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> entry in meshBlocks)
 		{
 			// Create GameObject container with mesh components for the loaded mesh.
-			GameObject meshObj = GameObject.Instantiate(mPointCloud);
+			GameObject meshObj = null;
+			if (mMeshBlocks.ContainsKey (entry.Key)) {
+				meshObj = mMeshBlocks[entry.Key];
+			} else {
+				meshObj = GameObject.Instantiate(mPointCloud);
+				mMeshBlocks.Add (entry.Key, meshObj);
+			}
+
 			MeshFilter mf = meshObj.GetComponent<MeshFilter> ();
 			if (mf == null) {
 				mf = meshObj.AddComponent<MeshFilter> ();
@@ -196,13 +203,6 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 				mr = meshObj.AddComponent<MeshRenderer> ();
 			} 
 			mr.material = mMeshMat;
-
-			if (mMeshBlocks.ContainsKey (entry.Key)) {
-				GameObject.Destroy (mMeshBlocks [entry.Key]);
-				mMeshBlocks[entry.Key] = meshObj;
-			} else {
-				mMeshBlocks.Add (entry.Key, meshObj);
-			}
 		}
 	}
 
