@@ -124,8 +124,8 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		MeshRenderer mr = mMap.GetComponent<MeshRenderer> ();
 		if (mr == null) {
 			mr = mMap.AddComponent<MeshRenderer> ();
-			mr.material = mPtCloudMat;
 		} 
+		mr.material = mPtCloudMat;
 	}
 
 	#if UNITY_EDITOR 
