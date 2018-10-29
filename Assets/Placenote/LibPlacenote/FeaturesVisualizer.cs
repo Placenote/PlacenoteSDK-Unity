@@ -165,7 +165,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 	}
 
-	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, Mesh> meshBlocks)
+	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> meshBlocks)
 	{
 		if (!LibPlacenote.Instance.Initialized()) {
 			return;
@@ -176,15 +176,19 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
-		foreach(KeyValuePair<LibPlacenote.PNMeshBlockIndex, Mesh> entry in meshBlocks)
+		foreach(KeyValuePair<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> entry in meshBlocks)
 		{
 			// Create GameObject container with mesh components for the loaded mesh.
 			GameObject meshObj = GameObject.Instantiate(mPointCloud);
 			MeshFilter mf = meshObj.GetComponent<MeshFilter> ();
 			if (mf == null) {
 				mf = meshObj.AddComponent<MeshFilter> ();
+				mf.mesh = new Mesh();
 			} 
-			mf.mesh = entry.Value;
+			mf.mesh.vertices = entry.Value.points;
+			mf.mesh.colors = entry.Value.colors;
+			mf.mesh.SetIndices (entry.Value.indices, MeshTopology.Triangles, 0);
+			mf.mesh.RecalculateNormals ();
 
 			LibPlacenote.PNMeshBlockIndex block = entry.Key;
 			MeshRenderer mr = meshObj.GetComponent<MeshRenderer> ();
@@ -244,16 +248,14 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		// Create GameObject container with mesh components for the loaded mesh.
 		GameObject pointcloudObj = GameObject.Instantiate(mPointCloud);
 
-		Mesh mesh = new Mesh ();
-		mesh.vertices = points;
-		mesh.colors = colors;
-		mesh.SetIndices (indices, MeshTopology.Points, 0);
-
 		MeshFilter mf = pointcloudObj.GetComponent<MeshFilter> ();
 		if (mf == null) {
 			mf = pointcloudObj.AddComponent<MeshFilter> ();
+			mf.mesh = new Mesh ();
 		} 
-		mf.mesh = mesh;
+		mf.mesh.vertices = points;
+		mf.mesh.colors = colors;
+		mf.mesh.SetIndices (indices, MeshTopology.Points, 0);
 
 		MeshRenderer mr = pointcloudObj.GetComponent<MeshRenderer> ();
 		if (mr == null) {
@@ -302,16 +304,14 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 
 		// Create GameObject container with mesh components for the loaded mesh.
-		Mesh mesh = new Mesh ();
-		mesh.vertices = points;
-		mesh.colors = colors;
-		mesh.SetIndices (indices, MeshTopology.Points, 0);
-
 		MeshFilter mf = mMap.GetComponent<MeshFilter> ();
 		if (mf == null) {
 			mf = mMap.AddComponent<MeshFilter> ();
+			mf.mesh = new Mesh ();
 		} 
-		mf.mesh = mesh;
+		mf.mesh.vertices = points;
+		mf.mesh.colors = colors;
+		mf.mesh.SetIndices (indices, MeshTopology.Points, 0);
 
 		MeshRenderer mr = mMap.GetComponent<MeshRenderer> ();
 		if (mr == null) {

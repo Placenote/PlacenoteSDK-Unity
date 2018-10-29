@@ -162,6 +162,17 @@ public class LibPlacenote : MonoBehaviour
 		public int triCount;
 	}
 
+
+	/// <summary>
+	/// Struct that decribes a mesh block
+	/// </summary>
+	public struct PNMeshBlock
+	{
+		public Vector3[] points;
+		public Color[] colors;
+		public int[] indices;
+	}
+
 	/// <summary>
 	/// Struct that decribes a triangle
 	/// </summary>
@@ -1535,11 +1546,12 @@ public class LibPlacenote : MonoBehaviour
 			}
 		});
 		*/
+		Dictionary<PNMeshBlockIndex, PNMeshBlock> denseMesh = LibPlacenote.Instance.GetDenseMesh ();
 		MainThreadTaskQueue.InvokeOnMainThread (() => {
-			Dictionary<PNMeshBlockIndex, Mesh> denseMesh = LibPlacenote.Instance.GetDenseMesh ();
 			if (denseMesh == null) {
 				return;
 			}
+
 			var listeners = Instance.listeners;
 			foreach (var listener in listeners) {
 				listener.OnDenseMeshBlocks (denseMesh);
@@ -1578,7 +1590,7 @@ public class LibPlacenote : MonoBehaviour
 	/// The mesh array that contains all mesh created by a mapping session,
 	/// or contained in a loaded map during a localization session
 	/// </returns>
-	public Dictionary<PNMeshBlockIndex, Mesh> GetDenseMesh ()
+	public Dictionary<PNMeshBlockIndex, PNMeshBlock> GetDenseMesh ()
 	{
 		int blockSize = 0;
 		PNMeshBlockInfoUnity[] blocks = new PNMeshBlockInfoUnity [1];
@@ -1615,9 +1627,9 @@ public class LibPlacenote : MonoBehaviour
 
 		int blockIdx = 0;
 		int triIdx = 0;
-		Dictionary<PNMeshBlockIndex, Mesh> meshBlocks = new Dictionary<PNMeshBlockIndex, Mesh> ();
+		Dictionary<PNMeshBlockIndex, PNMeshBlock> meshBlocks = new Dictionary<PNMeshBlockIndex, PNMeshBlock> ();
 		foreach (var block in blocks) {
-			Mesh mesh = new Mesh ();
+			PNMeshBlock mesh = new PNMeshBlock ();
 			PNMeshBlockIndex block3dIdx;
 			block3dIdx.x = block.x;
 			block3dIdx.y = block.y;
@@ -1668,13 +1680,9 @@ public class LibPlacenote : MonoBehaviour
 				triIdx++;
 			}
 
-			mesh.vertices = vertices;
+			mesh.points = vertices;
 			mesh.colors = colors;
-			mesh.SetIndices(indices, MeshTopology.Triangles, 0);
-			mesh.RecalculateNormals ();
-
-			Debug.Log ("normals length " + mesh.normals.Length);
-
+			mesh.indices = indices;
 			meshBlocks.Add (block3dIdx, mesh);
 			blockIdx++;
 		}

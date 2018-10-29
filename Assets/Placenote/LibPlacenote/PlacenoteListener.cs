@@ -8,6 +8,6 @@ public interface PlacenoteListener
 	void OnPose(Matrix4x4 outputPose, Matrix4x4 arkitPose);
 	void OnStatusChange(LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus);
 	void OnDensePointcloud(LibPlacenote.PNFeaturePointUnity[] ptcloud);
-	void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, Mesh> meshBlocks);
+	void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> meshBlocks);
 }
 

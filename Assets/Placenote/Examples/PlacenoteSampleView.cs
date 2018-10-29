@@ -423,7 +423,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	public void OnInitialized (bool success, string errMsg) {}
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose) {}
 	public void OnDensePointcloud (LibPlacenote.PNFeaturePointUnity[] ptcloud) {}
-	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, Mesh> meshBlocks) {}
+	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> meshBlocks) {}
 
 	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
 	{
