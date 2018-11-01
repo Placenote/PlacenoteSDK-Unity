@@ -191,7 +191,8 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			if (mf == null) {
 				mf = meshObj.AddComponent<MeshFilter> ();
 				mf.mesh = new Mesh();
-			} 
+			}
+			mf.mesh.Clear ();
 			mf.mesh.vertices = entry.Value.points;
 			mf.mesh.colors = entry.Value.colors;
 			mf.mesh.SetIndices (entry.Value.indices, MeshTopology.Triangles, 0);
@@ -253,6 +254,8 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			mf = pointcloudObj.AddComponent<MeshFilter> ();
 			mf.mesh = new Mesh ();
 		} 
+
+		mf.mesh.Clear ();
 		mf.mesh.vertices = points;
 		mf.mesh.colors = colors;
 		mf.mesh.SetIndices (indices, MeshTopology.Points, 0);
@@ -308,7 +311,9 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		if (mf == null) {
 			mf = mMap.AddComponent<MeshFilter> ();
 			mf.mesh = new Mesh ();
-		} 
+		}
+
+		mf.mesh.Clear ();
 		mf.mesh.vertices = points;
 		mf.mesh.colors = colors;
 		mf.mesh.SetIndices (indices, MeshTopology.Points, 0);
