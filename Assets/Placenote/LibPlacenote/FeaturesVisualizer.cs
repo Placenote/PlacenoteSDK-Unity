@@ -117,6 +117,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			mf = mMap.AddComponent<MeshFilter> ();
 			mf.mesh = new Mesh ();
 		}
+		mf.mesh.Clear()
 		mf.mesh.vertices = points;
 		mf.mesh.colors = colors;
 		mf.mesh.SetIndices (indices, MeshTopology.Points, 0);
