@@ -1581,6 +1581,80 @@ public class LibPlacenote : MonoBehaviour
 		PNDisableDenseMapping ();
 		#endif
 	}
+
+	/// <summary>
+	/// Return the dense mesh block specified by the block index
+	/// </summary>
+	/// <param name="blockIdx">Block index for the mesh block requested.</param>
+	/// <returns>
+	/// The mesh array for the block specified by blockIdx
+	/// </returns>
+	public PNMeshBlock GetBlockMesh (PNMeshBlockIndex blockIdx) {
+		PNMeshBlock mesh = new PNMeshBlock ();
+		PNMeshBlockInfoUnity blockInfo = new PNMeshBlockInfoUnity();
+		blockInfo.x = blockIdx.x;
+		blockInfo.y = blockIdx.y;
+		blockInfo.z = -blockIdx.z;
+		blockInfo.triCount = 0;
+
+		int triSize = 0;
+		PNTriangleUnity[] triangles = new PNTriangleUnity [1];
+		#if !UNITY_EDITOR
+		triSize = PNGetBlockMesh (ref blockInfo, triangles, 0);
+		#endif
+
+		if (triSize == 0) {
+			Debug.Log ("No triangles found");
+			return mesh;
+		}
+
+		#if !UNITY_EDITOR
+		Array.Resize (ref triangles, triSize);
+		PNGetBlockMesh (ref blockInfo, triangles, triSize);
+		#endif
+		blockInfo.triCount = triSize;
+
+		int arraySize = triSize * 3;
+		Vector3[] vertices = new Vector3 [arraySize];
+		Color[] colors = new Color [arraySize];
+		int[] indices = new int [arraySize];
+
+		for (int i = 0; i < triSize; i++) {
+			PNTriangleUnity tri = triangles[i];
+
+			int vertIdx = i*3;
+			int pt1Idx = vertIdx;
+			int pt2Idx = vertIdx + 1;
+			int pt3Idx = vertIdx + 2;
+			vertices[pt1Idx] = new Vector3(tri.point1.x, tri.point1.y, -tri.point1.z);
+			vertices[pt2Idx] = new Vector3(tri.point2.x, tri.point2.y, -tri.point2.z);
+			vertices[pt3Idx] = new Vector3(tri.point3.x, tri.point3.y, -tri.point3.z);
+
+			colors[pt1Idx]   = new Color(tri.color1.x/255f, tri.color1.y/255f, tri.color1.z/255f, 1f);
+			colors[pt2Idx]   = new Color(tri.color2.x/255f, tri.color2.y/255f, tri.color2.z/255f, 1f);
+			colors[pt3Idx]   = new Color(tri.color3.x/255f, tri.color3.y/255f, tri.color3.z/255f, 1f);
+
+			Vector3 P1toP2 = vertices [pt2Idx] - vertices [pt1Idx];
+			Vector3 P1toP3 = vertices [pt3Idx] - vertices [pt1Idx];
+			Vector3 triNormal = Vector3.Cross (P1toP2, P1toP3);
+			double projection = Vector3.Dot (Camera.main.transform.forward, triNormal);
+
+			if (projection < 0) {
+				indices [pt1Idx] = pt1Idx;
+				indices [pt2Idx] = pt2Idx;
+				indices [pt3Idx] = pt3Idx;
+			} else {
+				indices [pt1Idx] = pt2Idx;
+				indices [pt2Idx] = pt1Idx;
+				indices [pt3Idx] = pt3Idx;
+			}
+		}
+
+		mesh.points = vertices;
+		mesh.colors = colors;
+		mesh.indices = indices;
+		return mesh;
+	}
 		
 
 	/// <summary>
@@ -1597,7 +1671,6 @@ public class LibPlacenote : MonoBehaviour
 		#if !UNITY_EDITOR
 		blockSize = PNGetUpdatedMeshBlocks (blocks, 0);
 		#endif
-		Debug.Log ("block size == " + blockSize);
 
 		if (blockSize == 0) {
 			Debug.Log ("No updated blocks, probably tried to fail");
@@ -1633,7 +1706,7 @@ public class LibPlacenote : MonoBehaviour
 			PNMeshBlockIndex block3dIdx;
 			block3dIdx.x = block.x;
 			block3dIdx.y = block.y;
-			block3dIdx.z = block.z;
+			block3dIdx.z = -block.z;
 
 			if (block.triCount == 0) {
 				meshBlocks.Add (block3dIdx, mesh);
@@ -1659,6 +1732,7 @@ public class LibPlacenote : MonoBehaviour
 				vertices[pt1Idx] = new Vector3(tri.point1.x, tri.point1.y, -tri.point1.z);
 				vertices[pt2Idx] = new Vector3(tri.point2.x, tri.point2.y, -tri.point2.z);
 				vertices[pt3Idx] = new Vector3(tri.point3.x, tri.point3.y, -tri.point3.z);
+
 				colors[pt1Idx]   = new Color(tri.color1.x/255f, tri.color1.y/255f, tri.color1.z/255f, 1f);
 				colors[pt2Idx]   = new Color(tri.color2.x/255f, tri.color2.y/255f, tri.color2.z/255f, 1f);
 				colors[pt3Idx]   = new Color(tri.color3.x/255f, tri.color3.y/255f, tri.color3.z/255f, 1f);
@@ -1845,6 +1919,10 @@ public class LibPlacenote : MonoBehaviour
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNGetUpdatedMeshBlocks ([In, Out] PNMeshBlockInfoUnity[] blockArrayPtr, int blockSize);
+
+	[DllImport ("__Internal")]
+	[return: MarshalAs (UnmanagedType.I4)]
+	private static extern int PNGetBlockMesh (ref PNMeshBlockInfoUnity blockInfo, [In, Out] PNTriangleUnity[] triArrayPtr, int triSize);
 
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]

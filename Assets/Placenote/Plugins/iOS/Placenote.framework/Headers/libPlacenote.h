@@ -125,11 +125,12 @@ typedef void (*pose_callback) (PNTransform* placenotePose, PNTransform* arkitPos
 typedef void (*notification_callback) (const char* msg, void* context);
 
 
-FOUNDATION_EXPORT int PNInitialize(PNInitParams* params, result_callback cb, void* context);
+FOUNDATION_EXPORT int PNInitialize(PNInitParams* params, result_callback cb, void* context, transfer_map_callback resumeMapUploadCb, transfer_map_callback resumeDatasetUploadCb);
 FOUNDATION_EXPORT int PNGetStatus ();
 FOUNDATION_EXPORT int PNGetTrackedLandmarks (PNFeaturePoint* points, int size);
 FOUNDATION_EXPORT int PNGetAllLandmarks (PNFeaturePoint* points, int size);
 FOUNDATION_EXPORT int PNGetDenseMap (PNFeaturePoint* points, int size);
+FOUNDATION_EXPORT int PNGetBlockMesh (PNMeshBlockInfo* blockInfo, PNTriangle* tris, int size);
 FOUNDATION_EXPORT int PNGetMeshTriangles (PNTriangle* tris, int size);
 FOUNDATION_EXPORT int PNGetUpdatedMeshBlocks (PNMeshBlockInfo* blocks, int size);
 FOUNDATION_EXPORT int PNEnableDenseMapping (notification_callback newPtcloudCb, void* context);

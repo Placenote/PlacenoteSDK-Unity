@@ -31,6 +31,8 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	private List<GameObject> mPtCloudObjs = new List<GameObject> ();
 	private Dictionary<LibPlacenote.PNMeshBlockIndex, GameObject> mMeshBlocks = 
 		new Dictionary<LibPlacenote.PNMeshBlockIndex, GameObject> ();
+	private Dictionary<LibPlacenote.PNMeshBlockIndex, bool> mMeshBlockStatus = 
+		new Dictionary<LibPlacenote.PNMeshBlockIndex, bool> ();
 	private bool mEnabled = false;
 
 	[SerializeField] Material mPtCloudMat;
@@ -39,6 +41,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	[SerializeField] GameObject mPointCloud;
 	[SerializeField] bool mEnableMapPoints = false;
 	[SerializeField] bool mEnableMesh = true;
+	[SerializeField] float mMeshVisualizationRadius = 5f;
 
 	void Awake ()
 	{
@@ -116,10 +119,29 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 	}
 
-	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose){}
+	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose) {
+		foreach (LibPlacenote.PNMeshBlockIndex key in mMeshBlocks.Keys) {
+			Mesh mesh = mMeshBlocks [key].GetComponent<MeshFilter> ().mesh;
+			if (BlockIsTooFar (key)) {
+				mesh.Clear ();
+				mMeshBlockStatus [key] = false;
+			} else if (!mMeshBlockStatus [key] && BlockCloseEnoughToAdd(key)) {
+				LibPlacenote.PNMeshBlock meshBlock = LibPlacenote.Instance.GetBlockMesh (key);
+				Debug.Log ("triangle size " + meshBlock.points.Length/3);
+				if (meshBlock.points == null) {
+					mesh.Clear ();
+				} else {
+					mesh.vertices = meshBlock.points;
+					mesh.colors = meshBlock.colors;
+					mesh.SetIndices (meshBlock.indices, MeshTopology.Triangles, 0);
+					mesh.RecalculateNormals ();
+				}
+				mMeshBlockStatus [key] = true;
+			}
+		}
+	}
 
-	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
-	{
+	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus) {
 		if (currStatus == LibPlacenote.MappingStatus.WAITING) {
 			Debug.Log ("Session stopped, resetting pointcloud mesh.");
 			ClearPointcloud ();
@@ -165,8 +187,24 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 	}
 
-	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> meshBlocks)
-	{
+
+	bool BlockIsTooFar(LibPlacenote.PNMeshBlockIndex blockIndex) {
+		Vector3 blockPos = new Vector3 (blockIndex.x * 0.8f, blockIndex.y * 0.8f, blockIndex.z * 0.8f);
+		float dist = Vector3.Distance (Camera.main.transform.position, blockPos);
+
+		return dist > mMeshVisualizationRadius;
+	}
+
+
+	bool BlockCloseEnoughToAdd(LibPlacenote.PNMeshBlockIndex blockIndex) {
+		Vector3 blockPos = new Vector3 (blockIndex.x * 0.8f, blockIndex.y * 0.8f, blockIndex.z * 0.8f);
+		float dist = Vector3.Distance (Camera.main.transform.position, blockPos);
+
+		return dist > (mMeshVisualizationRadius - 0.4f);
+	}
+
+
+	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> meshBlocks) {
 		if (!LibPlacenote.Instance.Initialized()) {
 			return;
 		}
@@ -176,8 +214,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			return;
 		}
 
-		foreach(KeyValuePair<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> entry in meshBlocks)
-		{
+		foreach (KeyValuePair<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> entry in meshBlocks) {
 			// Create GameObject container with mesh components for the loaded mesh.
 			GameObject meshObj = null;
 			if (mMeshBlocks.ContainsKey (entry.Key)) {
@@ -185,6 +222,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			} else {
 				meshObj = GameObject.Instantiate(mPointCloud);
 				mMeshBlocks.Add (entry.Key, meshObj);
+				mMeshBlockStatus.Add (entry.Key, true);
 			}
 
 			MeshFilter mf = meshObj.GetComponent<MeshFilter> ();
