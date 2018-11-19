@@ -120,12 +120,13 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	}
 
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose) {
+		Vector3 cameraPose = PNUtility.MatrixOps.GetPosition (outputPose);
 		foreach (LibPlacenote.PNMeshBlockIndex key in mMeshBlocks.Keys) {
 			Mesh mesh = mMeshBlocks [key].GetComponent<MeshFilter> ().mesh;
-			if (BlockIsTooFar (key)) {
+			if (BlockIsTooFar (key, cameraPose)) {
 				mesh.Clear ();
 				mMeshBlockStatus [key] = false;
-			} else if (!mMeshBlockStatus [key] && BlockCloseEnoughToAdd(key)) {
+			} else if (!mMeshBlockStatus [key] && BlockCloseEnoughToAdd(key, cameraPose)) {
 				LibPlacenote.PNMeshBlock meshBlock = LibPlacenote.Instance.GetBlockMesh (key);
 				Debug.Log ("triangle size " + meshBlock.points.Length/3);
 				if (meshBlock.points == null) {
@@ -188,17 +189,17 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	}
 
 
-	bool BlockIsTooFar(LibPlacenote.PNMeshBlockIndex blockIndex) {
+	bool BlockIsTooFar(LibPlacenote.PNMeshBlockIndex blockIndex, Vector3 camPos) {
 		Vector3 blockPos = new Vector3 (blockIndex.x * 0.8f, blockIndex.y * 0.8f, blockIndex.z * 0.8f);
-		float dist = Vector3.Distance (Camera.main.transform.position, blockPos);
+		float dist = Vector3.Distance (camPos, blockPos);
 
 		return dist > mMeshVisualizationRadius;
 	}
 
 
-	bool BlockCloseEnoughToAdd(LibPlacenote.PNMeshBlockIndex blockIndex) {
+	bool BlockCloseEnoughToAdd(LibPlacenote.PNMeshBlockIndex blockIndex, Vector3 camPos) {
 		Vector3 blockPos = new Vector3 (blockIndex.x * 0.8f, blockIndex.y * 0.8f, blockIndex.z * 0.8f);
-		float dist = Vector3.Distance (Camera.main.transform.position, blockPos);
+		float dist = Vector3.Distance (camPos, blockPos);
 
 		return dist > (mMeshVisualizationRadius - 0.4f);
 	}
