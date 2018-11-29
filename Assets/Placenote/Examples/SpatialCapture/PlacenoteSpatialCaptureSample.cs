@@ -10,8 +10,6 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
 
-
-
 public class PlacenoteSpatialCaptureSample : MonoBehaviour, PlacenoteListener {
 
 	[SerializeField] Text mLabelText;
@@ -19,10 +17,7 @@ public class PlacenoteSpatialCaptureSample : MonoBehaviour, PlacenoteListener {
 	[SerializeField] GameObject mModelParent;
 
 	private UnityARSessionNativeInterface mSession;
-	private bool mFrameUpdated = false;
-	private UnityARCamera mARCamera;
-	private UnityARImageFrameData mImage = null;
-	private bool mARKitInit = false;
+	private bool mARInit = false;
 	private bool mPlacenoteInit = false;
 
 	// Use this for initialization
@@ -30,7 +25,7 @@ public class PlacenoteSpatialCaptureSample : MonoBehaviour, PlacenoteListener {
 	{
 		Input.location.Start ();
 		mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface ();
-		UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
+		
 		StartARKit ();
 		LibPlacenote.Instance.RegisterListener (this);
 	}
@@ -47,35 +42,19 @@ public class PlacenoteSpatialCaptureSample : MonoBehaviour, PlacenoteListener {
 		mSession.RunWithConfig (config);
 	}
 
-	private void ARFrameUpdated (UnityARCamera camera)
+	void Update()
 	{
-		mFrameUpdated = true;
-		mARCamera = camera;
+        if (!mARInit && LibPlacenote.Instance.Initialized())
+        {
+            mARInit = true;
+            mLabelText.text = "Ready to Load Scene!";
+        }
 	}
 
-	private void InitARFrameBuffer ()
-	{
-		mImage = new UnityARImageFrameData ();
-
-		int yBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yHeight;
-		mImage.y.data = Marshal.AllocHGlobal (yBufSize);
-		mImage.y.width = (ulong)mARCamera.videoParams.yWidth;
-		mImage.y.height = (ulong)mARCamera.videoParams.yHeight;
-		mImage.y.stride = (ulong)mARCamera.videoParams.yWidth;
-
-		// This does assume the YUV_NV21 format
-		int vuBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yWidth/2;
-		mImage.vu.data = Marshal.AllocHGlobal (vuBufSize);
-		mImage.vu.width = (ulong)mARCamera.videoParams.yWidth/2;
-		mImage.vu.height = (ulong)mARCamera.videoParams.yHeight/2;
-		mImage.vu.stride = (ulong)mARCamera.videoParams.yWidth;
-
-		mSession.SetCapturePixelData (true, mImage.y.data, mImage.vu.data);
-	}
-		
 	public void LoadMap() {
 
-		if (!mARKitInit) {
+        if (!mARInit) {
+            mLabelText.text = "Placenote is not initialized. Try again";
 			return;
 		}
 
@@ -96,46 +75,13 @@ public class PlacenoteSpatialCaptureSample : MonoBehaviour, PlacenoteListener {
 			);
 		}
 	}
-	
-	// Update is called once per frame
-	void Update () {
-		if (mFrameUpdated) {
-			mFrameUpdated = false;
-			if (mImage == null) {
-				InitARFrameBuffer ();
-			}
 
-			if (mARCamera.trackingState == ARTrackingState.ARTrackingStateNotAvailable) {
-				// ARKit pose is not yet initialized
-				return;
-			} else if (!mARKitInit) {
-				mARKitInit = true;
-				mLabelText.text = "ARKit is ready!";
-			}
-
-			if (!LibPlacenote.Instance.Initialized ()) {
-				//LibPlacenote is not ready
-				return;
-			} else if (!mPlacenoteInit) {
-				mPlacenoteInit = true;
-				mLabelText.text = "Placenote is ready!";
-				LoadMap ();
-
-			}
-
-			Matrix4x4 matrix = mSession.GetCameraPose ();
-
-			Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition (matrix);
-			Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation (matrix);
-			if (mARKitInit && mPlacenoteInit) {
-				LibPlacenote.Instance.SendARFrame (mImage, arkitPosition, arkitQuat, mARCamera.videoParams.screenOrientation);
-			}
-		}
-	}
-
+    public void OnLoadSceneClicked()
+    {
+        LoadMap();
+    }
 
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose) {}
-
 
 	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
 	{
