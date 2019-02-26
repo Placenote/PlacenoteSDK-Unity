@@ -192,10 +192,10 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mMapSelectedPanel.SetActive (false);
 					mMapListPanel.SetActive (false);
 					mInitButtonPanel.SetActive (false);
-					mMappingButtonPanel.SetActive(true);
+					mMappingButtonPanel.SetActive(false);
 					mExitButton.SetActive (true);
 
-					LibPlacenote.Instance.StartSession (true);
+					LibPlacenote.Instance.StartSession ();
 
 					if (mReportDebug) {
 						LibPlacenote.Instance.StartRecordDataset (
