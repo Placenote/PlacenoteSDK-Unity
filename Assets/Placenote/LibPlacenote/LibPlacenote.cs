@@ -353,10 +353,10 @@ public class LibPlacenote : MonoBehaviour
 		/// Filter maps based on this query, which is run via json-query:
 		/// https://www.npmjs.com/package/json-query
 		/// The filter will match if the query return a valid.
-		/// 
+		///
 		/// For a simple example, to match only maps that have a 'shapeList'
 		/// in the userdata object, simply pass 'shapeList'.
-		/// 
+		///
 		/// For other help, contact us on Slack.
 		/// </summary>
 		public string userdataQuery;
@@ -483,18 +483,23 @@ public class LibPlacenote : MonoBehaviour
 	{
 		mImage = new UnityARImageFrameData ();
 
-		int yBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yHeight;
-		mImage.y.data = Marshal.AllocHGlobal (yBufSize);
 		mImage.y.width = (ulong)mARCamera.videoParams.yWidth;
 		mImage.y.height = (ulong)mARCamera.videoParams.yHeight;
-		mImage.y.stride = (ulong)mARCamera.videoParams.yWidth;
+		mImage.y.stride = (ulong)(mARCamera.videoParams.yWidth == 1440? 1472 : mARCamera.videoParams.yWidth);
+		ulong yBufSize = mImage.y.stride * mImage.y.height;
+		mImage.y.data = Marshal.AllocHGlobal ((int)yBufSize);
+		Debug.Log (String.Format("yWidth {0} yHeight {1} yStride {2} totalSize {3}",
+			mImage.y.width, mImage.y.height, mImage.y.stride, yBufSize));
 
 		// This does assume the YUV_NV21 format
-		int vuBufSize = mARCamera.videoParams.yWidth * mARCamera.videoParams.yWidth/2;
-		mImage.vu.data = Marshal.AllocHGlobal (vuBufSize);
-		mImage.vu.width = (ulong)mARCamera.videoParams.yWidth/2;
-		mImage.vu.height = (ulong)mARCamera.videoParams.yHeight/2;
-		mImage.vu.stride = (ulong)mARCamera.videoParams.yWidth;
+		mImage.vu.width = mImage.y.width/2;
+		mImage.vu.height = mImage.y.height/2;
+		mImage.vu.stride = mImage.y.stride;
+		mImage.vu.stride = (ulong)(mARCamera.videoParams.yWidth == 1440? 1472 : mARCamera.videoParams.yWidth);
+		ulong vuBufSize = mImage.vu.stride * mImage.vu.height;
+		mImage.vu.data = Marshal.AllocHGlobal ((int)vuBufSize);
+		Debug.Log (String.Format("vuWidth {0} vuHeight {1} yStride {2} totalSize {3}",
+			mImage.vu.width, mImage.vu.height, mImage.vu.stride, vuBufSize));
 
 		mSession.SetCapturePixelData (true, mImage.y.data, mImage.vu.data);
 	}
@@ -1123,7 +1128,7 @@ public class LibPlacenote : MonoBehaviour
 		ms.name = name;
 		SearchMaps (ms, listCb);
 	}
-		
+
 	/// <summary>
 	/// Fetch a list of maps in the given location.
 	/// </summary>
@@ -1459,7 +1464,7 @@ public class LibPlacenote : MonoBehaviour
 	/// </returns>
 	public PNFeaturePointUnity[] GetMap ()
 	{
-		
+
 		PNFeaturePointUnity[] map = new PNFeaturePointUnity [1];
 
 		#if !UNITY_EDITOR
