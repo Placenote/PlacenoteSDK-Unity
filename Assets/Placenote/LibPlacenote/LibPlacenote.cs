@@ -1636,14 +1636,14 @@ public class LibPlacenote : MonoBehaviour
 			vertices[pt2Idx] = new Vector3(tri.point2.x, tri.point2.y, -tri.point2.z);
 			vertices[pt3Idx] = new Vector3(tri.point3.x, tri.point3.y, -tri.point3.z);
 			Vector3 uv1 = Camera.main.WorldToScreenPoint (vertices [pt1Idx]);
-			uvs [pt1Idx].x = uv1.x / mCurrFrame.y.width;
-			uvs [pt1Idx].y = uv1.y / mCurrFrame.y.height;
+			uvs [pt1Idx].x = 1 - uv1.x / mCurrFrame.y.width;
+			uvs [pt1Idx].y = 1 - uv1.y / mCurrFrame.y.height;
 			Vector3 uv2 = Camera.main.WorldToScreenPoint (vertices [pt2Idx]);
-			uvs [pt2Idx].x = uv2.x / mCurrFrame.y.width;
-			uvs [pt2Idx].y = uv2.y / mCurrFrame.y.height;
+			uvs [pt2Idx].x = 1 - uv2.x / mCurrFrame.y.width;
+			uvs [pt2Idx].y = 1 - uv2.y / mCurrFrame.y.height;
 			Vector3 uv3 = Camera.main.WorldToScreenPoint (vertices [pt3Idx]);
-			uvs [pt3Idx].x = uv3.x / mCurrFrame.y.width;
-			uvs [pt3Idx].y = uv3.y / mCurrFrame.y.height;
+			uvs [pt3Idx].x = 1 - uv3.x / mCurrFrame.y.width;
+			uvs [pt3Idx].y = 1 - uv3.y / mCurrFrame.y.height;
 
 			colors[pt1Idx]   = new Color(tri.color1.x/255f, tri.color1.y/255f, tri.color1.z/255f, 1f);
 			colors[pt2Idx]   = new Color(tri.color2.x/255f, tri.color2.y/255f, tri.color2.z/255f, 1f);
@@ -1751,14 +1751,14 @@ public class LibPlacenote : MonoBehaviour
 				vertices[pt3Idx] = new Vector3(tri.point3.x, tri.point3.y, -tri.point3.z);
 
 				Vector3 uv1 = Camera.main.WorldToScreenPoint (vertices [pt1Idx]);
-				uvs [pt1Idx].x = uv1.x / mCurrFrame.y.width;
-				uvs [pt1Idx].y = uv1.y / mCurrFrame.y.height;
+				uvs [pt1Idx].x = 1 - uv1.y / mCurrFrame.y.width;
+				uvs [pt1Idx].y = 1 - uv1.x / mCurrFrame.y.height;
 				Vector3 uv2 = Camera.main.WorldToScreenPoint (vertices [pt2Idx]);
-				uvs [pt2Idx].x = uv2.x / mCurrFrame.y.width;
-				uvs [pt2Idx].y = uv2.y / mCurrFrame.y.height;
+				uvs [pt2Idx].x = 1 - uv2.y / mCurrFrame.y.width;
+				uvs [pt2Idx].y = 1 - uv2.x / mCurrFrame.y.height;
 				Vector3 uv3 = Camera.main.WorldToScreenPoint (vertices [pt3Idx]);
-				uvs [pt3Idx].x = uv3.x / mCurrFrame.y.width;
-				uvs [pt3Idx].y = uv3.y / mCurrFrame.y.height;
+				uvs [pt3Idx].x = 1 - uv3.y / mCurrFrame.y.width;
+				uvs [pt3Idx].y = 1 - uv3.x / mCurrFrame.y.height;
 
 				colors[pt1Idx]   = new Color(tri.color1.x/255f, tri.color1.y/255f, tri.color1.z/255f, 1f);
 				colors[pt2Idx]   = new Color(tri.color2.x/255f, tri.color2.y/255f, tri.color2.z/255f, 1f);
