@@ -171,6 +171,7 @@ public class LibPlacenote : MonoBehaviour
 		public Vector3[] points;
 		public Color[] colors;
 		public int[] indices;
+		public Vector2[] uvs;
 	}
 
 	/// <summary>
@@ -474,6 +475,8 @@ public class LibPlacenote : MonoBehaviour
 
 	/// File info for writing JSON maps
 	private string simMapFileName = "/jsonMaps.json";
+	public UnityARImageFrameData mCurrFrame = null;
+
 
 	/// End for Unity Simulator
 
@@ -613,6 +616,7 @@ public class LibPlacenote : MonoBehaviour
 	/// </param>
 	public void SendARFrame (UnityARImageFrameData frameData, Vector3 position, Quaternion rotation, int screenOrientation)
 	{
+		mCurrFrame = frameData;
 		Matrix4x4 orientRemovalMat = Matrix4x4.zero;
 		orientRemovalMat.m22 = orientRemovalMat.m33 = 1;
 		switch (screenOrientation) {
@@ -683,6 +687,7 @@ public class LibPlacenote : MonoBehaviour
 	/// <param name="pts">points detected by ARKit</param>
 	public void SendARFrame (UnityARImageFrameData frameData, Vector3 position, Quaternion rotation, int screenOrientation, Vector3[] pts)
 	{
+		mCurrFrame = frameData;
 		Matrix4x4 orientRemovalMat = Matrix4x4.zero;
 		orientRemovalMat.m22 = orientRemovalMat.m33 = 1;
 		switch (screenOrientation) {
@@ -1616,6 +1621,7 @@ public class LibPlacenote : MonoBehaviour
 
 		int arraySize = triSize * 3;
 		Vector3[] vertices = new Vector3 [arraySize];
+		Vector2[] uvs = new Vector2 [arraySize];
 		Color[] colors = new Color [arraySize];
 		int[] indices = new int [arraySize];
 
@@ -1629,6 +1635,15 @@ public class LibPlacenote : MonoBehaviour
 			vertices[pt1Idx] = new Vector3(tri.point1.x, tri.point1.y, -tri.point1.z);
 			vertices[pt2Idx] = new Vector3(tri.point2.x, tri.point2.y, -tri.point2.z);
 			vertices[pt3Idx] = new Vector3(tri.point3.x, tri.point3.y, -tri.point3.z);
+			Vector3 uv1 = Camera.main.WorldToScreenPoint (vertices [pt1Idx]);
+			uvs [pt1Idx].x = uv1.x / mCurrFrame.y.width;
+			uvs [pt1Idx].y = uv1.y / mCurrFrame.y.height;
+			Vector3 uv2 = Camera.main.WorldToScreenPoint (vertices [pt2Idx]);
+			uvs [pt2Idx].x = uv2.x / mCurrFrame.y.width;
+			uvs [pt2Idx].y = uv2.y / mCurrFrame.y.height;
+			Vector3 uv3 = Camera.main.WorldToScreenPoint (vertices [pt3Idx]);
+			uvs [pt3Idx].x = uv3.x / mCurrFrame.y.width;
+			uvs [pt3Idx].y = uv3.y / mCurrFrame.y.height;
 
 			colors[pt1Idx]   = new Color(tri.color1.x/255f, tri.color1.y/255f, tri.color1.z/255f, 1f);
 			colors[pt2Idx]   = new Color(tri.color2.x/255f, tri.color2.y/255f, tri.color2.z/255f, 1f);
@@ -1653,6 +1668,7 @@ public class LibPlacenote : MonoBehaviour
 		mesh.points = vertices;
 		mesh.colors = colors;
 		mesh.indices = indices;
+		mesh.uvs = uvs;
 		return mesh;
 	}
 		
@@ -1718,6 +1734,7 @@ public class LibPlacenote : MonoBehaviour
 			Vector3[] vertices = new Vector3 [arraySize];
 			Color[] colors = new Color [arraySize];
 			int[] indices = new int [arraySize];
+			Vector2[] uvs = new Vector2 [arraySize];
 
 			for (int i = 0; i < block.triCount; i++) {
 				PNTriangleUnity tri = triangles[triIdx];
@@ -1732,6 +1749,16 @@ public class LibPlacenote : MonoBehaviour
 				vertices[pt1Idx] = new Vector3(tri.point1.x, tri.point1.y, -tri.point1.z);
 				vertices[pt2Idx] = new Vector3(tri.point2.x, tri.point2.y, -tri.point2.z);
 				vertices[pt3Idx] = new Vector3(tri.point3.x, tri.point3.y, -tri.point3.z);
+
+				Vector3 uv1 = Camera.main.WorldToScreenPoint (vertices [pt1Idx]);
+				uvs [pt1Idx].x = uv1.x / mCurrFrame.y.width;
+				uvs [pt1Idx].y = uv1.y / mCurrFrame.y.height;
+				Vector3 uv2 = Camera.main.WorldToScreenPoint (vertices [pt2Idx]);
+				uvs [pt2Idx].x = uv2.x / mCurrFrame.y.width;
+				uvs [pt2Idx].y = uv2.y / mCurrFrame.y.height;
+				Vector3 uv3 = Camera.main.WorldToScreenPoint (vertices [pt3Idx]);
+				uvs [pt3Idx].x = uv3.x / mCurrFrame.y.width;
+				uvs [pt3Idx].y = uv3.y / mCurrFrame.y.height;
 
 				colors[pt1Idx]   = new Color(tri.color1.x/255f, tri.color1.y/255f, tri.color1.z/255f, 1f);
 				colors[pt2Idx]   = new Color(tri.color2.x/255f, tri.color2.y/255f, tri.color2.z/255f, 1f);
@@ -1757,6 +1784,7 @@ public class LibPlacenote : MonoBehaviour
 			mesh.points = vertices;
 			mesh.colors = colors;
 			mesh.indices = indices;
+			mesh.uvs = uvs;
 			meshBlocks.Add (block3dIdx, mesh);
 			blockIdx++;
 		}

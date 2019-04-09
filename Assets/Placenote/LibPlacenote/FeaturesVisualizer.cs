@@ -234,6 +234,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			mf.mesh.Clear ();
 			mf.mesh.vertices = entry.Value.points;
 			mf.mesh.colors = entry.Value.colors;
+			mf.mesh.uv = entry.Value.uvs;
 			mf.mesh.SetIndices (entry.Value.indices, MeshTopology.Triangles, 0);
 			mf.mesh.RecalculateNormals ();
 
@@ -241,8 +242,15 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			MeshRenderer mr = meshObj.GetComponent<MeshRenderer> ();
 			if (mr == null) {
 				mr = meshObj.AddComponent<MeshRenderer> ();
-			} 
-			mr.material = mMeshMat;
+			}
+
+			Texture2D camTexture = new Texture2D ((int)LibPlacenote.Instance.mCurrFrame.y.width,
+				(int)LibPlacenote.Instance.mCurrFrame.y.height, TextureFormat.R8, false);
+			int bufLength = (int)LibPlacenote.Instance.mCurrFrame.y.stride *
+				(int)LibPlacenote.Instance.mCurrFrame.y.height;
+			camTexture.LoadRawTextureData (LibPlacenote.Instance.mCurrFrame.y.data, bufLength);
+			mr.material.SetTexture ("_MainTex", camTexture);
+			camTexture.Apply ();
 		}
 	}
 
