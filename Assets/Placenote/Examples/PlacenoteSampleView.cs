@@ -155,8 +155,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		Debug.Log ("Map search:" + mRadiusSlider.value.ToString("F2"));
 		LocationInfo locationInfo = Input.location.lastData;
-
-
 		float radiusSearch = mRadiusSlider.value * mMaxRadiusSearch;
 		mRadiusLabel.text = "Distance Filter: " + (radiusSearch / 1000.0).ToString ("F2") + " km";
 

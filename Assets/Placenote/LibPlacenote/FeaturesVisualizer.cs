@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Runtime.InteropServices;
 
 
 /// <summary>
@@ -205,6 +206,18 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	}
 
 
+	private static Color YUV2Color(byte y, byte u, byte v)
+	{
+		float rTmp = (y + (1.370705f * (v-128f)))/255.0f;
+		float gTmp = (y - (0.698001f * (v-128f)) - (0.337633f * (u-128f)))/255.0f;
+		float bTmp = (y + (1.732446f * (u-128f)))/255.0f;
+		rTmp = Mathf.Clamp(rTmp, 0f, 1f);
+		gTmp = Mathf.Clamp(gTmp, 0f, 1f);
+		bTmp = Mathf.Clamp(bTmp, 0f, 1f);
+
+		return new Color(rTmp, gTmp, bTmp);
+	}
+
 	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> meshBlocks) {
 		if (!LibPlacenote.Instance.Initialized()) {
 			return;
@@ -244,11 +257,27 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 				mr = meshObj.AddComponent<MeshRenderer> ();
 			}
 
-			Texture2D camTexture = new Texture2D ((int)LibPlacenote.Instance.mCurrFrame.y.width,
-				(int)LibPlacenote.Instance.mCurrFrame.y.height, TextureFormat.R8, false);
-			int bufLength = (int)LibPlacenote.Instance.mCurrFrame.y.stride *
-				(int)LibPlacenote.Instance.mCurrFrame.y.height;
-			camTexture.LoadRawTextureData (LibPlacenote.Instance.mCurrFrame.y.data, bufLength);
+			Destroy (mr.material.mainTexture);
+			Texture2D camTexture = new Texture2D ((int)LibPlacenote.Instance.mCurrFrame.y.width/3,
+				(int)LibPlacenote.Instance.mCurrFrame.y.height/3, TextureFormat.RGB24, false);
+			byte[] yData = new byte[LibPlacenote.Instance.mCurrFrame.y.stride * LibPlacenote.Instance.mCurrFrame.y.height];
+			Marshal.Copy(LibPlacenote.Instance.mCurrFrame.y.data, yData, 0, yData.Length);
+
+			byte[] vuData = new byte[LibPlacenote.Instance.mCurrFrame.vu.stride * LibPlacenote.Instance.mCurrFrame.vu.height];
+			Marshal.Copy(LibPlacenote.Instance.mCurrFrame.vu.data, vuData, 0, vuData.Length);
+			for (int dstRow = 0; dstRow < camTexture.height; dstRow++) {
+				for (int dstCol = 0; dstCol < camTexture.width; dstCol++) {
+
+					ulong srcRow = (ulong)dstRow*3;
+					ulong srcCol = (ulong)dstCol*3;
+
+					byte y = yData [(srcRow * (ulong)LibPlacenote.Instance.mCurrFrame.y.stride) + srcCol];
+					byte u = vuData [((srcRow / 2) * (ulong)LibPlacenote.Instance.mCurrFrame.vu.stride) + ((srcCol / 2) * 2)];
+					byte v = vuData [((srcRow / 2) * (ulong)LibPlacenote.Instance.mCurrFrame.vu.stride) + ((srcCol / 2) * 2) + 1];
+
+					camTexture.SetPixel (dstCol, dstRow, YUV2Color(y, u, v));
+				}
+			}
 			mr.material.SetTexture ("_MainTex", camTexture);
 			camTexture.Apply ();
 		}
