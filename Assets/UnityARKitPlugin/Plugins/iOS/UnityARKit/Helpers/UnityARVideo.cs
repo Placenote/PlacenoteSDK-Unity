@@ -11,8 +11,8 @@ namespace UnityEngine.XR.iOS
         public Material m_ClearMaterial;
 
         private CommandBuffer m_VideoCommandBuffer;
-        private Texture2D _videoTextureY;
-        private Texture2D _videoTextureCbCr;
+        public Texture2D _videoTextureY;
+        public Texture2D _videoTextureCbCr;
 		private Matrix4x4 _displayTransform;
 
 		private bool bCommandBufferInitialized;

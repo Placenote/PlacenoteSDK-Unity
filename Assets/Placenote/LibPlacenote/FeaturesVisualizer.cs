@@ -4,6 +4,8 @@ using UnityEngine;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Runtime.InteropServices;
+using UnityEngine.XR.iOS;
+using UnityEngine.Rendering;
 
 
 /// <summary>
@@ -44,6 +46,10 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	[SerializeField] bool mEnableMesh = true;
 	[SerializeField] float mMeshVisualizationRadius = 5f;
 
+	public Material m_ClearMaterial;
+	public UnityARVideo arVideo;
+	private Matrix4x4 _displayTransform;
+
 	void Awake ()
 	{
 		sInstance = this;
@@ -52,11 +58,28 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	void Start () {
 		// This is required for OnPose and OnStatusChange to be triggered
 		LibPlacenote.Instance.RegisterListener (this);
+		UnityARSessionNativeInterface.ARFrameUpdatedEvent += UpdateFrame;
 	}
 
 	void Update ()
 	{
 	}
+
+	void UpdateFrame(UnityARCamera cam)
+	{
+		_displayTransform = new Matrix4x4();
+		_displayTransform.SetColumn(0, cam.displayTransform.column0);
+		_displayTransform.SetColumn(1, cam.displayTransform.column1);
+		_displayTransform.SetColumn(2, cam.displayTransform.column2);
+		_displayTransform.SetColumn(3, cam.displayTransform.column3);		
+	}
+
+
+	void OnDestroy()
+	{
+		UnityARSessionNativeInterface.ARFrameUpdatedEvent -= UpdateFrame;
+	}
+
 
 	/// <summary>
 	/// Enable rendering of pointclouds collected from LibPlacenote for every half second
@@ -206,18 +229,6 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	}
 
 
-	private static Color YUV2Color(byte y, byte u, byte v)
-	{
-		float rTmp = (y + (1.370705f * (v-128f)))/255.0f;
-		float gTmp = (y - (0.698001f * (v-128f)) - (0.337633f * (u-128f)))/255.0f;
-		float bTmp = (y + (1.732446f * (u-128f)))/255.0f;
-		rTmp = Mathf.Clamp(rTmp, 0f, 1f);
-		gTmp = Mathf.Clamp(gTmp, 0f, 1f);
-		bTmp = Mathf.Clamp(bTmp, 0f, 1f);
-
-		return new Color(rTmp, gTmp, bTmp);
-	}
-
 	public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> meshBlocks) {
 		if (!LibPlacenote.Instance.Initialized()) {
 			return;
@@ -246,8 +257,6 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			}
 			mf.mesh.Clear ();
 			mf.mesh.vertices = entry.Value.points;
-			mf.mesh.colors = entry.Value.colors;
-			mf.mesh.uv = entry.Value.uvs;
 			mf.mesh.SetIndices (entry.Value.indices, MeshTopology.Triangles, 0);
 			mf.mesh.RecalculateNormals ();
 
@@ -257,29 +266,10 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 				mr = meshObj.AddComponent<MeshRenderer> ();
 			}
 
-			Destroy (mr.material.mainTexture);
-			Texture2D camTexture = new Texture2D ((int)LibPlacenote.Instance.mCurrFrame.y.width/3,
-				(int)LibPlacenote.Instance.mCurrFrame.y.height/3, TextureFormat.RGB24, false);
-			byte[] yData = new byte[LibPlacenote.Instance.mCurrFrame.y.stride * LibPlacenote.Instance.mCurrFrame.y.height];
-			Marshal.Copy(LibPlacenote.Instance.mCurrFrame.y.data, yData, 0, yData.Length);
-
-			byte[] vuData = new byte[LibPlacenote.Instance.mCurrFrame.vu.stride * LibPlacenote.Instance.mCurrFrame.vu.height];
-			Marshal.Copy(LibPlacenote.Instance.mCurrFrame.vu.data, vuData, 0, vuData.Length);
-			for (int dstRow = 0; dstRow < camTexture.height; dstRow++) {
-				for (int dstCol = 0; dstCol < camTexture.width; dstCol++) {
-
-					ulong srcRow = (ulong)dstRow*3;
-					ulong srcCol = (ulong)dstCol*3;
-
-					byte y = yData [(srcRow * (ulong)LibPlacenote.Instance.mCurrFrame.y.stride) + srcCol];
-					byte u = vuData [((srcRow / 2) * (ulong)LibPlacenote.Instance.mCurrFrame.vu.stride) + ((srcCol / 2) * 2)];
-					byte v = vuData [((srcRow / 2) * (ulong)LibPlacenote.Instance.mCurrFrame.vu.stride) + ((srcCol / 2) * 2) + 1];
-
-					camTexture.SetPixel (dstCol, dstRow, YUV2Color(y, u, v));
-				}
-			}
-			mr.material.SetTexture ("_MainTex", camTexture);
-			camTexture.Apply ();
+			m_ClearMaterial.SetTexture ("_textureCbCr", arVideo._videoTextureCbCr);
+			m_ClearMaterial.SetTexture ("_textureY", arVideo._videoTextureY);
+			m_ClearMaterial.SetMatrix ("_DisplayTransform", _displayTransform);
+			mr.material = m_ClearMaterial;
 		}
 	}
 
