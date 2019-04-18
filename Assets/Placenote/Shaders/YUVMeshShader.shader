@@ -75,7 +75,7 @@ Shader "Placenote/ARCameraMeshShader"
 					);
 
 				fixed4 rgb = mul(ycbcrToRGBTransform, ycbcr);
-				return rgb
+				return rgb;
 			}
 			ENDCG
 		}

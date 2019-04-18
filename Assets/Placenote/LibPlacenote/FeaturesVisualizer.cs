@@ -274,8 +274,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	}
 
 
-	public void OnDensePointcloud (LibPlacenote.PNFeaturePointUnity[] densePoints)
-	{
+	public void OnDensePointcloud (LibPlacenote.PNFeaturePointUnity[] densePoints) {
 		if (!LibPlacenote.Instance.Initialized()) {
 			return;
 		}
