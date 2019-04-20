@@ -37,7 +37,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	
     private LibPlacenote.MapMetadataSettable mCurrMapDetails;
 
-	private bool mReportDebug = true;
+	private bool mReportDebug = false;
 
 	private LibPlacenote.MapInfo mSelectedMapInfo;
 	private string mSelectedMapId {

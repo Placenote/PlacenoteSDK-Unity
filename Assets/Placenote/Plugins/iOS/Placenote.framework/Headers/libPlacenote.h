@@ -143,7 +143,7 @@ FOUNDATION_EXPORT int PNDeleteMap (const char* mapId, result_callback cb, void* 
 FOUNDATION_EXPORT int PNAddMap (result_callback cb, void* context);
 FOUNDATION_EXPORT int PNStartSession (pose_callback cb, bool extending, void* context);
 FOUNDATION_EXPORT int PNStopSession ();
-FOUNDATION_EXPORT int PNStartRecordDataset(transfer_map_callback cb, void* context);
+FOUNDATION_EXPORT int PNStartRecordDataset(transfer_map_callback streamCb, void* context);
 FOUNDATION_EXPORT int PNGetMetadata (const char* mapId, result_callback cb, void* context);
 FOUNDATION_EXPORT int PNSetMetadata (const char* mapId, const char* metadataUnvalidated, result_callback cb, void* context);
 FOUNDATION_EXPORT int PNGetPose(PNTransform* transform);
