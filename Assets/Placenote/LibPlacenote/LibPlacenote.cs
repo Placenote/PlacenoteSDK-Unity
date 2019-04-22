@@ -456,6 +456,7 @@ public class LibPlacenote : MonoBehaviour
 	private List<Action<MapInfo[]>> mapListCbs = new List<Action<MapInfo[]>> ();
 	private Matrix4x4? mCurrentTransform = null;
 
+
 	/// For the Unity Simulator
 
 	/// The Current Map status and current localization status that is used
@@ -556,6 +557,40 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 	/// <summary>
+	/// Notifies user on updates to an old map upload that has yet to finish <see cref="PNInitialize"/> call
+	/// </summary>
+	/// <param name="resumeStatus">
+	/// Status of the map upload from a  previous session
+	/// </param>
+	/// <param name="context">Context passed from C to capture states required by this function</param>
+	[MonoPInvokeCallback (typeof(PNTransferStatusUnity))]
+	static void OnResumeMapUpload (ref PNTransferStatusUnity resumeStatus, IntPtr context)
+	{
+		PNTransferStatusUnity statusClone = resumeStatus;
+		Debug.Log (String.Format ("ResumeUpload: Unity callback,mapId {0} completed {1} faulted {2} bytesTransferred {3} bytesTotal {4}",
+			resumeStatus.mapId, resumeStatus.completed, resumeStatus.faulted, resumeStatus.bytesTransferred, resumeStatus.bytesTotal)
+		);
+	}
+
+
+	/// <summary>
+	/// Notifies user on updates to an old dataset upload that has yet to finish <see cref="PNInitialize"/> call
+	/// </summary>
+	/// <param name="resumeStatus">
+	/// Status of the dataset upload from a  previous session
+	/// </param>
+	/// <param name="context">Context passed from C to capture states required by this function</param>
+	[MonoPInvokeCallback (typeof(PNTransferStatusUnity))]
+	static void OnResumeDatasetUpload (ref PNTransferStatusUnity resumeStatus, IntPtr context)
+	{
+		PNTransferStatusUnity statusClone = resumeStatus;
+		Debug.Log (String.Format ("ResumeUpload: Unity callback, mapId {0} completed {1} faulted {2} bytesTransferred {3} bytesTotal {4}",
+			resumeStatus.mapId, resumeStatus.completed, resumeStatus.faulted, resumeStatus.bytesTransferred, resumeStatus.bytesTotal)
+		);
+	}
+
+
+	/// <summary>
 	/// Initializes the LibPlacenote SDK singleton class.
 	/// </summary>
 	private void Init ()
@@ -572,8 +607,8 @@ public class LibPlacenote : MonoBehaviour
 		initParams.appBasePath = Application.streamingAssetsPath + "/Placenote";
 		initParams.mapPath = Application.persistentDataPath;
 
-        	#if !UNITY_EDITOR
-		PNInitialize (ref initParams, OnInitialized, IntPtr.Zero);
+    	#if !UNITY_EDITOR
+		PNInitialize (ref initParams, OnInitialized, IntPtr.Zero, OnResumeMapUpload, OnResumeDatasetUpload);
 		#endif
 	}
 
@@ -1861,7 +1896,8 @@ public class LibPlacenote : MonoBehaviour
 	[DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNInitialize (
-		ref PNInitParamsUnity initParams, PNResultCallback cb, IntPtr context
+		ref PNInitParamsUnity initParams, PNResultCallback cb, IntPtr context,
+		PNTransferMapCallback mapUploadCb, PNTransferMapCallback datasetUploadCb
 	);
 
 	[DllImport ("__Internal")]
