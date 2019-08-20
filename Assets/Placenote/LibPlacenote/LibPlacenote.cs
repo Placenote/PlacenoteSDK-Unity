@@ -3,15 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
-using UnityEngine.UI;
-using UnityEngine.XR.iOS;
 using System.IO;
-using System.Threading;
 using AOT;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-
-
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+using Unity.Collections.LowLevel.Unsafe;
 
 /// <summary>
 /// Class that contains parameter and buffer for a YUV 420 image from ARKit
@@ -414,95 +412,115 @@ public class LibPlacenote : MonoBehaviour
 	/// File info for writing JSON maps
 	private string simMapFileName = "/jsonMaps.json";
 
-	/// End for Unity Simulator
+    /// End for Unity Simulator
 
-	// Fill in API Key here
-	public String apiKey;
+    // Fill in API Key here
+    public String apiKey;
+    [SerializeField] ARCameraManager cameraManager;
 
-	// Variables to send frames to Placenote
-	private bool mFrameUpdated = false;
+    private GameObject mARCamera;
+
+    // Variables to send frames to Placenote
+    private bool mFrameUpdated = false;
 	private UnityARImageFrameData mImage = null;
-	private UnityARCamera mARCamera;
-	private UnityARSessionNativeInterface mSession;
 	private bool libPlacenoteSessionRunning = false;
 
 	/// <summary>
 	/// Get accessor for the LibPlacenote singleton
 	/// </summary>
 	/// <value>The singleton instance</value>
-	public static LibPlacenote Instance {
-		get {
+	public static LibPlacenote Instance
+    {
+		get
+        {
 			return sInstance;
 		}
 	}
 
 
-	public void Awake () {
+	void Awake ()
+    {
 		sInstance = this;
 		Init ();
 	}
 
-	public void Start()
+    void OnEnable()
+    {
+        if (cameraManager != null)
+        {
+            cameraManager.frameReceived += OnCameraFrameReceived;
+        }
+    }
+
+    void OnDisable()
+    {
+        if (cameraManager != null)
+        {
+            cameraManager.frameReceived -= OnCameraFrameReceived;
+        }
+    }
+
+    void Start()
 	{
-        mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface();
-        UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
-	}
+        if (cameraManager == null)
+        {
+            Debug.LogError("LibPlacenote: Start() -> Camera manager not passed as object parameter");
+            return;
+        }
+        mARCamera = cameraManager.transform.gameObject;
+    }
 
-	// Function is called when each frame from ARKit becomes available
-	private void ARFrameUpdated (UnityARCamera camera)
+    // Function is called when each frame from ARKit becomes available
+    unsafe void OnCameraFrameReceived(ARCameraFrameEventArgs events)
 	{
-		mFrameUpdated = true;
-		mARCamera = camera;
-	}
+        XRCameraImage image;
+        if (!cameraManager.TryGetLatestImage(out image))
+        {
+            return;
+        }
 
-	// Update function sends a camera frame from Arkit to Placenote
-	void Update () {
+        XRCameraImagePlane yPlane = image.GetPlane(0);
+        XRCameraImagePlane vuPlane = image.GetPlane(1);
+        if (mImage == null)
+        {
+            mImage = new UnityARImageFrameData();
 
-		if (mFrameUpdated && libPlacenoteSessionRunning) {
-			mFrameUpdated = false;
-			if (mImage == null) {
-				InitARFrameBuffer ();
-			}
+            mImage.y.data = Marshal.AllocHGlobal(yPlane.data.Length);
+            mImage.y.width = (ulong)image.width;
+            mImage.y.height = (ulong)image.height;
+            mImage.y.stride = (ulong)yPlane.rowStride;
 
-			if (mARCamera.trackingState == ARTrackingState.ARTrackingStateNotAvailable) {
-				// ARKit pose is not yet initialized
-				return;
-			}
+            // This does assume the YUV_NV21 format
+            mImage.vu.data = Marshal.AllocHGlobal(vuPlane.data.Length);
+            mImage.vu.width = (ulong)image.width / 2;
+            mImage.vu.height = (ulong)image.height / 2;
+            mImage.vu.stride = (ulong)vuPlane.rowStride;
+        }
+        Marshal.Copy(yPlane.data.ToArray(), 0, mImage.y.data, yPlane.data.Length);
+        Marshal.Copy(vuPlane.data.ToArray(), 0, mImage.vu.data, vuPlane.data.Length);
+        image.Dispose();
 
-			Matrix4x4 matrix = mSession.GetCameraPose ();
-			Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition (matrix);
-			Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation (matrix);
+        switch (ARSession.state)
+        {
+            case ARSessionState.Installing:
+            case ARSessionState.NeedsInstall:
+            case ARSessionState.None:
+            case ARSessionState.Ready:
+            case ARSessionState.SessionInitializing:
+            case ARSessionState.Unsupported:
+                return;
+            case ARSessionState.SessionTracking:
+                break;
+        }
 
-            // send image frame to placenote for processing
-			SendARFrame (mImage, arkitPosition, arkitQuat, mARCamera.videoParams.screenOrientation);
-		}
-	}
+        Matrix4x4 matrix = mARCamera.transform.localToWorldMatrix;
+        Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition(matrix);
+        Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation(matrix);
 
-	// Function to actually copy the frame buffer and make it available for Placenote
-	private void InitARFrameBuffer ()
-	{
-		mImage = new UnityARImageFrameData ();
+        LibPlacenote.Instance.SendARFrame(mImage, arkitPosition,
+            arkitQuat, (int)Screen.orientation);
+    }
 
-		mImage.y.width = (ulong)mARCamera.videoParams.yWidth;
-		mImage.y.height = (ulong)mARCamera.videoParams.yHeight;
-		mImage.y.stride = (ulong)(mARCamera.videoParams.yWidth == 1440? 1472 : mARCamera.videoParams.yWidth);
-		ulong yBufSize = mImage.y.stride * mImage.y.height;
-		mImage.y.data = Marshal.AllocHGlobal ((int)yBufSize);
-		Debug.Log (String.Format("yWidth {0} yHeight {1} yStride {2} totalSize {3}",
-			mImage.y.width, mImage.y.height, mImage.y.stride, yBufSize));
-
-		// This does assume the YUV_NV21 format
-		mImage.vu.width = mImage.y.width/2;
-		mImage.vu.height = mImage.y.height/2;
-		mImage.vu.stride = mImage.y.stride;
-		mImage.vu.stride = (ulong)(mARCamera.videoParams.yWidth == 1440? 1472 : mARCamera.videoParams.yWidth);
-		ulong vuBufSize = mImage.vu.stride * mImage.vu.height;
-		mImage.vu.data = Marshal.AllocHGlobal ((int)vuBufSize);
-		Debug.Log (String.Format("vuWidth {0} vuHeight {1} yStride {2} totalSize {3}",
-			mImage.vu.width, mImage.vu.height, mImage.vu.stride, vuBufSize));
-
-		mSession.SetCapturePixelData (true, mImage.y.data, mImage.vu.data);
-	}
 
 	/// <summary>
 	/// Register a listener to events published by LibPlacenote
@@ -537,10 +555,13 @@ public class LibPlacenote : MonoBehaviour
 	{
 		bool success = result.success;
 
-		if (success) {
+		if (success)
+        {
 			Debug.Log ("Initialized SDK!");
 			Instance.mInitialized = true;
-		} else {
+		}
+        else
+        {
 			Debug.Log ("Failed to initialize SDK!");
 			Debug.Log ("error message: " + result.msg);
 		}
@@ -609,27 +630,27 @@ public class LibPlacenote : MonoBehaviour
 		Matrix4x4 orientRemovalMat = Matrix4x4.zero;
 		orientRemovalMat.m22 = orientRemovalMat.m33 = 1;
 		switch (screenOrientation) {
-		// portrait
-		case 1:
-			orientRemovalMat.m01 = 1;
-			orientRemovalMat.m10 = -1;
-			break;
-		case 2:
-			orientRemovalMat.m01 = -1;
-			orientRemovalMat.m10 = 1;
-			break;
-		// landscape
-		case 3:
-		// do nothing
-			orientRemovalMat = Matrix4x4.identity;
-			break;
-		case 4:
-			orientRemovalMat.m00 = -1;
-			orientRemovalMat.m11 = -1;
-			break;
-		default:
-			Debug.LogError ("Unrecognized screen orientation");
-			return;
+		    // portrait
+		    case 1:
+			    orientRemovalMat.m01 = 1;
+			    orientRemovalMat.m10 = -1;
+			    break;
+		    case 2:
+			    orientRemovalMat.m01 = -1;
+			    orientRemovalMat.m10 = 1;
+                break;
+		    // landscape
+		    case 3:
+		    // do nothing
+			    orientRemovalMat = Matrix4x4.identity;
+                break;
+		    case 4:
+			    orientRemovalMat.m00 = -1;
+			    orientRemovalMat.m11 = -1;
+                break;
+		    default:
+			    Debug.LogError ("Unrecognized screen orientation");
+			    return;
 		}
 
 		Matrix4x4 rotationMat = Matrix4x4.TRS (new Vector3 (0, 0, 0), rotation, new Vector3 (1, 1, 1));
@@ -639,11 +660,11 @@ public class LibPlacenote : MonoBehaviour
 		PNTransformUnity pose = new PNTransformUnity ();
 		pose.position.x = position.x;
 		pose.position.y = position.y;
-		pose.position.z = position.z;
+		pose.position.z = -position.z;
 		pose.rotation.x = rotation.x;
 		pose.rotation.y = rotation.y;
-		pose.rotation.z = rotation.z;
-		pose.rotation.w = rotation.w;
+		pose.rotation.z = -rotation.z;
+		pose.rotation.w = -rotation.w;
 
 		PNImagePlaneUnity yPlane = new PNImagePlaneUnity ();
 		yPlane.width = (int)frameData.y.width;
@@ -669,11 +690,10 @@ public class LibPlacenote : MonoBehaviour
 	public PNTransformUnity GetPose ()
 	{
 		PNTransformUnity result = new PNTransformUnity ();
+
 		#if !UNITY_EDITOR
 		PNGetPose (ref result);
-
 		#else
-
 		/// Manually setting result to current Unity camera pose
 		result.position.x = Camera.main.gameObject.transform.position.x;
 		result.position.y = Camera.main.gameObject.transform.position.y;
@@ -682,8 +702,8 @@ public class LibPlacenote : MonoBehaviour
 		result.rotation.y = Camera.main.gameObject.transform.rotation.y;
 		result.rotation.z = Camera.main.gameObject.transform.rotation.z;
 		result.rotation.w = Camera.main.gameObject.transform.rotation.w;
-
 		#endif
+
 		return result;
 	}
 

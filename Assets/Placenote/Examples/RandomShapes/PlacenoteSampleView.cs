@@ -1,11 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using System;
+﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.XR.iOS;
-using System.Runtime.InteropServices;
-using System.IO;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
@@ -24,8 +18,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] Slider mRadiusSlider;
 	[SerializeField] float mMaxRadiusSearch;
 	[SerializeField] Text mRadiusLabel;
-
-	private UnityARSessionNativeInterface mSession;
 
 	private bool mARInit = false;
 
@@ -55,9 +47,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		mMapListPanel.SetActive (false);
 
-		mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface ();
-
-		StartARKit ();
 		FeaturesVisualizer.EnablePointcloud ();
 		LibPlacenote.Instance.RegisterListener (this);
 		ResetSlider ();
@@ -177,8 +166,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	public void OnLoadMapClicked ()
 	{
-		ConfigureSession ();
-
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
 			return;
@@ -245,8 +232,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	public void OnNewMapClick ()
 	{
-		ConfigureSession ();
-
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
 			return;
@@ -272,27 +257,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			Debug.Log ("Started Debug Report");
 		}
 
-	}
-
-	private void StartARKit ()
-	{
-		#if !UNITY_EDITOR
-		mLabelText.text = "Initializing ARKit";
-		Application.targetFrameRate = 60;
-		ConfigureSession ();
-		#endif
-	}
-
-
-	private void ConfigureSession() {
- 		#if !UNITY_EDITOR
-		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
-		config.alignment = UnityARAlignment.UnityARAlignmentGravity;
-		config.getPointCloudData = true;
-		config.enableLightEstimation = true;
-        config.planeDetection = UnityARPlaneDetection.Horizontal;
-		mSession.RunWithConfig (config);
- 		#endif
 	}
 
 
