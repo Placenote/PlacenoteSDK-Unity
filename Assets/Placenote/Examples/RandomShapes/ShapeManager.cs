@@ -34,7 +34,7 @@ public class ShapeManager : MonoBehaviour
     public List<ShapeInfo> shapeInfoList = new List<ShapeInfo>();
     public List<GameObject> shapeObjList = new List<GameObject>();
     public Material mShapeMaterial;
-    public ARRaycastManager mRaycastManager;
+    [SerializeField] ARRaycastManager mRaycastManager;
     private Color[] colorTypeOptions = {Color.cyan, Color.red, Color.yellow};
 
 	// Use this for initialization

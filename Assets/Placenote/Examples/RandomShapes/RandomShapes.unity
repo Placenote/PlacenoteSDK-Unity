@@ -906,7 +906,7 @@ MonoBehaviour:
   shapeInfoList: []
   shapeObjList: []
   mShapeMaterial: {fileID: 10302, guid: 0000000000000000f000000000000000, type: 3}
-  mRaycastManager: {fileID: 0}
+  mRaycastManager: {fileID: 2711838841766744936}
 --- !u!1 &429881558
 GameObject:
   m_ObjectHideFlags: 0
@@ -4282,3 +4282,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4ff1c5a4b485e47aca5aacd4a978133d, type: 3}
+--- !u!1 &2711838841766744935 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4620038059582172613, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
+    type: 3}
+  m_PrefabInstance: {fileID: 2711838841766744934}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2711838841766744936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2711838841766744935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa17d122634046b4a8e23048891fafc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
