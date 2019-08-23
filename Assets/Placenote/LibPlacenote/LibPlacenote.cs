@@ -1207,9 +1207,12 @@ public class LibPlacenote : MonoBehaviour
 		#else
 
 		/// If the file does not exist
-		if(!File.Exists(Application.dataPath + simMapFileName)){
+		if(!File.Exists(Application.dataPath + simMapFileName))
+        {
 			Debug.Log("There are no maps. Please create a new map.");
-		}else{
+		}
+        else
+        {
 			/// Reads maps from file as JSON
 			string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
 			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
@@ -1475,6 +1478,55 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 
+    /// <summary>
+    /// Raises the event that indicate that the map is successfully downloaded and loaded for a localization session
+    /// </summary>
+    /// <param name="status">Status.</param>
+    /// <param name="contextPtr">Context that captures loadProgressCb passed in to <see cref="LoadMap"/>.</param>
+    [MonoPInvokeCallback(typeof(PNTransferMapCallback))]
+    static void OnThumbnailSyncProgress(ref PNTransferStatusUnity status, IntPtr contextPtr)
+    {
+        GCHandle handle = GCHandle.FromIntPtr(contextPtr);
+        Action<bool, bool, float> syncProgressCb = handle.Target as Action<bool, bool, float>;
+
+        PNTransferStatusUnity statusClone = status;
+        MainThreadTaskQueue.InvokeOnMainThread(() => {
+            if (statusClone.completed)
+            {
+                Debug.Log("Thumbnail Synced!");
+                syncProgressCb(true, false, 1);
+                handle.Free();
+            }
+            else if (statusClone.faulted)
+            {
+                Debug.Log("Failed to sync thumbnail!");
+                syncProgressCb(false, true, 0);
+                handle.Free();
+            }
+            else
+            {
+                Debug.Log("Syncing thumbnail!");
+                syncProgressCb(false, false, (float)(statusClone.bytesTransferred) / statusClone.bytesTotal);
+            }
+        });
+    }
+
+    public void SyncLocalizationThumbnail(String mapId, String thumbnailPath, Action<bool, bool, float> syncProgressCb)
+    {
+        if (File.Exists(thumbnailPath))
+        {
+            Debug.Log("LibPlacenote: thumbnail found on HD, uploading to Placenote Cloud");
+        }
+        else
+        {
+            Debug.Log("LibPlacenote: downloading thumbnail from Placenote Cloud");
+        }
+
+        IntPtr cSharpContext = GCHandle.ToIntPtr(GCHandle.Alloc(syncProgressCb));
+        PNSyncThumbnail(mapId, thumbnailPath, OnThumbnailSyncProgress, cSharpContext);
+    }
+
+
 	/// <summary>
 	/// Return the map created by a mapping session, or the current map used by a localization session
 	/// </summary>
@@ -1579,7 +1631,11 @@ public class LibPlacenote : MonoBehaviour
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNDeleteMap (string mapId, PNResultCallback cb, IntPtr context);
 
-	[DllImport ("__Internal")]
+    [DllImport("__Internal")]
+    [return: MarshalAs(UnmanagedType.I4)]
+    private static extern int PNSyncThumbnail(string mapId, string thumbnailPath, PNTransferMapCallback cb, IntPtr context);
+
+    [DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNGetTrackedLandmarks ([In, Out] PNFeaturePointUnity[] lmArrayPtr, int lmSize);
 

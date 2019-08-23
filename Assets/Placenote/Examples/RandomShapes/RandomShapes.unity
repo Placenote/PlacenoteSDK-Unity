@@ -905,7 +905,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shapeInfoList: []
   shapeObjList: []
-  mShapeMaterial: {fileID: 10302, guid: 0000000000000000f000000000000000, type: 3}
+  mShapeMaterial: {fileID: 10302, guid: 0000000000000000f000000000000000, type: 0}
   mRaycastManager: {fileID: 2711838841766744936}
 --- !u!1 &429881558
 GameObject:
@@ -4280,6 +4280,11 @@ PrefabInstance:
       propertyPath: apiKey
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 8384612289340965710, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
+        type: 3}
+      propertyPath: m_TagString
+      value: MainCamera
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4ff1c5a4b485e47aca5aacd4a978133d, type: 3}
 --- !u!1 &2711838841766744935 stripped
@@ -4300,3 +4305,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa17d122634046b4a8e23048891fafc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &2711838841766744937 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8384612289340965710, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
+    type: 3}
+  m_PrefabInstance: {fileID: 2711838841766744934}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2711838841766744938 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8676023112320709428, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
+    type: 3}
+  m_PrefabInstance: {fileID: 2711838841766744934}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2711838841766744937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 816b289ef451e094f9ae174fb4cf8db0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &2711838841766744939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2711838841766744937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fe34de0cd4f844d7a250187637644ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mARBackground: {fileID: 2711838841766744938}

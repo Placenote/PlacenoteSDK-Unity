@@ -44,6 +44,7 @@ public class ShapeManager : MonoBehaviour
     bool HitTestWithResultType(Vector2 point, TrackableType resultType)
     {
         List<ARRaycastHit> hitResults = new List<ARRaycastHit>();
+        Debug.Log("point: " + point.x + " " + point.y);
         mRaycastManager.Raycast(point, hitResults, resultType);
 
         if (hitResults.Count > 0)
@@ -52,18 +53,8 @@ public class ShapeManager : MonoBehaviour
             {
                 Debug.Log("Got hit!");
 
-                Vector3 position = hitResult.pose.position;
-                Quaternion rotation = hitResult.pose.rotation;
-
-                //Transform to placenote frame of reference (planes are detected in ARKit frame of reference)
-                Matrix4x4 worldTransform = Matrix4x4.TRS(position, rotation, Vector3.one);
-                Matrix4x4? placenoteTransform = LibPlacenote.Instance.ProcessPose(worldTransform);
-
-                Vector3 hitPosition = PNUtility.MatrixOps.GetPosition(placenoteTransform.Value);
-                Quaternion hitRotation = PNUtility.MatrixOps.GetRotation(placenoteTransform.Value);
-
                 // add shape
-                AddShape(hitPosition, hitRotation);
+                AddShape(hitResult.pose.position, hitResult.pose.rotation);
 
                 return true;
             }
@@ -84,16 +75,11 @@ public class ShapeManager : MonoBehaviour
             {
                 if (EventSystem.current.currentSelectedGameObject == null)
                 {
-
                     Debug.Log("Not touching a UI button. Moving on.");
-
-                    // add new shape
-                    var screenPosition = Camera.main.ScreenToViewportPoint(touch.position);
-                    Vector2 point = new Vector2(screenPosition.x, screenPosition.y);
 
                     // prioritize reults types
                     TrackableType resultType = TrackableType.FeaturePoint;
-                    if (HitTestWithResultType(point, resultType))
+                    if (HitTestWithResultType(touch.position, resultType))
                     {
                         Debug.Log("Found a hit test result");
                     }

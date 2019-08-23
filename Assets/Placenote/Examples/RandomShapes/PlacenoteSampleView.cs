@@ -307,6 +307,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					}
 				});
 				mCurrMapDetails = metadata;
+
+                // upload thumbnail
+                LocalizationThumbnailSelector.Instance.SyncThumbnail(mSaveMapId);
 			},
 			(completed, faulted, percentage) => {
 				if (completed) {
