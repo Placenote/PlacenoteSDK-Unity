@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
 
 
@@ -12,6 +14,7 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
     private int mMaxLmSize = -1;
     private RenderTexture mBestRenderTexture;
     private Texture2D mThumbnailTexture;
+    [SerializeField] RawImage mImage;
     [SerializeField] ARCameraBackground mARBackground;
 
     public static LocalizationThumbnailSelector Instance
@@ -31,8 +34,13 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
     {
         // This is required for OnPose and OnStatusChange to be triggered
         LibPlacenote.Instance.RegisterListener(this);
-        mBestRenderTexture = new RenderTexture(Screen.width, Screen.height, 4, RenderTextureFormat.ARGB32);
+        mBestRenderTexture = new RenderTexture(Screen.width, Screen.height, 16, RenderTextureFormat.ARGB32);
+        mBestRenderTexture.Create();
         mThumbnailTexture = new Texture2D(Screen.width, Screen.height, TextureFormat.ARGB32, false);
+        if (mImage != null)
+        {
+            mImage.texture = mBestRenderTexture;
+        }
     }
 
     public void OnPose(Matrix4x4 outputPose, Matrix4x4 arkitPose)
@@ -43,11 +51,26 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
             return;
         }
 
-        int lmSize = trackedLandmarks.Length;
+        int lmSize = 0;
+        for (int i = 0; i < trackedLandmarks.Length; i++)
+        {
+            if (trackedLandmarks[i].measCount > 4)
+            {
+                lmSize++;
+            }
+        }
+
         if (lmSize > mMaxLmSize)
         {
             mMaxLmSize = lmSize;
-            // TODO: update image
+            if (mImage != null && Screen.width != (int)mImage.rectTransform.rect.width)
+            {
+                Debug.Log(String.Format("Screen {0} {1} uvRect {2} {3}", Screen.width, Screen.height,
+                    mImage.rectTransform.rect.width, mImage.rectTransform.rect.height));
+                mImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Screen.width);
+                mImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Screen.height);
+                mImage.rectTransform.ForceUpdateRectTransforms();
+            }
             Graphics.Blit(null, mBestRenderTexture, mARBackground.material);
             Graphics.CopyTexture(mBestRenderTexture, 0, 0, 0, 0,
                 mBestRenderTexture.width, mBestRenderTexture.height, mThumbnailTexture, 0, 0, 0, 0);
@@ -85,6 +108,7 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
                 if (completed && !faulted)
                 {
                     Debug.Log("Uploaded localization thumbnail");
+                    File.Delete(thumbnailPath);
                 }
             }
         );
