@@ -14,6 +14,8 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
     private int mMaxLmSize = -1;
     private RenderTexture mBestRenderTexture;
     private Texture2D mThumbnailTexture;
+
+    [SerializeField] int mThumbnailScale = 6;
     [SerializeField] RawImage mImage;
     [SerializeField] ARCameraBackground mARBackground;
 
@@ -34,9 +36,11 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
     {
         // This is required for OnPose and OnStatusChange to be triggered
         LibPlacenote.Instance.RegisterListener(this);
-        mBestRenderTexture = new RenderTexture(Screen.width, Screen.height, 16, RenderTextureFormat.ARGB32);
+        mBestRenderTexture = new RenderTexture(Screen.width / mThumbnailScale,
+            Screen.height / mThumbnailScale, 16, RenderTextureFormat.ARGB32);
         mBestRenderTexture.Create();
-        mThumbnailTexture = new Texture2D(Screen.width, Screen.height, TextureFormat.ARGB32, false);
+        mThumbnailTexture = new Texture2D(Screen.width / mThumbnailScale,
+            Screen.height / mThumbnailScale, TextureFormat.ARGB32, false);
         if (mImage != null)
         {
             mImage.texture = mBestRenderTexture;
@@ -45,6 +49,11 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
 
     public void OnPose(Matrix4x4 outputPose, Matrix4x4 arkitPose)
     {
+        if (LibPlacenote.Instance.GetMode() != LibPlacenote.MappingMode.MAPPING)
+        {
+            return;
+        }
+
         LibPlacenote.PNFeaturePointUnity[] trackedLandmarks = LibPlacenote.Instance.GetTrackedFeatures();
         if (trackedLandmarks == null)
         {
@@ -63,17 +72,18 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         if (lmSize > mMaxLmSize)
         {
             mMaxLmSize = lmSize;
-            if (mImage != null && Screen.width != (int)mImage.rectTransform.rect.width)
+            if (mImage != null && Screen.width / mThumbnailScale != (int)mImage.rectTransform.rect.width)
             {
-                Debug.Log(String.Format("Screen {0} {1} uvRect {2} {3}", Screen.width, Screen.height,
-                    mImage.rectTransform.rect.width, mImage.rectTransform.rect.height));
-                mImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Screen.width);
-                mImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Screen.height);
+                mImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,
+                    Screen.width / mThumbnailScale);
+                mImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+                    Screen.height / mThumbnailScale);
                 mImage.rectTransform.ForceUpdateRectTransforms();
             }
             Graphics.Blit(null, mBestRenderTexture, mARBackground.material);
-            Graphics.CopyTexture(mBestRenderTexture, 0, 0, 0, 0,
-                mBestRenderTexture.width, mBestRenderTexture.height, mThumbnailTexture, 0, 0, 0, 0);
+            RenderTexture.active = mBestRenderTexture;
+            mThumbnailTexture.ReadPixels(new Rect(0, 0, mBestRenderTexture.width, mBestRenderTexture.height), 0, 0);
+            mThumbnailTexture.Apply();
         }
     }
 
@@ -82,22 +92,49 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         if (prevStatus != LibPlacenote.MappingStatus.WAITING && currStatus == LibPlacenote.MappingStatus.WAITING)
         {
             mMaxLmSize = -1;
+            mImage.gameObject.SetActive(false);
         }
-    }
-
-    public Texture2D GetThumbnailCandidate()
-    {
-        if (mMaxLmSize < 0)
+        else if (prevStatus == LibPlacenote.MappingStatus.WAITING)
         {
-            return null;
+            mImage.gameObject.SetActive(true);
         }
-
-        return mThumbnailTexture;
     }
 
-    public void SyncThumbnail(string mapId)
+    public void DownloadThumbnail(string mapId)
     {
-        string thumbnailPath = Path.Combine(Application.persistentDataPath, "thumbnail.png");
+        string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
+
+        // Save Render Texture into a jpg
+        LibPlacenote.Instance.SyncLocalizationThumbnail(mapId, thumbnailPath,
+            (completed, faulted, progress) =>
+            {
+                if (!completed || faulted)
+                {
+                    return;
+                }
+
+                Debug.Log("Downloaded localization thumbnail");
+                RectTransform rectTransform = mImage.rectTransform;
+                byte[] fileData = File.ReadAllBytes(thumbnailPath);
+                mThumbnailTexture = new Texture2D(2, 2);
+                mThumbnailTexture.LoadImage(fileData);
+
+                if (mThumbnailTexture.width != (int)rectTransform.rect.width)
+                {
+                    rectTransform.SetSizeWithCurrentAnchors(
+                        RectTransform.Axis.Horizontal, mThumbnailTexture.width);
+                    rectTransform.SetSizeWithCurrentAnchors(
+                        RectTransform.Axis.Vertical, mThumbnailTexture.height);
+                    rectTransform.ForceUpdateRectTransforms();
+                }
+                mImage.texture = mThumbnailTexture;
+            }
+        );
+    }
+
+    public void UploadThumbnail(string mapId)
+    {
+        string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
         byte[] imgBuffer = mThumbnailTexture.EncodeToPNG();
         System.IO.File.WriteAllBytes(thumbnailPath, imgBuffer);
 
@@ -105,11 +142,13 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         LibPlacenote.Instance.SyncLocalizationThumbnail(mapId, thumbnailPath,
             (completed, faulted, progress) =>
             {
-                if (completed && !faulted)
+                if (!completed || faulted)
                 {
-                    Debug.Log("Uploaded localization thumbnail");
-                    File.Delete(thumbnailPath);
+                    return;
                 }
+
+                Debug.Log("Uploaded localization thumbnail");
+                File.Delete(thumbnailPath);
             }
         );
     }

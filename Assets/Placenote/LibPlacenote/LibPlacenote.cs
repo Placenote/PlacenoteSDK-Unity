@@ -211,10 +211,25 @@ public class LibPlacenote : MonoBehaviour
 		LOST
 	}
 
-	/// <summary>
-	/// Struct that contains location data for the map. All fields are required.
-	/// </summary>
-	[System.Serializable]
+    /// <summary>
+    /// Enums that indicates the mode of the LibPlacenote
+    /// </summary>
+    public enum MappingMode
+    {
+        /// <summary>
+        /// WAITING indicates that a mapping session is running at the moment
+        /// </summary>
+        MAPPING,
+        /// <summary>
+        /// RUNNING indicates that a localization session is currently running
+        /// </summary>
+        LOCALIZING
+    }
+
+    /// <summary>
+    /// Struct that contains location data for the map. All fields are required.
+    /// </summary>
+    [System.Serializable]
 	public class MapLocation
 	{
 		/// <summary>
@@ -423,7 +438,6 @@ public class LibPlacenote : MonoBehaviour
     // Variables to send frames to Placenote
     private bool mFrameUpdated = false;
 	private UnityARImageFrameData mImage = null;
-	private bool libPlacenoteSessionRunning = false;
 
 	/// <summary>
 	/// Get accessor for the LibPlacenote singleton
@@ -513,9 +527,8 @@ public class LibPlacenote : MonoBehaviour
                 break;
         }
 
-        Matrix4x4 matrix = mARCamera.transform.localToWorldMatrix;
-        Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition(matrix);
-        Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation(matrix);
+        Vector3 arkitPosition = mARCamera.transform.localPosition;
+        Quaternion arkitQuat = mARCamera.transform.localRotation;
 
         LibPlacenote.Instance.SendARFrame(mImage, arkitPosition,
             arkitQuat, (int)Screen.orientation);
@@ -723,13 +736,30 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 
-	/// <summary>
-	/// Callback used to publish the computed poses along with its corresponding ARKit pose to listeners
-	/// </summary>
-	/// <param name="outputPose">Output pose of the LibPlacenote mapping session</param>
-	/// <param name="arkitPose">ARKit pose that corresponds with the output pose.</param>
-	/// <param name="context">Context passed from C to capture states required by this function.</param>
-	[MonoPInvokeCallback (typeof(PNPoseCallback))]
+    /// <summary>
+    /// Gets the mode of the running session
+    /// </summary>
+    /// <returns>The mode of the mapping session.</returns>
+    public MappingMode GetMode()
+    {
+        if (mLocalization)
+        {
+            return MappingMode.LOCALIZING;
+        }
+        else
+        {
+            return MappingMode.MAPPING;
+        }
+    }
+
+
+    /// <summary>
+    /// Callback used to publish the computed poses along with its corresponding ARKit pose to listeners
+    /// </summary>
+    /// <param name="outputPose">Output pose of the LibPlacenote mapping session</param>
+    /// <param name="arkitPose">ARKit pose that corresponds with the output pose.</param>
+    /// <param name="context">Context passed from C to capture states required by this function.</param>
+    [MonoPInvokeCallback (typeof(PNPoseCallback))]
 	static void OnPose (ref PNTransformUnity outputPose, ref PNTransformUnity arkitPose, IntPtr context)
 	{
 		Matrix4x4 outputPoseMat = PNUtility.MatrixOps.PNPose2Matrix4x4 (outputPose);
@@ -784,20 +814,19 @@ public class LibPlacenote : MonoBehaviour
 	{
 		#if !UNITY_EDITOR
 		PNStartSession (OnPose, extend, IntPtr.Zero);
-		libPlacenoteSessionRunning = true;
 		#else
 
 		if(mLocalization) {
 			/// Set MappingStatus to LOST if status is localization
 			mCurrStatus = MappingStatus.LOST;
-			/// Stops the relocalization (checkLocalization) or the mapping (saving cameraPoses) invoke
+			/// Stops the relocalization (CheckLocalization) or the mapping (saving cameraPoses) invoke
 			sInstance.CancelInvoke();
 			/// Start checking for localization
-			sInstance.InvokeRepeating ("checkLocalization", 0f, 0.5f);
+			sInstance.InvokeRepeating ("CheckLocalization", 0f, 0.5f);
 		} else {
 			/// Set MappingStatus to RUNNING if status is mapping (ie. not localization)
 			mCurrStatus = MappingStatus.RUNNING;
-			/// Stops the relocalization (checkLocalization) or the mapping (saving cameraPoses) invoke
+			/// Stops the relocalization (CheckLocalization) or the mapping (saving cameraPoses) invoke
 			sInstance.CancelInvoke();
 			/// Start saving camera poses to create a map
 			simCameraPoses.cameraPoses = new List<PNTransformUnity> ();
@@ -806,7 +835,6 @@ public class LibPlacenote : MonoBehaviour
 
 		/// A coroutine that simulates the InvokeRepeating of OnPose
 		StartCoroutine(OnPoseInvokeRepeat());
-
 		#endif
 	}
 
@@ -862,7 +890,7 @@ public class LibPlacenote : MonoBehaviour
 	/// For Unity Simulator
 	/// Checks if the current camera pose is within the range for localization.
 	/// </summary>
-	public void checkLocalization()
+	public void CheckLocalization()
 	{
 		PNTransformUnity currCameraPose = GetPose();
 		Vector3 currPosition = new Vector3 (currCameraPose.position.x, currCameraPose.position.y, currCameraPose.position.z);
@@ -892,11 +920,11 @@ public class LibPlacenote : MonoBehaviour
 	/// Stops the running mapping/localization session.
 	/// </summary>
 	public void StopSession ()
-	{
-		mCurrentTransform = null; //transform is again, meaningless
+    {
+        mLocalization = false;
+        mCurrentTransform = null; //transform is again, meaningless
 		#if !UNITY_EDITOR
 		PNStopSession ();
-		libPlacenoteSessionRunning = false;
 		#else
 		/// Stops the current OnPose coroutine
 		StopCoroutine(OnPoseInvokeRepeat());
@@ -905,7 +933,6 @@ public class LibPlacenote : MonoBehaviour
 		sInstance.CancelInvoke ();
 
 		mCurrStatus = MappingStatus.WAITING;
-		mLocalization = false;
 		#endif
 	}
 
@@ -993,7 +1020,6 @@ public class LibPlacenote : MonoBehaviour
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (metadataCb));
 		return PNGetMetadata (mapId, OnGetMetadata, cSharpContext) == 0;
 		#else
-
 		/// If the file does not exist
 		if (!File.Exists(Application.dataPath + simMapFileName)) {
 			Debug.Log("There are no maps. Please create a new map to setMetadata.");
@@ -1055,7 +1081,6 @@ public class LibPlacenote : MonoBehaviour
 		int retCode = PNSetMetadata (mapId, JsonConvert.SerializeObject (metadata), OnSetMetadata, cSharpContext);
 		return retCode == 0;
 		#else
-
 		/// If the file does not exist
 		if (!File.Exists(Application.dataPath + simMapFileName)) {
 			Debug.Log("There are no maps. Please create a new map to setMetadata.");
@@ -1124,11 +1149,13 @@ public class LibPlacenote : MonoBehaviour
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (listCb));
 		PNListMaps(OnMapList, cSharpContext);
 		#else
-
 		/// If the file does not exist
-		if(!File.Exists(Application.dataPath + simMapFileName)){
+		if (!File.Exists(Application.dataPath + simMapFileName))
+        {
 			Debug.Log("There are no maps. Please create a new map.");
-		}else{
+		}
+        else
+        {
 			/// Reads maps from file as JSON
 			string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
 			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
@@ -1381,11 +1408,11 @@ public class LibPlacenote : MonoBehaviour
 	/// </param>
     public void LoadMap(String mapId, Action<bool, bool, float> loadProgressCb)
     {
-        #if !UNITY_EDITOR
+        mLocalization = true;
+#if !UNITY_EDITOR
         IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (loadProgressCb));
         PNLoadMap (mapId, OnMapLoaded, cSharpContext);
-        #else
-        mLocalization = true;
+#else
         // Reads maps from file as JSON
         bool foundMap = false;
         string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
