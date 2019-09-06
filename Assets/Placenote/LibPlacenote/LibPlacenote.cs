@@ -1504,12 +1504,12 @@ public class LibPlacenote : MonoBehaviour
 		#endif
 	}
 
-
     /// <summary>
     /// Raises the event that indicate that the map is successfully downloaded and loaded for a localization session
     /// </summary>
     /// <param name="status">Status.</param>
     /// <param name="contextPtr">Context that captures loadProgressCb passed in to <see cref="LoadMap"/>.</param>
+
     [MonoPInvokeCallback(typeof(PNTransferMapCallback))]
     static void OnThumbnailSyncProgress(ref PNTransferStatusUnity status, IntPtr contextPtr)
     {

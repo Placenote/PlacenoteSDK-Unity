@@ -19,7 +19,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] Slider mRadiusSlider;
 	[SerializeField] float mMaxRadiusSearch;
 	[SerializeField] Text mRadiusLabel;
-    [SerializeField] RawImage mLocalizationThumbnail;
 
 	private bool mARInit = false;
 	
@@ -34,7 +33,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		}
 	}
 	private string mSaveMapId = null;
-
 
 	private BoxCollider mBoxColliderDummy;
 	private SphereCollider mSphereColliderDummy;
@@ -57,7 +55,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mSimulatorAddShapeButton.SetActive(true);
 		#endif
 	}
-		
+	
 	void Update ()
 	{
 		if (!mARInit && LibPlacenote.Instance.Initialized()) {
@@ -97,7 +95,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
         mLabelText.text = "Filtering maps by GPS location";
 
 		LocationInfo locationInfo = Input.location.lastData;
-
 
 		float radiusSearch = mRadiusSlider.value * mMaxRadiusSearch;
 		mRadiusLabel.text = "Distance Filter: " + (radiusSearch / 1000.0).ToString ("F2") + " km";
@@ -178,7 +175,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
             {
 				if (completed)
                 {
-                    LocalizationThumbnailSelector.Instance.DownloadThumbnail(mSelectedMapId);
                     mMapSelectedPanel.SetActive (false);
 					mMapListPanel.SetActive (false);
 					mInitButtonPanel.SetActive (false);
@@ -230,7 +226,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			}
 		});
 	}
-
 
 
 	public void OnNewMapClick ()
@@ -310,8 +305,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				});
 				mCurrMapDetails = metadata;
 
-                // upload thumbnail
-                LocalizationThumbnailSelector.Instance.UploadThumbnail(mSaveMapId);
 			},
 			(completed, faulted, percentage) => {
 				if (completed) {

@@ -5,24 +5,13 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Placenote/Examples/RandomShapes/RandomShapes.unity
     guid: 1257efda9ace3439485a7e2c7516465e
   - enabled: 0
-    path: 
-    guid: 80858f7f97efd46c1ae3ee51a3134eef
-  - enabled: 0
     path: Assets/Placenote/Examples/SaveAndLoadAMap/SaveAndLoadAMap.unity
     guid: dd93a25ab3537451c981c88731e9a4ee
-  - enabled: 0
+  - enabled: 1
     path: Assets/Placenote/Examples/SaveMetaData/SaveMetaData.unity
     guid: d1f32b9175c944fd2bcc1c0c16824170
-  - enabled: 0
-    path: Assets/Placenote/Examples/ARKitHitTesting/ARKitHitTesting.unity
-    guid: 7bba42f2fe8e0452bac40db2e2494664
-  - enabled: 0
-    path: Assets/Placenote/Examples/ARKitPlaneSaver/ARKitPlaneSaver.unity
-    guid: fb6bd26f419484f8981ef58eade36217
-  - enabled: 0
-    path: Assets/Placenote/Examples/SpatialCapture/SpatialCapture.unity
-    guid: 1b3e7a6a7395a4df084ab765e3f1ca70
+  m_configObjects: {}
