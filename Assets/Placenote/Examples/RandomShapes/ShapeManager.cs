@@ -1,13 +1,11 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.XR.iOS;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
+using UnityEngine.XR.ARSubsystems;
+using UnityEngine.XR.ARFoundation;
 
- // Classes to hold shape information
-
+// Classes to hold shape information
 [System.Serializable]
 public class ShapeInfo
 {
@@ -30,47 +28,33 @@ public class ShapeList
 }
 
 
-
- // Main Class for Managing Markers
-
-public class ShapeManager : MonoBehaviour {
-
+// Main Class for Managing Markers
+public class ShapeManager : MonoBehaviour
+{
     public List<ShapeInfo> shapeInfoList = new List<ShapeInfo>();
     public List<GameObject> shapeObjList = new List<GameObject>();
     public Material mShapeMaterial;
+    [SerializeField] ARRaycastManager mRaycastManager;
     private Color[] colorTypeOptions = {Color.cyan, Color.red, Color.yellow};
 
 	// Use this for initialization
-	void Start () {
-
-	}
+	void Start () {}
 
     // The HitTest to Add a Marker
-
-    bool HitTestWithResultType(ARPoint point, ARHitTestResultType resultTypes)
+    bool HitTestWithResultType(Vector2 point, TrackableType resultType)
     {
-        List<ARHitTestResult> hitResults = UnityARSessionNativeInterface.GetARSessionNativeInterface().HitTest(point, resultTypes);
+        List<ARRaycastHit> hitResults = new List<ARRaycastHit>();
+        Debug.Log("point: " + point.x + " " + point.y);
+        mRaycastManager.Raycast(point, hitResults, resultType);
 
         if (hitResults.Count > 0)
         {
             foreach (var hitResult in hitResults)
             {
-
                 Debug.Log("Got hit!");
 
-                Vector3 position = UnityARMatrixOps.GetPosition(hitResult.worldTransform);
-                Quaternion rotation = UnityARMatrixOps.GetRotation(hitResult.worldTransform);
-
-                //Transform to placenote frame of reference (planes are detected in ARKit frame of reference)
-                Matrix4x4 worldTransform = Matrix4x4.TRS(position, rotation, Vector3.one);
-                Matrix4x4? placenoteTransform = LibPlacenote.Instance.ProcessPose(worldTransform);
-
-                Vector3 hitPosition = PNUtility.MatrixOps.GetPosition(placenoteTransform.Value);
-                Quaternion hitRotation = PNUtility.MatrixOps.GetRotation(placenoteTransform.Value);
-
                 // add shape
-                AddShape(hitPosition, hitRotation);
-
+                AddShape(hitResult.pose.position, hitResult.pose.rotation);
 
                 return true;
             }
@@ -83,9 +67,7 @@ public class ShapeManager : MonoBehaviour {
 
     void Update()
     {
-
         // Check if the screen is touched
-
         if (Input.touchCount > 0)
         {
             var touch = Input.GetTouch(0);
@@ -93,33 +75,14 @@ public class ShapeManager : MonoBehaviour {
             {
                 if (EventSystem.current.currentSelectedGameObject == null)
                 {
-
                     Debug.Log("Not touching a UI button. Moving on.");
 
-                    // add new shape
-                    var screenPosition = Camera.main.ScreenToViewportPoint(touch.position);
-                    ARPoint point = new ARPoint
-                    {
-                        x = screenPosition.x,
-                        y = screenPosition.y
-                    };
-
                     // prioritize reults types
-                    ARHitTestResultType[] resultTypes = {
-                        //ARHitTestResultType.ARHitTestResultTypeExistingPlaneUsingExtent,
-                        //ARHitTestResultType.ARHitTestResultTypeExistingPlane,
-                        //ARHitTestResultType.ARHitTestResultTypeEstimatedHorizontalPlane,
-                        //ARHitTestResultType.ARHitTestResultTypeEstimatedVerticalPlane,
-                        ARHitTestResultType.ARHitTestResultTypeFeaturePoint
-                    };
+                    TrackableType resultType = TrackableType.FeaturePoint;
 
-                    foreach (ARHitTestResultType resultType in resultTypes)
+                    if (HitTestWithResultType(touch.position, resultType))
                     {
-                        if (HitTestWithResultType(point, resultType))
-                        {
-                            Debug.Log("Found a hit test result");
-                            return;
-                        }
+                        Debug.Log("Found a hit test result");
                     }
                 }
             }
@@ -132,12 +95,10 @@ public class ShapeManager : MonoBehaviour {
 		Quaternion dropRotation = Camera.main.transform.rotation;
 
 		AddShape(dropPosition, dropRotation);
-
 	}
 
 
     // All shape management functions (add shapes, save shapes to metadata etc.
-
     public void AddShape(Vector3 shapePosition, Quaternion shapeRotation)
     {
         System.Random rnd = new System.Random();

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.XR.iOS;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 

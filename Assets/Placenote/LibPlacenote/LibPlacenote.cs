@@ -3,15 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
-using UnityEngine.UI;
-using UnityEngine.XR.iOS;
 using System.IO;
-using System.Threading;
 using AOT;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-
-
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+using Unity.Collections.LowLevel.Unsafe;
 
 /// <summary>
 /// Class that contains parameter and buffer for a YUV 420 image from ARKit
@@ -213,10 +211,25 @@ public class LibPlacenote : MonoBehaviour
 		LOST
 	}
 
-	/// <summary>
-	/// Struct that contains location data for the map. All fields are required.
-	/// </summary>
-	[System.Serializable]
+    /// <summary>
+    /// Enums that indicates the mode of the LibPlacenote
+    /// </summary>
+    public enum MappingMode
+    {
+        /// <summary>
+        /// WAITING indicates that a mapping session is running at the moment
+        /// </summary>
+        MAPPING,
+        /// <summary>
+        /// RUNNING indicates that a localization session is currently running
+        /// </summary>
+        LOCALIZING
+    }
+
+    /// <summary>
+    /// Struct that contains location data for the map. All fields are required.
+    /// </summary>
+    [System.Serializable]
 	public class MapLocation
 	{
 		/// <summary>
@@ -414,95 +427,113 @@ public class LibPlacenote : MonoBehaviour
 	/// File info for writing JSON maps
 	private string simMapFileName = "/jsonMaps.json";
 
-	/// End for Unity Simulator
+    /// End for Unity Simulator
 
-	// Fill in API Key here
-	public String apiKey;
+    // Fill in API Key here
+    public String apiKey;
+    [SerializeField] ARCameraManager cameraManager;
 
-	// Variables to send frames to Placenote
-	private bool mFrameUpdated = false;
+    private GameObject mARCamera;
+
+    // Variables to send frames to Placenote
+    private bool mFrameUpdated = false;
 	private UnityARImageFrameData mImage = null;
-	private UnityARCamera mARCamera;
-	private UnityARSessionNativeInterface mSession;
-	private bool libPlacenoteSessionRunning = false;
 
 	/// <summary>
 	/// Get accessor for the LibPlacenote singleton
 	/// </summary>
 	/// <value>The singleton instance</value>
-	public static LibPlacenote Instance {
-		get {
+	public static LibPlacenote Instance
+    {
+		get
+        {
 			return sInstance;
 		}
 	}
 
 
-	public void Awake () {
+	void Awake ()
+    {
 		sInstance = this;
 		Init ();
 	}
 
-	public void Start()
+    void OnEnable()
+    {
+        if (cameraManager != null)
+        {
+            cameraManager.frameReceived += OnCameraFrameReceived;
+        }
+    }
+
+    void OnDisable()
+    {
+        if (cameraManager != null)
+        {
+            cameraManager.frameReceived -= OnCameraFrameReceived;
+        }
+    }
+
+    void Start()
 	{
-        mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface();
-        UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
-	}
+        if (cameraManager == null)
+        {
+            Debug.LogError("LibPlacenote: Start() -> Camera manager not passed as object parameter");
+            return;
+        }
+        mARCamera = cameraManager.transform.gameObject;
+    }
 
-	// Function is called when each frame from ARKit becomes available
-	private void ARFrameUpdated (UnityARCamera camera)
+    // Function is called when each frame from ARKit becomes available
+    unsafe void OnCameraFrameReceived(ARCameraFrameEventArgs events)
 	{
-		mFrameUpdated = true;
-		mARCamera = camera;
-	}
+        XRCameraImage image;
+        if (!cameraManager.TryGetLatestImage(out image))
+        {
+            return;
+        }
 
-	// Update function sends a camera frame from Arkit to Placenote
-	void Update () {
+        XRCameraImagePlane yPlane = image.GetPlane(0);
+        XRCameraImagePlane vuPlane = image.GetPlane(1);
+        if (mImage == null)
+        {
+            mImage = new UnityARImageFrameData();
 
-		if (mFrameUpdated && libPlacenoteSessionRunning) {
-			mFrameUpdated = false;
-			if (mImage == null) {
-				InitARFrameBuffer ();
-			}
+            mImage.y.data = Marshal.AllocHGlobal(yPlane.data.Length);
+            mImage.y.width = (ulong)image.width;
+            mImage.y.height = (ulong)image.height;
+            mImage.y.stride = (ulong)yPlane.rowStride;
 
-			if (mARCamera.trackingState == ARTrackingState.ARTrackingStateNotAvailable) {
-				// ARKit pose is not yet initialized
-				return;
-			}
+            // This does assume the YUV_NV21 format
+            mImage.vu.data = Marshal.AllocHGlobal(vuPlane.data.Length);
+            mImage.vu.width = (ulong)image.width / 2;
+            mImage.vu.height = (ulong)image.height / 2;
+            mImage.vu.stride = (ulong)vuPlane.rowStride;
+        }
+        Marshal.Copy(yPlane.data.ToArray(), 0, mImage.y.data, yPlane.data.Length);
+        Marshal.Copy(vuPlane.data.ToArray(), 0, mImage.vu.data, vuPlane.data.Length);
+        image.Dispose();
 
-			Matrix4x4 matrix = mSession.GetCameraPose ();
-			Vector3 arkitPosition = PNUtility.MatrixOps.GetPosition (matrix);
-			Quaternion arkitQuat = PNUtility.MatrixOps.GetRotation (matrix);
+        switch (ARSession.state)
+        {
+            case ARSessionState.Installing:
+            case ARSessionState.NeedsInstall:
+            case ARSessionState.None:
+            case ARSessionState.Ready:
+            case ARSessionState.SessionInitializing:
+            case ARSessionState.Unsupported:
+                return;
+            case ARSessionState.SessionTracking:
+                break;
+        }
 
-            // send image frame to placenote for processing
-			SendARFrame (mImage, arkitPosition, arkitQuat, mARCamera.videoParams.screenOrientation);
-		}
-	}
+        Vector3 arkitPosition = mARCamera.transform.localPosition;
+        Quaternion arkitQuat = mARCamera.transform.localRotation;
 
-	// Function to actually copy the frame buffer and make it available for Placenote
-	private void InitARFrameBuffer ()
-	{
-		mImage = new UnityARImageFrameData ();
+        LibPlacenote.Instance.SendARFrame(mImage, arkitPosition,
+            arkitQuat, (int)Screen.orientation);
+    }
 
-		mImage.y.width = (ulong)mARCamera.videoParams.yWidth;
-		mImage.y.height = (ulong)mARCamera.videoParams.yHeight;
-		mImage.y.stride = (ulong)(mARCamera.videoParams.yWidth == 1440? 1472 : mARCamera.videoParams.yWidth);
-		ulong yBufSize = mImage.y.stride * mImage.y.height;
-		mImage.y.data = Marshal.AllocHGlobal ((int)yBufSize);
-		Debug.Log (String.Format("yWidth {0} yHeight {1} yStride {2} totalSize {3}",
-			mImage.y.width, mImage.y.height, mImage.y.stride, yBufSize));
-
-		// This does assume the YUV_NV21 format
-		mImage.vu.width = mImage.y.width/2;
-		mImage.vu.height = mImage.y.height/2;
-		mImage.vu.stride = mImage.y.stride;
-		mImage.vu.stride = (ulong)(mARCamera.videoParams.yWidth == 1440? 1472 : mARCamera.videoParams.yWidth);
-		ulong vuBufSize = mImage.vu.stride * mImage.vu.height;
-		mImage.vu.data = Marshal.AllocHGlobal ((int)vuBufSize);
-		Debug.Log (String.Format("vuWidth {0} vuHeight {1} yStride {2} totalSize {3}",
-			mImage.vu.width, mImage.vu.height, mImage.vu.stride, vuBufSize));
-
-		mSession.SetCapturePixelData (true, mImage.y.data, mImage.vu.data);
-	}
 
 	/// <summary>
 	/// Register a listener to events published by LibPlacenote
@@ -537,10 +568,13 @@ public class LibPlacenote : MonoBehaviour
 	{
 		bool success = result.success;
 
-		if (success) {
+		if (success)
+        {
 			Debug.Log ("Initialized SDK!");
 			Instance.mInitialized = true;
-		} else {
+		}
+        else
+        {
 			Debug.Log ("Failed to initialize SDK!");
 			Debug.Log ("error message: " + result.msg);
 		}
@@ -609,27 +643,27 @@ public class LibPlacenote : MonoBehaviour
 		Matrix4x4 orientRemovalMat = Matrix4x4.zero;
 		orientRemovalMat.m22 = orientRemovalMat.m33 = 1;
 		switch (screenOrientation) {
-		// portrait
-		case 1:
-			orientRemovalMat.m01 = 1;
-			orientRemovalMat.m10 = -1;
-			break;
-		case 2:
-			orientRemovalMat.m01 = -1;
-			orientRemovalMat.m10 = 1;
-			break;
-		// landscape
-		case 3:
-		// do nothing
-			orientRemovalMat = Matrix4x4.identity;
-			break;
-		case 4:
-			orientRemovalMat.m00 = -1;
-			orientRemovalMat.m11 = -1;
-			break;
-		default:
-			Debug.LogError ("Unrecognized screen orientation");
-			return;
+		    // portrait
+		    case 1:
+			    orientRemovalMat.m01 = 1;
+			    orientRemovalMat.m10 = -1;
+			    break;
+		    case 2:
+			    orientRemovalMat.m01 = -1;
+			    orientRemovalMat.m10 = 1;
+                break;
+		    // landscape
+		    case 3:
+		    // do nothing
+			    orientRemovalMat = Matrix4x4.identity;
+                break;
+		    case 4:
+			    orientRemovalMat.m00 = -1;
+			    orientRemovalMat.m11 = -1;
+                break;
+		    default:
+			    Debug.LogError ("Unrecognized screen orientation");
+			    return;
 		}
 
 		Matrix4x4 rotationMat = Matrix4x4.TRS (new Vector3 (0, 0, 0), rotation, new Vector3 (1, 1, 1));
@@ -639,11 +673,11 @@ public class LibPlacenote : MonoBehaviour
 		PNTransformUnity pose = new PNTransformUnity ();
 		pose.position.x = position.x;
 		pose.position.y = position.y;
-		pose.position.z = position.z;
+		pose.position.z = -position.z;
 		pose.rotation.x = rotation.x;
 		pose.rotation.y = rotation.y;
-		pose.rotation.z = rotation.z;
-		pose.rotation.w = rotation.w;
+		pose.rotation.z = -rotation.z;
+		pose.rotation.w = -rotation.w;
 
 		PNImagePlaneUnity yPlane = new PNImagePlaneUnity ();
 		yPlane.width = (int)frameData.y.width;
@@ -669,11 +703,10 @@ public class LibPlacenote : MonoBehaviour
 	public PNTransformUnity GetPose ()
 	{
 		PNTransformUnity result = new PNTransformUnity ();
+
 		#if !UNITY_EDITOR
 		PNGetPose (ref result);
-
 		#else
-
 		/// Manually setting result to current Unity camera pose
 		result.position.x = Camera.main.gameObject.transform.position.x;
 		result.position.y = Camera.main.gameObject.transform.position.y;
@@ -682,8 +715,8 @@ public class LibPlacenote : MonoBehaviour
 		result.rotation.y = Camera.main.gameObject.transform.rotation.y;
 		result.rotation.z = Camera.main.gameObject.transform.rotation.z;
 		result.rotation.w = Camera.main.gameObject.transform.rotation.w;
-
 		#endif
+
 		return result;
 	}
 
@@ -703,13 +736,30 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 
-	/// <summary>
-	/// Callback used to publish the computed poses along with its corresponding ARKit pose to listeners
-	/// </summary>
-	/// <param name="outputPose">Output pose of the LibPlacenote mapping session</param>
-	/// <param name="arkitPose">ARKit pose that corresponds with the output pose.</param>
-	/// <param name="context">Context passed from C to capture states required by this function.</param>
-	[MonoPInvokeCallback (typeof(PNPoseCallback))]
+    /// <summary>
+    /// Gets the mode of the running session
+    /// </summary>
+    /// <returns>The mode of the mapping session.</returns>
+    public MappingMode GetMode()
+    {
+        if (mLocalization)
+        {
+            return MappingMode.LOCALIZING;
+        }
+        else
+        {
+            return MappingMode.MAPPING;
+        }
+    }
+
+
+    /// <summary>
+    /// Callback used to publish the computed poses along with its corresponding ARKit pose to listeners
+    /// </summary>
+    /// <param name="outputPose">Output pose of the LibPlacenote mapping session</param>
+    /// <param name="arkitPose">ARKit pose that corresponds with the output pose.</param>
+    /// <param name="context">Context passed from C to capture states required by this function.</param>
+    [MonoPInvokeCallback (typeof(PNPoseCallback))]
 	static void OnPose (ref PNTransformUnity outputPose, ref PNTransformUnity arkitPose, IntPtr context)
 	{
 		Matrix4x4 outputPoseMat = PNUtility.MatrixOps.PNPose2Matrix4x4 (outputPose);
@@ -764,20 +814,19 @@ public class LibPlacenote : MonoBehaviour
 	{
 		#if !UNITY_EDITOR
 		PNStartSession (OnPose, extend, IntPtr.Zero);
-		libPlacenoteSessionRunning = true;
 		#else
 
 		if(mLocalization) {
 			/// Set MappingStatus to LOST if status is localization
 			mCurrStatus = MappingStatus.LOST;
-			/// Stops the relocalization (checkLocalization) or the mapping (saving cameraPoses) invoke
+			/// Stops the relocalization (CheckLocalization) or the mapping (saving cameraPoses) invoke
 			sInstance.CancelInvoke();
 			/// Start checking for localization
-			sInstance.InvokeRepeating ("checkLocalization", 0f, 0.5f);
+			sInstance.InvokeRepeating ("CheckLocalization", 0f, 0.5f);
 		} else {
 			/// Set MappingStatus to RUNNING if status is mapping (ie. not localization)
 			mCurrStatus = MappingStatus.RUNNING;
-			/// Stops the relocalization (checkLocalization) or the mapping (saving cameraPoses) invoke
+			/// Stops the relocalization (CheckLocalization) or the mapping (saving cameraPoses) invoke
 			sInstance.CancelInvoke();
 			/// Start saving camera poses to create a map
 			simCameraPoses.cameraPoses = new List<PNTransformUnity> ();
@@ -786,7 +835,6 @@ public class LibPlacenote : MonoBehaviour
 
 		/// A coroutine that simulates the InvokeRepeating of OnPose
 		StartCoroutine(OnPoseInvokeRepeat());
-
 		#endif
 	}
 
@@ -842,7 +890,7 @@ public class LibPlacenote : MonoBehaviour
 	/// For Unity Simulator
 	/// Checks if the current camera pose is within the range for localization.
 	/// </summary>
-	public void checkLocalization()
+	public void CheckLocalization()
 	{
 		PNTransformUnity currCameraPose = GetPose();
 		Vector3 currPosition = new Vector3 (currCameraPose.position.x, currCameraPose.position.y, currCameraPose.position.z);
@@ -872,11 +920,11 @@ public class LibPlacenote : MonoBehaviour
 	/// Stops the running mapping/localization session.
 	/// </summary>
 	public void StopSession ()
-	{
-		mCurrentTransform = null; //transform is again, meaningless
+    {
+        mLocalization = false;
+        mCurrentTransform = null; //transform is again, meaningless
 		#if !UNITY_EDITOR
 		PNStopSession ();
-		libPlacenoteSessionRunning = false;
 		#else
 		/// Stops the current OnPose coroutine
 		StopCoroutine(OnPoseInvokeRepeat());
@@ -885,7 +933,6 @@ public class LibPlacenote : MonoBehaviour
 		sInstance.CancelInvoke ();
 
 		mCurrStatus = MappingStatus.WAITING;
-		mLocalization = false;
 		#endif
 	}
 
@@ -973,7 +1020,6 @@ public class LibPlacenote : MonoBehaviour
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (metadataCb));
 		return PNGetMetadata (mapId, OnGetMetadata, cSharpContext) == 0;
 		#else
-
 		/// If the file does not exist
 		if (!File.Exists(Application.dataPath + simMapFileName)) {
 			Debug.Log("There are no maps. Please create a new map to setMetadata.");
@@ -1035,7 +1081,6 @@ public class LibPlacenote : MonoBehaviour
 		int retCode = PNSetMetadata (mapId, JsonConvert.SerializeObject (metadata), OnSetMetadata, cSharpContext);
 		return retCode == 0;
 		#else
-
 		/// If the file does not exist
 		if (!File.Exists(Application.dataPath + simMapFileName)) {
 			Debug.Log("There are no maps. Please create a new map to setMetadata.");
@@ -1104,11 +1149,13 @@ public class LibPlacenote : MonoBehaviour
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (listCb));
 		PNListMaps(OnMapList, cSharpContext);
 		#else
-
 		/// If the file does not exist
-		if(!File.Exists(Application.dataPath + simMapFileName)){
+		if (!File.Exists(Application.dataPath + simMapFileName))
+        {
 			Debug.Log("There are no maps. Please create a new map.");
-		}else{
+		}
+        else
+        {
 			/// Reads maps from file as JSON
 			string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
 			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
@@ -1187,9 +1234,12 @@ public class LibPlacenote : MonoBehaviour
 		#else
 
 		/// If the file does not exist
-		if(!File.Exists(Application.dataPath + simMapFileName)){
+		if(!File.Exists(Application.dataPath + simMapFileName))
+        {
 			Debug.Log("There are no maps. Please create a new map.");
-		}else{
+		}
+        else
+        {
 			/// Reads maps from file as JSON
 			string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
 			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
@@ -1358,11 +1408,11 @@ public class LibPlacenote : MonoBehaviour
 	/// </param>
     public void LoadMap(String mapId, Action<bool, bool, float> loadProgressCb)
     {
-        #if !UNITY_EDITOR
+        mLocalization = true;
+#if !UNITY_EDITOR
         IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (loadProgressCb));
         PNLoadMap (mapId, OnMapLoaded, cSharpContext);
-        #else
-        mLocalization = true;
+#else
         // Reads maps from file as JSON
         bool foundMap = false;
         string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
@@ -1453,6 +1503,55 @@ public class LibPlacenote : MonoBehaviour
 		deletedCb (true, "Success");
 		#endif
 	}
+
+    /// <summary>
+    /// Raises the event that indicate that the map is successfully downloaded and loaded for a localization session
+    /// </summary>
+    /// <param name="status">Status.</param>
+    /// <param name="contextPtr">Context that captures loadProgressCb passed in to <see cref="LoadMap"/>.</param>
+
+    [MonoPInvokeCallback(typeof(PNTransferMapCallback))]
+    static void OnThumbnailSyncProgress(ref PNTransferStatusUnity status, IntPtr contextPtr)
+    {
+        GCHandle handle = GCHandle.FromIntPtr(contextPtr);
+        Action<bool, bool, float> syncProgressCb = handle.Target as Action<bool, bool, float>;
+
+        PNTransferStatusUnity statusClone = status;
+        MainThreadTaskQueue.InvokeOnMainThread(() => {
+            if (statusClone.completed)
+            {
+                Debug.Log("Thumbnail Synced!");
+                syncProgressCb(true, false, 1);
+                handle.Free();
+            }
+            else if (statusClone.faulted)
+            {
+                Debug.Log("Failed to sync thumbnail!");
+                syncProgressCb(false, true, 0);
+                handle.Free();
+            }
+            else
+            {
+                Debug.Log("Syncing thumbnail!");
+                syncProgressCb(false, false, (float)(statusClone.bytesTransferred) / statusClone.bytesTotal);
+            }
+        });
+    }
+
+    public void SyncLocalizationThumbnail(String mapId, String thumbnailPath, Action<bool, bool, float> syncProgressCb)
+    {
+        if (File.Exists(thumbnailPath))
+        {
+            Debug.Log("LibPlacenote: thumbnail found on HD, uploading to Placenote Cloud");
+        }
+        else
+        {
+            Debug.Log("LibPlacenote: downloading thumbnail from Placenote Cloud");
+        }
+
+        IntPtr cSharpContext = GCHandle.ToIntPtr(GCHandle.Alloc(syncProgressCb));
+        PNSyncThumbnail(mapId, thumbnailPath, OnThumbnailSyncProgress, cSharpContext);
+    }
 
 
 	/// <summary>
@@ -1559,7 +1658,11 @@ public class LibPlacenote : MonoBehaviour
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNDeleteMap (string mapId, PNResultCallback cb, IntPtr context);
 
-	[DllImport ("__Internal")]
+    [DllImport("__Internal")]
+    [return: MarshalAs(UnmanagedType.I4)]
+    private static extern int PNSyncThumbnail(string mapId, string thumbnailPath, PNTransferMapCallback cb, IntPtr context);
+
+    [DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNGetTrackedLandmarks ([In, Out] PNFeaturePointUnity[] lmArrayPtr, int lmSize);
 

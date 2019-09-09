@@ -1,13 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using System;
+﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.XR.iOS;
-using System.Runtime.InteropServices;
-using System.IO;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using System.IO;
 
 public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 {
@@ -25,10 +20,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	[SerializeField] float mMaxRadiusSearch;
 	[SerializeField] Text mRadiusLabel;
 
-	private UnityARSessionNativeInterface mSession;
-
 	private bool mARInit = false;
-
 	
     private LibPlacenote.MapMetadataSettable mCurrMapDetails;
 
@@ -42,7 +34,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	}
 	private string mSaveMapId = null;
 
-
 	private BoxCollider mBoxColliderDummy;
 	private SphereCollider mSphereColliderDummy;
 	private CapsuleCollider mCapColliderDummy;
@@ -55,9 +46,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		mMapListPanel.SetActive (false);
 
-		mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface ();
-
-		StartARKit ();
 		FeaturesVisualizer.EnablePointcloud ();
 		LibPlacenote.Instance.RegisterListener (this);
 		ResetSlider ();
@@ -67,7 +55,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mSimulatorAddShapeButton.SetActive(true);
 		#endif
 	}
-		
+	
 	void Update ()
 	{
 		if (!mARInit && LibPlacenote.Instance.Initialized()) {
@@ -86,7 +74,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		foreach (Transform t in mListContentParent.transform) {
 			Destroy (t.gameObject);
 		}
-
 
 		mMapListPanel.SetActive (true);
 		mInitButtonPanel.SetActive (false);
@@ -108,7 +95,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
         mLabelText.text = "Filtering maps by GPS location";
 
 		LocationInfo locationInfo = Input.location.lastData;
-
 
 		float radiusSearch = mRadiusSlider.value * mMaxRadiusSearch;
 		mRadiusLabel.text = "Distance Filter: " + (radiusSearch / 1000.0).ToString ("F2") + " km";
@@ -151,7 +137,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mMappingButtonPanel.SetActive (false);
 
 		LibPlacenote.Instance.StopSession ();
-        FeaturesVisualizer.clearPointcloud();
+        FeaturesVisualizer.ClearPointcloud();
         GetComponent<ShapeManager>().ClearShapes();
 
 	}
@@ -177,8 +163,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	public void OnLoadMapClicked ()
 	{
-		ConfigureSession ();
-
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
 			return;
@@ -187,9 +171,11 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		ResetSlider ();
 		mLabelText.text = "Loading Map ID: " + mSelectedMapId;
 		LibPlacenote.Instance.LoadMap (mSelectedMapId,
-			(completed, faulted, percentage) => {
-				if (completed) {
-					mMapSelectedPanel.SetActive (false);
+			(completed, faulted, percentage) =>
+            {
+				if (completed)
+                {
+                    mMapSelectedPanel.SetActive (false);
 					mMapListPanel.SetActive (false);
 					mInitButtonPanel.SetActive (false);
 					mMappingButtonPanel.SetActive(false);
@@ -242,11 +228,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	}
 
 
-
 	public void OnNewMapClick ()
 	{
-		ConfigureSession ();
-
 		if (!LibPlacenote.Instance.Initialized()) {
 			Debug.Log ("SDK not yet initialized");
 			return;
@@ -274,27 +257,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 	}
 
-	private void StartARKit ()
-	{
-		#if !UNITY_EDITOR
-		mLabelText.text = "Initializing ARKit";
-		Application.targetFrameRate = 60;
-		ConfigureSession ();
-		#endif
-	}
-
-
-	private void ConfigureSession() {
- 		#if !UNITY_EDITOR
-		ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration ();
-		config.alignment = UnityARAlignment.UnityARAlignmentGravity;
-		config.getPointCloudData = true;
-		config.enableLightEstimation = true;
-        config.planeDetection = UnityARPlaneDetection.Horizontal;
-		mSession.RunWithConfig (config);
- 		#endif
-	}
-
 
 	public void OnSaveMapClick ()
 	{
@@ -310,7 +272,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		LibPlacenote.Instance.SaveMap (
 			(mapId) => {
 				LibPlacenote.Instance.StopSession ();
-                FeaturesVisualizer.clearPointcloud();
+                FeaturesVisualizer.ClearPointcloud();
 
 				mSaveMapId = mapId;
 				mInitButtonPanel.SetActive (true);
@@ -323,13 +285,12 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 				JObject userdata = new JObject ();
 				metadata.userdata = userdata;
-
                 JObject shapeList = GetComponent<ShapeManager>().Shapes2JSON();
-
 				userdata["shapeList"] = shapeList;
                 GetComponent<ShapeManager>().ClearShapes();
 
-				if (useLocation) {
+				if (useLocation)
+                {
 					metadata.location = new LibPlacenote.MapLocation();
 					metadata.location.latitude = locationInfo.latitude;
 					metadata.location.longitude = locationInfo.longitude;
@@ -343,6 +304,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					}
 				});
 				mCurrMapDetails = metadata;
+
 			},
 			(completed, faulted, percentage) => {
 				if (completed) {

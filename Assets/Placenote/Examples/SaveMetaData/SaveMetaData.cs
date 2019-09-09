@@ -7,16 +7,10 @@ using UnityEngine.UI;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-
-using UnityEngine.XR.iOS; // Import ARKit Library
-
 namespace SaveMetaData
 {
     public class SaveMetaData : MonoBehaviour, PlacenoteListener
     {
-        // Unity ARKit Session handler
-        private UnityARSessionNativeInterface mSession;
-
         // UI game object references
         public GameObject initPanel;
         public GameObject mappingPanel;
@@ -32,9 +26,6 @@ namespace SaveMetaData
 
         void Start()
         {
-            // Start ARKit using the Unity ARKit Plugin
-            mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface();
-            StartARKit();
 
             FeaturesVisualizer.EnablePointcloud(); // Optional - to see the point features
             LibPlacenote.Instance.RegisterListener(this); // Register listener for onStatusChange and OnPose
@@ -54,18 +45,6 @@ namespace SaveMetaData
             LibPlacenote.Instance.StartSession();
         }
 
-        // Initialize ARKit. This will be standard in all AR apps
-        private void StartARKit()
-        {
-            Application.targetFrameRate = 60;
-            ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration();
-            config.planeDetection = UnityARPlaneDetection.Horizontal;
-            config.alignment = UnityARAlignment.UnityARAlignmentGravity;
-            config.getPointCloudData = true;
-            config.enableLightEstimation = true;
-            mSession.RunWithConfig(config);
-        }
-
         // Save a map and upload it to Placenote cloud
         public void OnSaveMapClick()
         {
@@ -73,7 +52,7 @@ namespace SaveMetaData
             initPanel.SetActive(true);
             localizedPanel.SetActive(false);
 
-            FeaturesVisualizer.clearPointcloud();
+            FeaturesVisualizer.ClearPointcloud();
 
             if (!LibPlacenote.Instance.Initialized())
             {
@@ -212,7 +191,7 @@ namespace SaveMetaData
         public void OnExitClicked()
         {
             LibPlacenote.Instance.StopSession();
-            FeaturesVisualizer.clearPointcloud();
+            FeaturesVisualizer.ClearPointcloud();
             GetComponent<ModelManager>().ClearModels();
 
             modelsLoaded = false;

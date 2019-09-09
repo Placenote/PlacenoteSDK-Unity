@@ -5,14 +5,8 @@ using System.Runtime.InteropServices;
 using System.IO;
 using UnityEngine.UI;
 
-using UnityEngine.XR.iOS; // Import ARKit Library
-
-
 public class SaveAndLoadAMap : MonoBehaviour, PlacenoteListener
 {
-    // Unity ARKit Session handler
-    private UnityARSessionNativeInterface mSession;
-
     // UI game object references
     public GameObject saveMapButton;
     public GameObject loadMapButton;
@@ -24,10 +18,6 @@ public class SaveAndLoadAMap : MonoBehaviour, PlacenoteListener
 
     void Start()
     {
-        // Start ARKit using the Unity ARKit Plugin
-        mSession = UnityARSessionNativeInterface.GetARSessionNativeInterface();
-        StartARKit();
-
         FeaturesVisualizer.EnablePointcloud(); // Optional - to see the point features
         LibPlacenote.Instance.RegisterListener(this); // Register listener for onStatusChange and OnPose
         notifications.text = "Click New Map to start";
@@ -44,17 +34,6 @@ public class SaveAndLoadAMap : MonoBehaviour, PlacenoteListener
         LibPlacenote.Instance.StartSession();
     }
 
-    // Initialize ARKit. This will be standard in all AR apps
-    private void StartARKit()
-    {
-        Application.targetFrameRate = 60;
-        ARKitWorldTrackingSessionConfiguration config = new ARKitWorldTrackingSessionConfiguration();
-        config.planeDetection = UnityARPlaneDetection.Horizontal;
-        config.alignment = UnityARAlignment.UnityARAlignmentGravity;
-        config.getPointCloudData = true;
-        config.enableLightEstimation = true;
-        mSession.RunWithConfig(config);
-    }
 
     // Save a map and upload it to Placenote cloud
     public void OnSaveMapClick()

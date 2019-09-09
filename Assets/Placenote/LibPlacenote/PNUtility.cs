@@ -6,22 +6,18 @@ namespace PNUtility
 	{
 		public static Vector3 GetPosition(Matrix4x4 matrix)
 		{
-			// Convert from ARKit's right-handed coordinate
-			// system to Unity's left-handed
 			Vector3 position = matrix.GetColumn(3);
 			return position;
 		}
 
 		public static Quaternion GetRotation(Matrix4x4 matrix)
 		{
-			// Convert from ARKit's right-handed coordinate
-			// system to Unity's left-handed
 			Quaternion rotation = QuaternionFromMatrix(matrix);
 			return rotation;
 		}
 
-
-		public static Quaternion QuaternionFromMatrix(Matrix4x4 m) {
+		public static Quaternion QuaternionFromMatrix(Matrix4x4 m)
+        {
 			// Adapted from: http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
 			Quaternion q = new Quaternion();
 			q.w = Mathf.Sqrt( Mathf.Max( 0, 1 + m[0,0] + m[1,1] + m[2,2] ) ) / 2; 
@@ -35,7 +31,8 @@ namespace PNUtility
 		}
 
 
-		public static Matrix4x4 PNPose2Matrix4x4(LibPlacenote.PNTransformUnity pose) {
+		public static Matrix4x4 PNPose2Matrix4x4(LibPlacenote.PNTransformUnity pose)
+        {
 			Vector3 position = new Vector3 (pose.position.x, pose.position.y, -pose.position.z);
 			Quaternion rotation = new Quaternion (pose.rotation.x, pose.rotation.y,
 				-pose.rotation.z, -pose.rotation.w);
