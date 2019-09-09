@@ -470,7 +470,9 @@ public class LibPlacenote : MonoBehaviour
     private MappingStatus mPrevStatus = MappingStatus.WAITING;
     private bool mInitialized = false;
     private List<Action<MapInfo[]>> mapListCbs = new List<Action<MapInfo[]>>();
-    private Matrix4x4? mCurrentTransform = null;
+    private Action<string> mOnMapIdEvent = (mapId) => {
+        Debug.Log("Map ID for current mapping session: " + mapId);
+    };
 
     /// For the Unity Simulator
 
@@ -501,6 +503,8 @@ public class LibPlacenote : MonoBehaviour
 
     // Variables to send frames to Placenote
     private UnityARImageFrameData mImage = null;
+    private string mCurrMappingId;
+    private bool libPlacenoteSessionRunning = false;
 
     /// <summary>
     /// Get accessor for the LibPlacenote singleton
@@ -937,7 +941,6 @@ public class LibPlacenote : MonoBehaviour
                     listener.OnPose(outputPoseMat, arkitPoseMat);
                 }
             });
-            Instance.mCurrentTransform = outputPoseMat * arkitPoseMat.inverse;
         }
 
         if (status != Instance.mPrevStatus)
@@ -967,7 +970,8 @@ public class LibPlacenote : MonoBehaviour
     public void StartSession(bool extend = false)
     {
 #if !UNITY_EDITOR
-		PNStartSession (OnPose, extend, IntPtr.Zero);
+        IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (extend));
+        PNAddMap (OnMapAdded, cSharpContext);
 #else
 
         if (mLocalization)
@@ -1087,9 +1091,32 @@ public class LibPlacenote : MonoBehaviour
     public void StopSession()
     {
         mLocalization = false;
-        mCurrentTransform = null; //transform is again, meaningless
+
 #if !UNITY_EDITOR
-		PNStopSession ();
+        // Delete map if stopsession is called before upload
+        if (!String.IsNullOrEmpty(Instance.mCurrMappingId))
+        {
+            Debug.Log("Deleting map because map not saved!");
+
+            Action<bool, String> deletedCb = (deleted, errMsg) =>
+            {
+                if (deleted)
+                {
+                    Debug.Log("Deleted map");
+                }
+                else
+                {
+                    Debug.Log("Failed to delete map with");
+                }
+            };
+
+            IntPtr cSharpContext = GCHandle.ToIntPtr(GCHandle.Alloc(deletedCb));
+
+            PNDeleteMap(Instance.mCurrMappingId, OnMapDeleted, cSharpContext);
+            Instance.mCurrMappingId = "";
+        }
+        PNStopSession();
+        libPlacenoteSessionRunning = false;
 #else
         /// Stops the current OnPose coroutine
         StopCoroutine(OnPoseInvokeRepeat());
@@ -1143,9 +1170,18 @@ public class LibPlacenote : MonoBehaviour
     /// <param name="uploadProgressCb">Callback to publish the progress of the dataset upload.</param>
     public void StartRecordDataset(Action<bool, bool, float> uploadProgressCb)
     {
+        IntPtr cSharpContext = GCHandle.ToIntPtr(GCHandle.Alloc(uploadProgressCb));
+        if (String.IsNullOrEmpty(Instance.mCurrMappingId))
+        {
+            Debug.Log("Waiting for a valid map ID to start recording dataset");
+            mOnMapIdEvent += (mapId) =>
+            {
+                PNStartRecordDataset(Instance.mCurrMappingId, OnDatasetUpload, cSharpContext);
+            };
+            return;
+        }
 #if !UNITY_EDITOR
-		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (uploadProgressCb));
-		PNStartRecordDataset (OnDatasetUpload, cSharpContext);
+		PNStartRecordDataset (Instance.mCurrMappingId, OnDatasetUpload, cSharpContext);
 #else
         uploadProgressCb(true, false, 1.0f);
 #endif
@@ -1188,7 +1224,7 @@ public class LibPlacenote : MonoBehaviour
     /// Get the metadata for the given ma.
     /// </summary>
     /// <param name="mapId">ID of the map</param>
-    /// <param name="metadata">Map metadata</param>
+    /// <param name="metadataCb">Callback to return metadata</param>
     public bool GetMetadata(string mapId, Action<MapMetadata> metadataCb)
     {
 #if !UNITY_EDITOR
@@ -1442,7 +1478,7 @@ public class LibPlacenote : MonoBehaviour
     }
 
     /// <summary>
-    /// A class to casted as context to be passed to <see cref="OnMapSaved"/>
+    /// A class to casted as context to be passed to <see cref="OnMapAdded"/>
     /// and <see cref="OnMapUploaded"/> functions to capture external states
     /// </summary>
     private class SaveLoadContext
@@ -1502,29 +1538,23 @@ public class LibPlacenote : MonoBehaviour
     /// Context pointer to capture savedCb passed the <see cref="SaveMap"/> parameters
     /// </param>
     [MonoPInvokeCallback(typeof(PNResultCallback))]
-    static void OnMapSaved(ref PNCallbackResultUnity result, IntPtr contextPtr)
+    static void OnMapAdded(ref PNCallbackResultUnity result, IntPtr contextPtr)
     {
         GCHandle handle = GCHandle.FromIntPtr(contextPtr);
-        SaveLoadContext context = handle.Target as SaveLoadContext;
-        Action<String> savedCb = context.savedCb;
+        bool extend = (bool)handle.Target;
 
         PNCallbackResultUnity resultClone = result;
-        MainThreadTaskQueue.InvokeOnMainThread(() =>
+        if (resultClone.success)
         {
-            if (resultClone.success)
-            {
-                String mapId = resultClone.msg;
-                Debug.Log("Added a record to map db with id " + mapId);
-                PNSaveMap(mapId, OnMapUploaded, contextPtr);
-                savedCb(mapId);
-            }
-            else
-            {
-                Debug.Log(String.Format("Failed to add the map! Error msg: %s", resultClone.msg));
-                savedCb(null);
-                handle.Free();
-            }
-        });
+            Instance.mCurrMappingId = resultClone.msg;
+            Instance.mOnMapIdEvent(Instance.mCurrMappingId);
+            PNStartSession(OnPose, extend, IntPtr.Zero);
+            Instance.libPlacenoteSessionRunning = true;
+        }
+        else
+        {
+            Debug.Log(String.Format("Failed to add the map and unable to start session! Error msg: {0}", resultClone.msg));
+        }
     }
 
 
@@ -1541,7 +1571,10 @@ public class LibPlacenote : MonoBehaviour
 
 #if !UNITY_EDITOR
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (context));
-		PNAddMap (OnMapSaved, cSharpContext);
+		String newMapId = Instance.mCurrMappingId;
+		Instance.mCurrMappingId = "";
+		PNSaveMap(newMapId, OnMapUploaded, cSharpContext);
+		savedCb(newMapId);
 #else
 
         /// Setting map Id
@@ -2212,7 +2245,7 @@ public class LibPlacenote : MonoBehaviour
 
     [DllImport("__Internal")]
     [return: MarshalAs(UnmanagedType.I4)]
-    private static extern int PNStartRecordDataset(PNTransferMapCallback cb, IntPtr context);
+    private static extern int PNStartRecordDataset(string mapId, PNTransferMapCallback cb, IntPtr context);
 
     [DllImport("__Internal")]
     [return: MarshalAs(UnmanagedType.I4)]
