@@ -79,6 +79,7 @@ public class ShapeManager : MonoBehaviour
 
                     // prioritize reults types
                     TrackableType resultType = TrackableType.FeaturePoint;
+
                     if (HitTestWithResultType(touch.position, resultType))
                     {
                         Debug.Log("Found a hit test result");
