@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR.ARFoundation;
 
 
 /// <summary>
@@ -33,9 +35,6 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
         LibPlacenote.Instance.RegisterListener(this);
     }
 
-    void Update()
-    {
-    }
 
     /// <summary>
     /// Enable rendering of pointclouds collected from LibPlacenote for every half second
@@ -118,46 +117,6 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
             ClearPointcloud();
         }
     }
-
-    void GetColour(float v, float vmin, float vmax, ref float r, ref float g, ref float b)
-    {
-        // scale the gray value into the range [0, 8]
-        float gray = 8 * Mathf.Min(1f, Mathf.Max(0f, (v - vmin) / (vmax - vmin)));
-        // s is the slope of color change
-        float s = 0.5f;
-
-        if (gray <= 1)
-        {
-            r = 0f;
-            g = 0f;
-            b = (gray + 1) * s + 0.5f;
-        }
-        else if (gray <= 3)
-        {
-            r = 0f;
-            g = (gray - 1) * s + 0.5f;
-            b = 255;
-        }
-        else if (gray <= 5)
-        {
-            r = (gray - 3) * s + 0.5f;
-            g = 1f;
-            b = (5 - gray) * s + 0.5f;
-        }
-        else if (gray <= 7)
-        {
-            r = 1f;
-            g = (7 - gray) * s + 0.5f;
-            b = 0f;
-        }
-        else
-        {
-            r = (9 - gray) * s + 0.5f;
-            g = 0f;
-            b = 0f;
-        }
-    }
-
 
     public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> meshBlocks)
     {

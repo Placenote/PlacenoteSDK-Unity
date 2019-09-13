@@ -671,6 +671,11 @@ PrefabInstance:
       propertyPath: m_RootOrder
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 114499044807483482, guid: 67dc9e8d1405441ad9d95c2b7b1f3112,
+        type: 3}
+      propertyPath: mPointcloudManager
+      value: 
+      objectReference: {fileID: 373281801}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 67dc9e8d1405441ad9d95c2b7b1f3112, type: 3}
 --- !u!1 &366217781
@@ -784,6 +789,18 @@ MonoBehaviour:
       m_Calls: []
     m_TypeName: UnityEngine.UI.ScrollRect+ScrollRectEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
+--- !u!114 &373281801 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 373281801, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
+    type: 3}
+  m_PrefabInstance: {fileID: 2711838841766744934}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ab0e80cee9cc1d44928bfe488dd1e2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &420322404
 GameObject:
   m_ObjectHideFlags: 0
@@ -4383,13 +4400,7 @@ PrefabInstance:
       propertyPath: apiKey
       value: 
       objectReference: {fileID: 0}
-    - target: {fileID: 2711838841766744939, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
-        type: 3}
-      propertyPath: mImage
-      value: 
-      objectReference: {fileID: 737448333}
-    m_RemovedComponents:
-    - {fileID: 2711838841766744939, guid: 4ff1c5a4b485e47aca5aacd4a978133d, type: 3}
+    m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4ff1c5a4b485e47aca5aacd4a978133d, type: 3}
 --- !u!114 &2711838841766744936 stripped
 MonoBehaviour:

@@ -473,6 +473,8 @@ public class LibPlacenote : MonoBehaviour
     private Action<string> mOnMapIdEvent = (mapId) => {
         Debug.Log("Map ID for current mapping session: " + mapId);
     };
+    private Matrix4x4? mCurrentTransform = null;
+    private ARPointCloud mCurrPtcloud = null;
 
     /// For the Unity Simulator
 
@@ -498,6 +500,7 @@ public class LibPlacenote : MonoBehaviour
     // Fill in API Key here
     public String apiKey;
     [SerializeField] ARCameraManager cameraManager;
+    [SerializeField] ARPointCloudManager ptcloudManager;
 
     private GameObject mARCamera;
 
@@ -531,6 +534,11 @@ public class LibPlacenote : MonoBehaviour
         {
             cameraManager.frameReceived += OnCameraFrameReceived;
         }
+
+        if (ptcloudManager != null)
+        {
+            ptcloudManager.pointCloudsChanged += OnPointCloudChanged;
+        }
     }
 
     void OnDisable()
@@ -538,6 +546,11 @@ public class LibPlacenote : MonoBehaviour
         if (cameraManager != null)
         {
             cameraManager.frameReceived -= OnCameraFrameReceived;
+        }
+
+        if (ptcloudManager != null)
+        {
+            ptcloudManager.pointCloudsChanged -= OnPointCloudChanged;
         }
     }
 
@@ -550,6 +563,20 @@ public class LibPlacenote : MonoBehaviour
         }
         mARCamera = cameraManager.transform.gameObject;
     }
+
+
+    void OnPointCloudChanged(ARPointCloudChangedEventArgs events)
+    {
+        if (events.added.Count > 0)
+        {
+            mCurrPtcloud = events.added[0];
+        }
+        else if (events.updated.Count > 0)
+        {
+            mCurrPtcloud = events.updated[0];
+        }
+    }
+
 
     // Function is called when each frame from ARKit becomes available
     unsafe void OnCameraFrameReceived(ARCameraFrameEventArgs events)
@@ -722,7 +749,7 @@ public class LibPlacenote : MonoBehaviour
     /// Fill in this parameter with screenOrientation from the current UnityVideoParams structure.
     /// Used to correct for the extra rotation applied by the Unity ARKit Plugin on the ARKit pose transform.
     /// </param>
-    public void SendARFrame(UnityARImageFrameData frameData, Vector3 position, Quaternion rotation, int screenOrientation)
+    private void SendARFrame(UnityARImageFrameData frameData, Vector3 position, Quaternion rotation, int screenOrientation)
     {
         Matrix4x4 orientRemovalMat = Matrix4x4.zero;
         orientRemovalMat.m22 = orientRemovalMat.m33 = 1;
@@ -777,7 +804,24 @@ public class LibPlacenote : MonoBehaviour
         vuPlane.buf = frameData.vu.data;
 
 #if !UNITY_EDITOR
-		PNSetFrame (ref yPlane, ref vuPlane, ref pose);
+        if (mCurrPtcloud == null)
+        {
+            Debug.Log("mCurrPtcloud is null");
+		    PNSetFrame (ref yPlane, ref vuPlane, ref pose);
+        }
+        else
+        {
+            Debug.Log("mCurrPtcloud length: " + mCurrPtcloud.positions.Length);
+            PNVector3Unity[] pnPts = new PNVector3Unity[mCurrPtcloud.positions.Length];
+            for (int i = 0; i < mCurrPtcloud.positions.Length; i++)
+            {
+                pnPts[i].x = mCurrPtcloud.positions[i].x;
+                pnPts[i].y = mCurrPtcloud.positions[i].y;
+                pnPts[i].z = -mCurrPtcloud.positions[i].z;
+            }
+
+		    PNSetFrameWithPoints (ref yPlane, ref vuPlane, ref pose, pnPts, pnPts.Length);
+        }
 #endif
     }
 
@@ -793,7 +837,7 @@ public class LibPlacenote : MonoBehaviour
     /// Used to correct for the extra rotation applied by the Unity ARKit Plugin on the ARKit pose transform.
     /// </param>
     /// <param name="pts">points detected by ARKit</param>
-    public void SendARFrame(UnityARImageFrameData frameData, Vector3 position, Quaternion rotation, int screenOrientation, Vector3[] pts)
+    private void SendARFrame(UnityARImageFrameData frameData, Vector3 position, Quaternion rotation, int screenOrientation, Vector3[] pts)
     {
         Matrix4x4 orientRemovalMat = Matrix4x4.zero;
         orientRemovalMat.m22 = orientRemovalMat.m33 = 1;
@@ -829,11 +873,11 @@ public class LibPlacenote : MonoBehaviour
         PNTransformUnity pose = new PNTransformUnity();
         pose.position.x = position.x;
         pose.position.y = position.y;
-        pose.position.z = position.z;
+        pose.position.z = -position.z;
         pose.rotation.x = rotation.x;
         pose.rotation.y = rotation.y;
-        pose.rotation.z = rotation.z;
-        pose.rotation.w = rotation.w;
+        pose.rotation.z = -rotation.z;
+        pose.rotation.w = -rotation.w;
 
         PNImagePlaneUnity yPlane = new PNImagePlaneUnity();
         yPlane.width = (int)frameData.y.width;
@@ -851,8 +895,8 @@ public class LibPlacenote : MonoBehaviour
         for (int i = 0; i < pts.Length; i++)
         {
             pnPts[i].x = pts[i].x;
-            pnPts[i].y = -pts[i].y;
-            pnPts[i].z = pts[i].z;
+            pnPts[i].y = pts[i].y;
+            pnPts[i].z = -pts[i].z;
         }
 
 #if !UNITY_EDITOR
@@ -1091,7 +1135,8 @@ public class LibPlacenote : MonoBehaviour
     public void StopSession()
     {
         mLocalization = false;
-
+        mCurrentTransform = null; //transform is again, meaningless
+        mCurrPtcloud = null;
 #if !UNITY_EDITOR
         // Delete map if stopsession is called before upload
         if (!String.IsNullOrEmpty(Instance.mCurrMappingId))
@@ -1158,7 +1203,7 @@ public class LibPlacenote : MonoBehaviour
             }
             else
             {
-                Debug.Log("Uploading dataset!");
+                Debug.Log("Uploading dataset! Callback null? " + (uploadProgressCb == null));
                 uploadProgressCb(false, false, (float)(statusClone.bytesTransferred) / statusClone.bytesTotal);
             }
         });
@@ -1170,17 +1215,18 @@ public class LibPlacenote : MonoBehaviour
     /// <param name="uploadProgressCb">Callback to publish the progress of the dataset upload.</param>
     public void StartRecordDataset(Action<bool, bool, float> uploadProgressCb)
     {
-        IntPtr cSharpContext = GCHandle.ToIntPtr(GCHandle.Alloc(uploadProgressCb));
         if (String.IsNullOrEmpty(Instance.mCurrMappingId))
         {
             Debug.Log("Waiting for a valid map ID to start recording dataset");
             mOnMapIdEvent += (mapId) =>
             {
-                PNStartRecordDataset(Instance.mCurrMappingId, OnDatasetUpload, cSharpContext);
+                IntPtr cSharpContext2 = GCHandle.ToIntPtr(GCHandle.Alloc(uploadProgressCb));
+                PNStartRecordDataset(Instance.mCurrMappingId, OnDatasetUpload, cSharpContext2);
             };
             return;
         }
 #if !UNITY_EDITOR
+        IntPtr cSharpContext = GCHandle.ToIntPtr(GCHandle.Alloc(uploadProgressCb));
 		PNStartRecordDataset (Instance.mCurrMappingId, OnDatasetUpload, cSharpContext);
 #else
         uploadProgressCb(true, false, 1.0f);

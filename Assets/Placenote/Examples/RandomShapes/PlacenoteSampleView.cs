@@ -206,7 +206,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
                         LibPlacenote.Instance.StartRecordDataset(
                             (datasetCompleted, datasetFaulted, datasetPercentage) =>
                             {
-
                                 if (datasetCompleted)
                                 {
                                     mLabelText.text = "Dataset Upload Complete";
