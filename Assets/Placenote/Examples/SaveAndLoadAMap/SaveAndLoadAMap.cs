@@ -154,5 +154,13 @@ public class SaveAndLoadAMap : MonoBehaviour, PlacenoteListener
 
 
     }
+
+    public void OnInitialized(bool success, string errMsg)
+    {
+    }
+
+    public void OnDenseMeshBlocks(Dictionary<LibPlacenote.PNMeshBlockIndex, LibPlacenote.PNMeshBlock> meshBlocks)
+    {
+    }
 }
 
