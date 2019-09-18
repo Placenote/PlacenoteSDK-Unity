@@ -9,7 +9,6 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
-using Unity.Collections.LowLevel.Unsafe;
 
 /// <summary>
 /// Class that contains parameter and buffer for a YUV 420 image from ARKit
@@ -76,7 +75,7 @@ public class LibPlacenote : MonoBehaviour
 	/// Struct that captures the intrinsic calibration parameters of a pinhole model camera.
 	/// </summary>
 	[StructLayout (LayoutKind.Sequential)]
-	public struct PNCameraInstrinsicsUnity
+	public struct PNCameraIntrinsicsUnity
 	{
 		public int width;
 		public int height;
@@ -175,10 +174,10 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 
-	/// <summary>
-	/// Struct that captures the status and progress of a map file transfer between client app and the Placenote Cloud
-	/// </summary>
-	[StructLayout (LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    /// <summary>
+    /// Struct that captures the status and progress of a map file transfer between client app and the Placenote Cloud
+    /// </summary>
+    [StructLayout (LayoutKind.Sequential, CharSet = CharSet.Ansi)]
 	public struct PNTransferStatusUnity
 	{
 		[MarshalAs (UnmanagedType.LPStr)]
@@ -413,6 +412,7 @@ public class LibPlacenote : MonoBehaviour
 	/// The Current Map status and current localization status that is used
 	private MappingStatus mCurrStatus = MappingStatus.WAITING;
 	private bool mLocalization = false;
+    private int mLocalizedCount = 0;
 
 	/// The thresholds that define when a new camera pose should be saved
 	private float SIM_MAP_DISTANCE_THRESHOLD = 0.4f;
@@ -436,7 +436,7 @@ public class LibPlacenote : MonoBehaviour
     private GameObject mARCamera;
 
     // Variables to send frames to Placenote
-    private bool mFrameUpdated = false;
+    private bool mIntrinsicsSet = false;
 	private UnityARImageFrameData mImage = null;
 
 	/// <summary>
@@ -491,6 +491,32 @@ public class LibPlacenote : MonoBehaviour
         if (!cameraManager.TryGetLatestImage(out image))
         {
             return;
+        }
+
+        if (!mIntrinsicsSet)
+        {
+            XRCameraIntrinsics intrinsics;
+            if (cameraManager.TryGetIntrinsics(out intrinsics))
+            {
+                PNCameraIntrinsicsUnity pnIntrinsics = new PNCameraIntrinsicsUnity();
+                pnIntrinsics.width = intrinsics.resolution.x;
+                pnIntrinsics.height = intrinsics.resolution.y;
+                pnIntrinsics.fx = intrinsics.focalLength.x;
+                pnIntrinsics.fy = intrinsics.focalLength.y;
+                pnIntrinsics.cx = intrinsics.principalPoint.x;
+                pnIntrinsics.cy = intrinsics.principalPoint.y;
+                pnIntrinsics.k1 = 0;
+                pnIntrinsics.k2 = 0;
+                pnIntrinsics.p1 = 0;
+                pnIntrinsics.p2 = 0;
+
+#if !UNITY_EDITOR
+                if (PNSetIntrinsics(ref pnIntrinsics) == 0)
+                {
+                    mIntrinsicsSet = true;
+                }
+#endif
+            }
         }
 
         XRCameraImagePlane yPlane = image.GetPlane(0);
@@ -585,10 +611,10 @@ public class LibPlacenote : MonoBehaviour
 	/// </summary>
 	private void Init ()
 	{
-		#if UNITY_EDITOR
+#if UNITY_EDITOR
 		mInitialized = true;
 		simMap.metadata = new MapMetadata ();
-		#endif
+#endif
 
 		PNInitParamsUnity initParams = new PNInitParamsUnity ();
 
@@ -597,9 +623,9 @@ public class LibPlacenote : MonoBehaviour
 		initParams.appBasePath = Application.streamingAssetsPath + "/Placenote";
 		initParams.mapPath = Application.persistentDataPath;
 
-        	#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		PNInitialize (ref initParams, OnInitialized, IntPtr.Zero);
-		#endif
+#endif
 	}
 
 
@@ -608,14 +634,14 @@ public class LibPlacenote : MonoBehaviour
 	/// </summary>
 	private void Shutdown ()
 	{
-		#if UNITY_EDITOR
+#if UNITY_EDITOR
 		mInitialized = false;
 		StopSession();
-		#endif
+#endif
 
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		PNShutdown();
-		#endif
+#endif
 	}
 
 
@@ -691,9 +717,9 @@ public class LibPlacenote : MonoBehaviour
 		vuPlane.stride = (int)frameData.vu.stride;
 		vuPlane.buf = frameData.vu.data;
 
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		PNSetFrame (ref yPlane, ref vuPlane, ref pose);
-		#endif
+#endif
 	}
 
 	/// <summary>
@@ -704,9 +730,9 @@ public class LibPlacenote : MonoBehaviour
 	{
 		PNTransformUnity result = new PNTransformUnity ();
 
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		PNGetPose (ref result);
-		#else
+#else
 		/// Manually setting result to current Unity camera pose
 		result.position.x = Camera.main.gameObject.transform.position.x;
 		result.position.y = Camera.main.gameObject.transform.position.y;
@@ -715,7 +741,7 @@ public class LibPlacenote : MonoBehaviour
 		result.rotation.y = Camera.main.gameObject.transform.rotation.y;
 		result.rotation.z = Camera.main.gameObject.transform.rotation.z;
 		result.rotation.w = Camera.main.gameObject.transform.rotation.w;
-		#endif
+#endif
 
 		return result;
 	}
@@ -727,12 +753,12 @@ public class LibPlacenote : MonoBehaviour
 	/// <returns>The status of the mapping session.</returns>
 	public MappingStatus GetStatus ()
 	{
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		MappingStatus status = (MappingStatus)PNGetStatus ();
 		return status;
-		#else
+#else
 		return mCurrStatus;
-		#endif
+#endif
 	}
 
 
@@ -781,6 +807,17 @@ public class LibPlacenote : MonoBehaviour
 			MainThreadTaskQueue.InvokeOnMainThread (() => {
 				foreach (var listener in listeners) {
 					listener.OnStatusChange (Instance.mPrevStatus, status);
+                    if (Instance.GetMode() == MappingMode.LOCALIZING &&
+                        Instance.mPrevStatus == MappingStatus.LOST &&
+                        status == MappingStatus.RUNNING)
+                    {
+                        if (Instance.mLocalizedCount == 0)
+                        {
+
+                            listener.OnLocalized();
+                        }
+                        Instance.mLocalizedCount++;
+                    }
 				}
 				Instance.mPrevStatus = status;
 			});
@@ -812,9 +849,9 @@ public class LibPlacenote : MonoBehaviour
 	/// </param>
 	public void StartSession (bool extend = false)
 	{
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		PNStartSession (OnPose, extend, IntPtr.Zero);
-		#else
+#else
 
 		if(mLocalization) {
 			/// Set MappingStatus to LOST if status is localization
@@ -835,7 +872,7 @@ public class LibPlacenote : MonoBehaviour
 
 		/// A coroutine that simulates the InvokeRepeating of OnPose
 		StartCoroutine(OnPoseInvokeRepeat());
-		#endif
+#endif
 	}
 
 	/// <summary>
@@ -921,11 +958,12 @@ public class LibPlacenote : MonoBehaviour
 	/// </summary>
 	public void StopSession ()
     {
+        mLocalizedCount = 0;
         mLocalization = false;
         mCurrentTransform = null; //transform is again, meaningless
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		PNStopSession ();
-		#else
+#else
 		/// Stops the current OnPose coroutine
 		StopCoroutine(OnPoseInvokeRepeat());
 
@@ -933,7 +971,7 @@ public class LibPlacenote : MonoBehaviour
 		sInstance.CancelInvoke ();
 
 		mCurrStatus = MappingStatus.WAITING;
-		#endif
+#endif
 	}
 
 	/// <summary>
@@ -972,12 +1010,12 @@ public class LibPlacenote : MonoBehaviour
 	/// <param name="uploadProgressCb">Callback to publish the progress of the dataset upload.</param>
 	public void StartRecordDataset (Action<bool, bool, float> uploadProgressCb)
 	{
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (uploadProgressCb));
 		PNStartRecordDataset (OnDatasetUpload, cSharpContext);
-		#else
+#else
 		uploadProgressCb (true, false, 1.0f);
-		#endif
+#endif
 	}
 
 	/// <summary>
@@ -1016,10 +1054,10 @@ public class LibPlacenote : MonoBehaviour
 	/// <param name="metadata">Map metadata</param>
 	public bool GetMetadata (string mapId, Action<MapMetadata> metadataCb)
 	{
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (metadataCb));
 		return PNGetMetadata (mapId, OnGetMetadata, cSharpContext) == 0;
-		#else
+#else
 		/// If the file does not exist
 		if (!File.Exists(Application.dataPath + simMapFileName)) {
 			Debug.Log("There are no maps. Please create a new map to setMetadata.");
@@ -1037,7 +1075,7 @@ public class LibPlacenote : MonoBehaviour
 
 		metadataCb(null);
 		return false;
-		#endif
+#endif
 	}
 
 
@@ -1076,11 +1114,11 @@ public class LibPlacenote : MonoBehaviour
 	/// <param name="metadata">Map metadata</param>
 	public bool SetMetadata (string mapId, MapMetadataSettable metadata, Action<bool> metaDataSavedCb = null)
 	{
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (metaDataSavedCb));
 		int retCode = PNSetMetadata (mapId, JsonConvert.SerializeObject (metadata), OnSetMetadata, cSharpContext);
 		return retCode == 0;
-		#else
+#else
 		/// If the file does not exist
 		if (!File.Exists(Application.dataPath + simMapFileName)) {
 			Debug.Log("There are no maps. Please create a new map to setMetadata.");
@@ -1105,7 +1143,7 @@ public class LibPlacenote : MonoBehaviour
 
 		metaDataSavedCb(false);
 		return false;
-		#endif
+#endif
 	}
 
 	/// <summary>
@@ -1145,10 +1183,10 @@ public class LibPlacenote : MonoBehaviour
 	{
 		mapListCbs.Add (listCb);
 
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (listCb));
 		PNListMaps(OnMapList, cSharpContext);
-		#else
+#else
 		/// If the file does not exist
 		if (!File.Exists(Application.dataPath + simMapFileName))
         {
@@ -1161,7 +1199,7 @@ public class LibPlacenote : MonoBehaviour
 			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
 			listCb (mapList);
 		}
-		#endif
+#endif
 	}
 
 	/// <summary>
@@ -1228,10 +1266,10 @@ public class LibPlacenote : MonoBehaviour
 	{
 		mapListCbs.Add (listCb);
 
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (listCb));
 		PNSearchMaps(JsonConvert.SerializeObject(search), OnMapList, cSharpContext);
-		#else
+#else
 
 		/// If the file does not exist
 		if(!File.Exists(Application.dataPath + simMapFileName))
@@ -1245,7 +1283,7 @@ public class LibPlacenote : MonoBehaviour
 			MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
 			listCb (mapList);
 		}
-		#endif
+#endif
 	}
 
 	/// <summary>
@@ -1336,10 +1374,10 @@ public class LibPlacenote : MonoBehaviour
 		context.savedCb = savedCb;
 		context.progressCb = progressCb;
 
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (context));
 		PNAddMap (OnMapSaved, cSharpContext);
-		#else
+#else
 
 		/// Setting map Id
 		simMap.placeId =  Guid.NewGuid().ToString();
@@ -1365,7 +1403,7 @@ public class LibPlacenote : MonoBehaviour
 
 		savedCb (simMap.placeId);
 		progressCb (true, false, 1.0f);
-		#endif
+#endif
 	}
 
 
@@ -1434,7 +1472,7 @@ public class LibPlacenote : MonoBehaviour
         {
             loadProgressCb(false, true, 0);
         }
-        #endif
+#endif
     }
 
 
@@ -1474,10 +1512,10 @@ public class LibPlacenote : MonoBehaviour
 	/// </param>
 	public void DeleteMap (String mapId, Action<bool, string> deletedCb)
 	{
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (deletedCb));
 		PNDeleteMap (mapId, OnMapDeleted, cSharpContext);
-		#else
+#else
 		// Reading map
 		string mapData = File.ReadAllText(Application.dataPath + simMapFileName);
 		MapInfo[] mapList = JsonConvert.DeserializeObject<MapInfo[]> (mapData);
@@ -1501,7 +1539,7 @@ public class LibPlacenote : MonoBehaviour
 		}
 
 		deletedCb (true, "Success");
-		#endif
+#endif
 	}
 
 
@@ -1566,7 +1604,7 @@ public class LibPlacenote : MonoBehaviour
 
 		PNFeaturePointUnity[] map = new PNFeaturePointUnity [1];
 
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		int lmSize = 0;
 		lmSize = PNGetAllLandmarks (map, 0);
 
@@ -1577,7 +1615,7 @@ public class LibPlacenote : MonoBehaviour
 
 		Array.Resize (ref map, lmSize);
 		PNGetAllLandmarks (map, lmSize);
-		#endif
+#endif
 
 		return map;
 	}
@@ -1600,19 +1638,19 @@ public class LibPlacenote : MonoBehaviour
 		int lmSize = 0;
 		PNFeaturePointUnity[] map = new PNFeaturePointUnity [1];
 
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		lmSize = PNGetTrackedLandmarks (map, 0);
-		#endif
+#endif
 
 		if (lmSize == 0) {
 			Debug.Log ("Empty landmarks, probably tried to fail");
 			return null;
 		}
 
-		#if !UNITY_EDITOR
+#if !UNITY_EDITOR
 		Array.Resize (ref map, lmSize);
 		PNGetTrackedLandmarks (map, lmSize);
-		#endif
+#endif
 
 		return map;
 	}
@@ -1674,7 +1712,11 @@ public class LibPlacenote : MonoBehaviour
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNGetPose (ref PNTransformUnity pose);
 
-	[DllImport ("__Internal")]
+    [DllImport("__Internal")]
+    [return: MarshalAs(UnmanagedType.I4)]
+    private static extern int PNSetIntrinsics(ref PNCameraIntrinsicsUnity pose);
+
+    [DllImport ("__Internal")]
 	[return: MarshalAs (UnmanagedType.I4)]
 	private static extern int PNStartSession (PNPoseCallback cb, bool extend, IntPtr context);
 

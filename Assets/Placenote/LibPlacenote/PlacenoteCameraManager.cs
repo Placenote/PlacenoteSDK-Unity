@@ -38,4 +38,8 @@ public class PlacenoteCameraManager : MonoBehaviour, PlacenoteListener
 	{
 		
 	}
+
+    public void OnLocalized()
+    {
+    }
 }

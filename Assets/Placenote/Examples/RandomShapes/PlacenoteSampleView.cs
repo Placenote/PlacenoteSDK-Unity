@@ -345,4 +345,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			}
 		}
 	}
+
+    public void OnLocalized()
+    {
+    }
 }

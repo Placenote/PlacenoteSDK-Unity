@@ -203,4 +203,8 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
             }
         );
     }
+
+    public void OnLocalized()
+    {
+    }
 }

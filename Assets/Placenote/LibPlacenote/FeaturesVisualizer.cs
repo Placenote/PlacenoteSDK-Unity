@@ -126,4 +126,8 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		} 
 		mr.material = mPtCloudMat;
 	}
+
+    public void OnLocalized()
+    {
+    }
 }
