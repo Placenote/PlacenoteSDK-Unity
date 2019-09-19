@@ -719,12 +719,10 @@ public class LibPlacenote : MonoBehaviour
     /// </summary>
     private void Shutdown()
     {
+        StopSession();
 #if UNITY_EDITOR
         mInitialized = false;
-        StopSession();
-#endif
-
-#if !UNITY_EDITOR
+#else
 		PNShutdown();
 #endif
     }
@@ -1013,11 +1011,18 @@ public class LibPlacenote : MonoBehaviour
     /// </param>
     public void StartSession(bool extend = false)
     {
-#if !UNITY_EDITOR
-        IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (extend));
-        PNAddMap (OnMapAdded, cSharpContext);
-#else
 
+#if !UNITY_EDITOR
+        if (String.IsNullOrEmpty(mCurrMappingId))
+        {
+            IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (extend));
+            PNAddMap (OnMapAdded, cSharpContext);
+        }
+        else
+        {
+            PNStartSession(OnPose, extend, IntPtr.Zero);
+        }
+#else
         if (mLocalization)
         {
             /// Set MappingStatus to LOST if status is localization

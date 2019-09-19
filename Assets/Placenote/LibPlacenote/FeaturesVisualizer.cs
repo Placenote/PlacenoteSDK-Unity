@@ -93,6 +93,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
         {
             Destroy(block.Value);
         }
+        sInstance.mMeshBlocks.Clear();
         sInstance.mMeshBlockStatus.Clear();
         sInstance.mPtCloudObjs.Clear();
     }
