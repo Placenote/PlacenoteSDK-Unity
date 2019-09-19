@@ -80,7 +80,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
     /// </summary>
     public static void ClearPointcloud()
     {
-        Debug.Log("Cleared pointcloud");
+        Debug.Log("Cleared pointcloud and mesh");
         MeshFilter mf = sInstance.mMap.GetComponent<MeshFilter>();
         mf.mesh.Clear();
 
@@ -88,6 +88,12 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
         {
             Destroy(ptCloud);
         }
+
+        foreach (var block in sInstance.mMeshBlocks)
+        {
+            Destroy(block.Value);
+        }
+        sInstance.mMeshBlockStatus.Clear();
         sInstance.mPtCloudObjs.Clear();
     }
 
