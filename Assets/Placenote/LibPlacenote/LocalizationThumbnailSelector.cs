@@ -35,6 +35,11 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         sInstance = this;
     }
 
+    void Update()
+    {
+        Graphics.Blit(null, mBestRenderTexture, mARBackground.material);
+    }
+
     void Start()
     {
         // This is required for OnPose and OnStatusChange to be triggered
@@ -44,10 +49,6 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         mBestRenderTexture.Create();
         mThumbnailTexture = new Texture2D(Screen.width / mThumbnailScale,
             Screen.height / mThumbnailScale, TextureFormat.ARGB32, false);
-        if (mImage != null)
-        {
-            mImage.texture = mBestRenderTexture;
-        }
     }
 
     public void OnPose(Matrix4x4 outputPose, Matrix4x4 arkitPose)
@@ -96,10 +97,15 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
                 Screen.height / mThumbnailScale);
             mImage.rectTransform.ForceUpdateRectTransforms();
         }
-        Graphics.Blit(null, mBestRenderTexture, mARBackground.material);
+
         RenderTexture.active = mBestRenderTexture;
         mThumbnailTexture.ReadPixels(new Rect(0, 0, mBestRenderTexture.width, mBestRenderTexture.height), 0, 0);
         mThumbnailTexture.Apply();
+
+        if (mImage != null)
+        {
+            mImage.texture = mThumbnailTexture;
+        }
     }
 
     public void OnSelectThumbnailClick()
