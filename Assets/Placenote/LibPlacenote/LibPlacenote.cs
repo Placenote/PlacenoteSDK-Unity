@@ -804,12 +804,10 @@ public class LibPlacenote : MonoBehaviour
 #if !UNITY_EDITOR
         if (mCurrPtcloud == null)
         {
-            Debug.Log("mCurrPtcloud is null");
 		    PNSetFrame (ref yPlane, ref vuPlane, ref pose);
         }
         else
         {
-            Debug.Log("mCurrPtcloud length: " + mCurrPtcloud.positions.Length);
             PNVector3Unity[] pnPts = new PNVector3Unity[mCurrPtcloud.positions.Length];
             for (int i = 0; i < mCurrPtcloud.positions.Length; i++)
             {
