@@ -411,6 +411,7 @@ public class LibPlacenote : MonoBehaviour
 
 	/// The Current Map status and current localization status that is used
 	private MappingStatus mCurrStatus = MappingStatus.WAITING;
+    private bool mSessionStarted = false;
 	private bool mLocalization = false;
     private int mLocalizedCount = 0;
 
@@ -475,7 +476,7 @@ public class LibPlacenote : MonoBehaviour
     }
 
     void Start()
-	{
+    {
         if (cameraManager == null)
         {
             Debug.LogError("LibPlacenote: Start() -> Camera manager not passed as object parameter");
@@ -486,7 +487,12 @@ public class LibPlacenote : MonoBehaviour
 
     // Function is called when each frame from ARKit becomes available
     unsafe void OnCameraFrameReceived(ARCameraFrameEventArgs events)
-	{
+    {
+        if (!mSessionStarted)
+        {
+            return;
+        }
+
         XRCameraImage image;
         if (!cameraManager.TryGetLatestImage(out image))
         {
@@ -848,12 +854,13 @@ public class LibPlacenote : MonoBehaviour
 	/// map as a seperate map with a different map ID.
 	/// </param>
 	public void StartSession (bool extend = false)
-	{
+    {
+        mSessionStarted = true;
 #if !UNITY_EDITOR
 		PNStartSession (OnPose, extend, IntPtr.Zero);
 #else
 
-		if(mLocalization) {
+        if (mLocalization) {
 			/// Set MappingStatus to LOST if status is localization
 			mCurrStatus = MappingStatus.LOST;
 			/// Stops the relocalization (CheckLocalization) or the mapping (saving cameraPoses) invoke
@@ -958,6 +965,7 @@ public class LibPlacenote : MonoBehaviour
 	/// </summary>
 	public void StopSession ()
     {
+        mSessionStarted = false;
         mLocalizedCount = 0;
         mLocalization = false;
         mCurrentTransform = null; //transform is again, meaningless
