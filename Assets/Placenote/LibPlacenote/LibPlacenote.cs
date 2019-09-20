@@ -965,6 +965,13 @@ public class LibPlacenote : MonoBehaviour
 	/// </summary>
 	public void StopSession ()
     {
+        MainThreadTaskQueue.InvokeOnMainThread(() => {
+            foreach (var listener in listeners)
+            {
+                listener.OnStatusChange(Instance.mPrevStatus, MappingStatus.LOST);
+            }
+            Instance.mPrevStatus = MappingStatus.LOST;
+        });
         mSessionStarted = false;
         mLocalizedCount = 0;
         mLocalization = false;
