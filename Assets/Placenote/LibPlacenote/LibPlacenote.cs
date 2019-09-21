@@ -809,9 +809,26 @@ public class LibPlacenote : MonoBehaviour
 			Instance.mCurrentTransform = outputPoseMat * arkitPoseMat.inverse;
 		}
 
-		if (status != Instance.mPrevStatus) {
-			MainThreadTaskQueue.InvokeOnMainThread (() => {
-				foreach (var listener in listeners) {
+        if (!Instance.mSessionStarted)
+        {
+            MainThreadTaskQueue.InvokeOnMainThread(() => {
+                if (Instance.mPrevStatus != MappingStatus.WAITING)
+                {
+
+                    foreach (var listener in listeners)
+                    {
+                        listener.OnStatusChange(Instance.mPrevStatus, MappingStatus.WAITING);
+                    }
+                    Instance.mPrevStatus = MappingStatus.WAITING;
+                }
+            });
+            return;
+        }
+
+        MainThreadTaskQueue.InvokeOnMainThread (() => {
+            if (status != Instance.mPrevStatus)
+            {
+                foreach (var listener in listeners) {
 					listener.OnStatusChange (Instance.mPrevStatus, status);
                     if (Instance.GetMode() == MappingMode.LOCALIZING &&
                         Instance.mPrevStatus == MappingStatus.LOST &&
@@ -819,16 +836,15 @@ public class LibPlacenote : MonoBehaviour
                     {
                         if (Instance.mLocalizedCount == 0)
                         {
-
                             listener.OnLocalized();
                         }
                         Instance.mLocalizedCount++;
                     }
-				}
-				Instance.mPrevStatus = status;
-			});
-		}
-	}
+                }
+                Instance.mPrevStatus = status;
+            }
+        });
+    }
 
 
 	/// <summary>
@@ -965,29 +981,35 @@ public class LibPlacenote : MonoBehaviour
 	/// </summary>
 	public void StopSession ()
     {
-        MainThreadTaskQueue.InvokeOnMainThread(() => {
-            foreach (var listener in listeners)
-            {
-                listener.OnStatusChange(Instance.mPrevStatus, MappingStatus.LOST);
-            }
-            Instance.mPrevStatus = MappingStatus.LOST;
-        });
         mSessionStarted = false;
         mLocalizedCount = 0;
         mLocalization = false;
         mCurrentTransform = null; //transform is again, meaningless
+
 #if !UNITY_EDITOR
 		PNStopSession ();
 #else
-		/// Stops the current OnPose coroutine
-		StopCoroutine(OnPoseInvokeRepeat());
+        /// Stops the current OnPose coroutine
+        StopCoroutine(OnPoseInvokeRepeat());
 
 		/// Stops the relocalization or the mapping (saving cameraPoses) invoke
 		sInstance.CancelInvoke ();
 
 		mCurrStatus = MappingStatus.WAITING;
 #endif
-	}
+
+        MainThreadTaskQueue.InvokeOnMainThread(() => {
+            if (Instance.mPrevStatus != MappingStatus.WAITING)
+            {
+
+                foreach (var listener in listeners)
+                {
+                    listener.OnStatusChange(Instance.mPrevStatus, MappingStatus.WAITING);
+                }
+                Instance.mPrevStatus = MappingStatus.WAITING;
+            }
+        });
+    }
 
 	/// <summary>
 	/// Raises the dataset upload progress event to listeners

@@ -673,6 +673,28 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 67dc9e8d1405441ad9d95c2b7b1f3112, type: 3}
+--- !u!1 &285439513 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1271650370769016, guid: 67dc9e8d1405441ad9d95c2b7b1f3112,
+    type: 3}
+  m_PrefabInstance: {fileID: 285439512}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &285439514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 285439513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fe34de0cd4f844d7a250187637644ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mThumbnailScale: 6
+  mImage: {fileID: 737448333}
+  mLabelText: {fileID: 2097528938}
+  mARBackground: {fileID: 1911058556}
 --- !u!1 &366217781
 GameObject:
   m_ObjectHideFlags: 0
@@ -1825,14 +1847,13 @@ GameObject:
   - component: {fileID: 737448332}
   - component: {fileID: 737448334}
   - component: {fileID: 737448333}
-  - component: {fileID: 737448335}
   m_Layer: 5
   m_Name: LocalizationThumbnail
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &737448332
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1887,22 +1908,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 737448331}
   m_CullTransparentMesh: 0
---- !u!114 &737448335
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 737448331}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0fe34de0cd4f844d7a250187637644ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mThumbnailScale: 6
-  mImage: {fileID: 737448333}
-  mLabelText: {fileID: 2097528938}
-  mARBackground: {fileID: 1911058556}
 --- !u!1 &743025634
 GameObject:
   m_ObjectHideFlags: 0
@@ -3787,7 +3792,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 737448335}
+      - m_Target: {fileID: 0}
         m_MethodName: OnSelectThumbnailClick
         m_Mode: 1
         m_Arguments:
