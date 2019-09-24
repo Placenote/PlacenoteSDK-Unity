@@ -1001,7 +1001,6 @@ public class LibPlacenote : MonoBehaviour
         MainThreadTaskQueue.InvokeOnMainThread(() => {
             if (Instance.mPrevStatus != MappingStatus.WAITING)
             {
-
                 foreach (var listener in listeners)
                 {
                     listener.OnStatusChange(Instance.mPrevStatus, MappingStatus.WAITING);
