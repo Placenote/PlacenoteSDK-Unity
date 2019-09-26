@@ -82,7 +82,8 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         if (lmSize > mMaxLmSize)
         {
             mMaxLmSize = lmSize;
-            Debug.Log("Updated thumbnail with " + mMaxLmSize + " tracked landmarks");
+            Debug.Log(String.Format("Updating thumbnail with {0} landmarks with size {1} {2}",
+                mMaxLmSize, Screen.width / mThumbnailScale, Screen.height / mThumbnailScale));
             SetCurrentImageAsThumbnail();
         }
     }
@@ -96,6 +97,14 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
             mImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
                 Screen.height / mThumbnailScale);
             mImage.rectTransform.ForceUpdateRectTransforms();
+
+            mThumbnailTexture.Resize(Screen.width / mThumbnailScale,
+                Screen.height / mThumbnailScale);
+
+            mBestRenderTexture.Release();
+            mBestRenderTexture = new RenderTexture(Screen.width / mThumbnailScale,
+                Screen.height / mThumbnailScale, 16, RenderTextureFormat.ARGB32);
+            mBestRenderTexture.Create();
         }
 
         RenderTexture.active = mBestRenderTexture;
@@ -171,11 +180,12 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
                     return;
                 }
 
-                Debug.Log("Downloaded localization thumbnail");
                 RectTransform rectTransform = mImage.rectTransform;
                 byte[] fileData = File.ReadAllBytes(thumbnailPath);
                 mThumbnailTexture = new Texture2D(2, 2);
                 mThumbnailTexture.LoadImage(fileData);
+                Debug.Log(String.Format("Downloaded localization thumbnail {0} {1}",
+                    mThumbnailTexture.width, mThumbnailTexture.height));
 
                 if (mThumbnailTexture.width != (int)rectTransform.rect.width)
                 {
@@ -193,6 +203,8 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
     public void UploadThumbnail(string mapId)
     {
         string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
+        Debug.Log(String.Format("Upload localization thumbnail {0} {1}",
+            mThumbnailTexture.width, mThumbnailTexture.height));
         byte[] imgBuffer = mThumbnailTexture.EncodeToPNG();
         System.IO.File.WriteAllBytes(thumbnailPath, imgBuffer);
 

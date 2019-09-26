@@ -470,7 +470,8 @@ public class LibPlacenote : MonoBehaviour
     private MappingStatus mPrevStatus = MappingStatus.WAITING;
     private bool mInitialized = false;
     private List<Action<MapInfo[]>> mapListCbs = new List<Action<MapInfo[]>>();
-    private Action<string> mOnMapIdEvent = (mapId) => {
+    private Action<string> mOnMapIdEvent = (mapId) =>
+    {
         Debug.Log("Map ID for current mapping session: " + mapId);
     };
     private Matrix4x4? mCurrentTransform = null;
@@ -481,6 +482,8 @@ public class LibPlacenote : MonoBehaviour
     /// The Current Map status and current localization status that is used
     private MappingStatus mCurrStatus = MappingStatus.WAITING;
     private bool mLocalization = false;
+    private bool mSessionStarted = false;
+    private int mLocalizedCount = 0;
 
     /// The thresholds that define when a new camera pose should be saved
     private float SIM_MAP_DISTANCE_THRESHOLD = 0.4f;
@@ -507,7 +510,6 @@ public class LibPlacenote : MonoBehaviour
     // Variables to send frames to Placenote
     private UnityARImageFrameData mImage = null;
     private string mCurrMappingId;
-    private bool libPlacenoteSessionRunning = false;
 
     /// <summary>
     /// Get accessor for the LibPlacenote singleton
@@ -581,6 +583,11 @@ public class LibPlacenote : MonoBehaviour
     // Function is called when each frame from ARKit becomes available
     unsafe void OnCameraFrameReceived(ARCameraFrameEventArgs events)
     {
+        if (!mSessionStarted)
+        {
+            return;
+        }
+
         XRCameraImage image;
         if (!cameraManager.TryGetLatestImage(out image))
         {
@@ -970,12 +977,26 @@ public class LibPlacenote : MonoBehaviour
         Matrix4x4 arkitPoseMat = PNUtility.MatrixOps.PNPose2Matrix4x4(arkitPose);
 
         MappingStatus status = Instance.GetStatus();
+        var listeners = Instance.listeners;
+        if (!Instance.mSessionStarted)
+        {
+            MainThreadTaskQueue.InvokeOnMainThread(() => {
+                if (Instance.mPrevStatus != MappingStatus.WAITING)
+                {
+                    foreach (var listener in listeners)
+                    {
+                        listener.OnStatusChange(Instance.mPrevStatus, MappingStatus.WAITING);
+                    }
+                    Instance.mPrevStatus = MappingStatus.WAITING;
+                }
+            });
+            return;
+        }
 
         if (status == MappingStatus.RUNNING)
         {
             MainThreadTaskQueue.InvokeOnMainThread(() =>
             {
-                var listeners = Instance.listeners;
                 foreach (var listener in listeners)
                 {
                     listener.OnPose(outputPoseMat, arkitPoseMat);
@@ -987,7 +1008,6 @@ public class LibPlacenote : MonoBehaviour
         {
             MainThreadTaskQueue.InvokeOnMainThread(() =>
             {
-                var listeners = Instance.listeners;
                 foreach (var listener in listeners)
                 {
                     listener.OnStatusChange(Instance.mPrevStatus, status);
@@ -1018,6 +1038,7 @@ public class LibPlacenote : MonoBehaviour
         }
         else
         {
+            mSessionStarted = true;
             PNStartSession(OnPose, extend, IntPtr.Zero);
         }
 #else
@@ -1137,9 +1158,22 @@ public class LibPlacenote : MonoBehaviour
     /// </summary>
     public void StopSession()
     {
+        mSessionStarted = false;
+        mLocalizedCount = 0;
         mLocalization = false;
         mCurrentTransform = null; //transform is again, meaningless
         mCurrPtcloud = null;
+
+        MainThreadTaskQueue.InvokeOnMainThread(() => {
+            if (Instance.mPrevStatus != MappingStatus.WAITING)
+            {
+                foreach (var listener in Instance.listeners)
+                {
+                    listener.OnStatusChange(Instance.mPrevStatus, MappingStatus.WAITING);
+                }
+                Instance.mPrevStatus = MappingStatus.WAITING;
+            }
+        });
 #if !UNITY_EDITOR
         // Delete map if stopsession is called before upload
         if (!String.IsNullOrEmpty(Instance.mCurrMappingId))
@@ -1164,7 +1198,6 @@ public class LibPlacenote : MonoBehaviour
             Instance.mCurrMappingId = "";
         }
         PNStopSession();
-        libPlacenoteSessionRunning = false;
 #else
         /// Stops the current OnPose coroutine
         StopCoroutine(OnPoseInvokeRepeat());
@@ -1597,8 +1630,8 @@ public class LibPlacenote : MonoBehaviour
         {
             Instance.mCurrMappingId = resultClone.msg;
             Instance.mOnMapIdEvent(Instance.mCurrMappingId);
+            Instance.mSessionStarted = true;
             PNStartSession(OnPose, extend, IntPtr.Zero);
-            Instance.libPlacenoteSessionRunning = true;
         }
         else
         {
@@ -1883,11 +1916,10 @@ public class LibPlacenote : MonoBehaviour
         }
 
 #if !UNITY_EDITOR
-		Array.Resize (ref triangles, triSize);
-		PNGetBlockMesh (ref blockInfo, triangles, triSize);
+        Array.Resize (ref triangles, triSize);
+        PNGetBlockMesh (ref blockInfo, triangles, triSize);
 #endif
         blockInfo.triCount = triSize;
-
         int arraySize = triSize * 3;
         Vector3[] vertices = new Vector3[arraySize];
         Color[] colors = new Color[arraySize];
@@ -1947,7 +1979,7 @@ public class LibPlacenote : MonoBehaviour
         int blockSize = 0;
         PNMeshBlockInfoUnity[] blocks = new PNMeshBlockInfoUnity[1];
 #if !UNITY_EDITOR
-		blockSize = PNGetUpdatedMeshBlocks (blocks, 0);
+        blockSize = PNGetUpdatedMeshBlocks (blocks, 0);
 #endif
 
         if (blockSize == 0)
@@ -1957,14 +1989,14 @@ public class LibPlacenote : MonoBehaviour
         }
 
 #if !UNITY_EDITOR
-		Array.Resize (ref blocks, blockSize);
-		PNGetUpdatedMeshBlocks (blocks, blockSize);
+        Array.Resize (ref blocks, blockSize);
+        PNGetUpdatedMeshBlocks (blocks, blockSize);
 #endif
 
         int triSize = 0;
         PNTriangleUnity[] triangles = new PNTriangleUnity[1];
 #if !UNITY_EDITOR
-		triSize = PNGetMeshTriangles (triangles, 0);
+        triSize = PNGetMeshTriangles (triangles, 0);
 #endif
 
         if (triSize == 0)
@@ -1974,8 +2006,8 @@ public class LibPlacenote : MonoBehaviour
         }
 
 #if !UNITY_EDITOR
-		Array.Resize (ref triangles, triSize);
-		PNGetMeshTriangles (triangles, triSize);
+        Array.Resize (ref triangles, triSize);
+        PNGetMeshTriangles (triangles, triSize);
 #endif
 
         int blockIdx = 0;
