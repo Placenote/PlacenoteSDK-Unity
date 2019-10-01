@@ -523,6 +523,7 @@ public class LibPlacenote : MonoBehaviour
                 }
 #endif
             }
+            return;
         }
 
         XRCameraImagePlane yPlane = image.GetPlane(0);
