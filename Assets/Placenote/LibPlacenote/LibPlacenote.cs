@@ -405,7 +405,6 @@ public class LibPlacenote : MonoBehaviour
 	private MappingStatus mPrevStatus = MappingStatus.WAITING;
 	private bool mInitialized = false;
 	private List<Action<MapInfo[]>> mapListCbs = new List<Action<MapInfo[]>> ();
-	private Matrix4x4? mCurrentTransform = null;
 
 	/// For the Unity Simulator
 
@@ -439,12 +438,14 @@ public class LibPlacenote : MonoBehaviour
     // Variables to send frames to Placenote
     private bool mIntrinsicsSet = false;
 	private UnityARImageFrameData mImage = null;
+    private Texture2D mThumbnailTexture = null;
+    private string mCurrMappingId;
 
-	/// <summary>
-	/// Get accessor for the LibPlacenote singleton
-	/// </summary>
-	/// <value>The singleton instance</value>
-	public static LibPlacenote Instance
+    /// <summary>
+    /// Get accessor for the LibPlacenote singleton
+    /// </summary>
+    /// <value>The singleton instance</value>
+    public static LibPlacenote Instance
     {
 		get
         {
@@ -807,7 +808,6 @@ public class LibPlacenote : MonoBehaviour
 					listener.OnPose (outputPoseMat, arkitPoseMat);
 				}
 			});
-			Instance.mCurrentTransform = outputPoseMat * arkitPoseMat.inverse;
 		}
 
         if (!Instance.mSessionStarted)
@@ -846,19 +846,6 @@ public class LibPlacenote : MonoBehaviour
             }
         });
     }
-
-
-	/// <summary>
-	/// Return a transform in the current ARKit frame transformed into the inertial frame w.r.t the current Placenote Map. Will return null
-	/// mapping is not initialized
-	/// </summary>
-	/// <param name="status">Transform in the ARKit frame of reference (e.g: acquired from a screen touch)</param>
-	public Matrix4x4? ProcessPose(Matrix4x4 poseInARKit) {
-		if (mCurrentTransform == null) {
-			return null;
-		}
-		return (mCurrentTransform * poseInARKit);
-	}
 
 
 	/// <summary>
@@ -985,7 +972,8 @@ public class LibPlacenote : MonoBehaviour
         mSessionStarted = false;
         mLocalizedCount = 0;
         mLocalization = false;
-        mCurrentTransform = null; //transform is again, meaningless
+        mThumbnailTexture = null;
+        mCurrMappingId = "";
 
 #if !UNITY_EDITOR
 		PNStopSession ();
@@ -1334,14 +1322,112 @@ public class LibPlacenote : MonoBehaviour
 	}
 
 
-	/// <summary>
-	/// Raises the map upload progress event to listeners
-	/// </summary>
-	/// <param name="status">Status of the upload</param>
-	/// <param name="contextPtr">
-	/// Context pointer to capture progressCb passed the <see cref="SaveMap"/> parameters
-	/// </param>
-	[MonoPInvokeCallback (typeof(PNTransferMapCallback))]
+    /// <summary>
+    /// Setting the localization thumbnail for the current map
+	/// <param name="thumbnailTex">Thumbnail texture to be uploaded along with the current map when saved.</param>
+    /// </summary>
+    public void SetLocalizationThumbnail(Texture2D thumbnailTex)
+    {
+        if (mSessionStarted)
+        {
+            mThumbnailTexture = thumbnailTex;
+        }
+        else
+        {
+            Debug.Log("SetLocalizationThumbnail: Session is not running, can't set thumbnail texture");
+        }
+    }
+
+
+    /// <summary>
+    /// Setting the localization thumbnail for the current map
+    /// </summary>
+    public void GetLocalizationThumbnail(Action<Texture2D> thumbnailCb)
+    {
+        if (mThumbnailTexture != null)
+        {
+            thumbnailCb(mThumbnailTexture);
+        }
+        else if (!String.IsNullOrEmpty(mCurrMappingId) && GetMode() == MappingMode.LOCALIZING)
+        {
+            DownloadThumbnail(mCurrMappingId, thumbnailCb);
+        }
+        else
+        {
+            thumbnailCb(null);
+        }
+    }
+
+
+    private void UploadThumbnail(string mapId)
+    {
+        if (mThumbnailTexture == null)
+        {
+            Debug.Log("UploadThumbnail: No thumbnail captured, skipping");
+            return;
+        }
+
+        string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
+        Debug.Log(String.Format("Upload localization thumbnail {0} {1}",
+            mThumbnailTexture.width, mThumbnailTexture.height));
+        byte[] imgBuffer = mThumbnailTexture.EncodeToPNG();
+        System.IO.File.WriteAllBytes(thumbnailPath, imgBuffer);
+
+        // Save Render Texture into a jpg
+        LibPlacenote.Instance.SyncLocalizationThumbnail(mapId, thumbnailPath,
+            (completed, faulted, progress) =>
+            {
+                if (!completed || faulted)
+                {
+                    return;
+                }
+
+                Debug.Log("Uploaded localization thumbnail");
+                File.Delete(thumbnailPath);
+            }
+        );
+    }
+
+
+    private void DownloadThumbnail(string mapId, Action<Texture2D> thumbnailCb)
+    {
+        string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
+
+        // Save Render Texture into a jpg
+        LibPlacenote.Instance.SyncLocalizationThumbnail(mapId, thumbnailPath,
+            (completed, faulted, progress) =>
+            {
+                if (!completed)
+                {
+                    return;
+                }
+
+                if (faulted)
+                {
+                    Debug.Log("Error downloading thumbnail");
+                    thumbnailCb(null);
+                    return;
+                }
+
+                byte[] fileData = File.ReadAllBytes(thumbnailPath);
+                mThumbnailTexture = new Texture2D(2, 2);
+                mThumbnailTexture.LoadImage(fileData);
+                thumbnailCb(mThumbnailTexture);
+                Debug.Log(String.Format("Downloaded localization thumbnail {0} {1}",
+                    mThumbnailTexture.width, mThumbnailTexture.height));
+            }
+        );
+    }
+
+
+    /// <summary>
+    /// Raises the map upload progress event to listeners
+    /// </summary>
+    /// <param name="status">Status of the upload</param>
+    /// <param name="contextPtr">
+    /// Context pointer to capture progressCb passed the <see cref="SaveMap"/> parameters
+    /// </param>
+    [MonoPInvokeCallback (typeof(PNTransferMapCallback))]
 	static void OnMapUploaded (ref PNTransferStatusUnity status, IntPtr contextPtr)
 	{
 		GCHandle handle = GCHandle.FromIntPtr (contextPtr);
@@ -1355,9 +1441,10 @@ public class LibPlacenote : MonoBehaviour
 		MainThreadTaskQueue.InvokeOnMainThread (() => {
 			if (statusClone.completed) {
 				Debug.Log ("Uploaded map!");
-				progressCb (true, false, 1);
+                progressCb (true, false, 1);
 				handle.Free ();
-			} else if (statusClone.faulted) {
+                Instance.UploadThumbnail(statusClone.mapId);
+            } else if (statusClone.faulted) {
 				Debug.Log ("Failed to upload map!");
 				progressCb (false, true, 0);
 				handle.Free ();
@@ -1378,7 +1465,7 @@ public class LibPlacenote : MonoBehaviour
 	/// Context pointer to capture savedCb passed the <see cref="SaveMap"/> parameters
 	/// </param>
 	[MonoPInvokeCallback (typeof(PNResultCallback))]
-	static void OnMapSaved (ref PNCallbackResultUnity result, IntPtr contextPtr)
+	static void OnMapAdded (ref PNCallbackResultUnity result, IntPtr contextPtr)
 	{
 		GCHandle handle = GCHandle.FromIntPtr (contextPtr);
 		SaveLoadContext context = handle.Target as SaveLoadContext;
@@ -1413,19 +1500,23 @@ public class LibPlacenote : MonoBehaviour
 
 #if !UNITY_EDITOR
 		IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (context));
-		PNAddMap (OnMapSaved, cSharpContext);
+		PNAddMap (OnMapAdded, cSharpContext);
 #else
 
-		/// Setting map Id
-		simMap.placeId =  Guid.NewGuid().ToString();
+        /// Setting map Id
+        simMap.placeId =  Guid.NewGuid().ToString();
 		/// Setting saved camera poses
 		simMap.metadata.simulatedMap = simCameraPoses;
 		string jsonMap = JsonConvert.SerializeObject(simMap);
 
 		/// The file does not exist yet OR The file exists but does not contain '[]'
-		if( !File.Exists(Application.dataPath + simMapFileName) || File.ReadAllText(Application.dataPath + simMapFileName).ToString() == "") {
+		if( !File.Exists(Application.dataPath + simMapFileName) ||
+            File.ReadAllText(Application.dataPath + simMapFileName).ToString() == "")
+        {
 			File.WriteAllText(Application.dataPath + simMapFileName, "[" + jsonMap +"]");
-		} else {
+		}
+        else
+        {
 			string currMapData = File.ReadAllText(Application.dataPath + simMapFileName);
 			var mapInfoList = JsonConvert.DeserializeObject<List<MapInfo>>(currMapData);
 			/// The file exists but has no maps
@@ -1460,7 +1551,7 @@ public class LibPlacenote : MonoBehaviour
 			if (statusClone.completed) {
 				Debug.Log ("Loaded map!");
 				loadProgressCb (true, false, 1);
-				handle.Free ();
+                handle.Free ();
 			} else if (statusClone.faulted) {
 				Debug.Log ("Failed to downloading map!");
 				loadProgressCb (false, true, 0);
@@ -1484,6 +1575,7 @@ public class LibPlacenote : MonoBehaviour
     public void LoadMap(String mapId, Action<bool, bool, float> loadProgressCb)
     {
         mLocalization = true;
+        mCurrMappingId = mapId;
 #if !UNITY_EDITOR
         IntPtr cSharpContext = GCHandle.ToIntPtr (GCHandle.Alloc (loadProgressCb));
         PNLoadMap (mapId, OnMapLoaded, cSharpContext);

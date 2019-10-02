@@ -96,10 +96,10 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 			colors [i].b = 0;
 			colors [i].g = map [i].measCount / 10f;
 
-			if (map [i].measCount < 4) {
+			if (map [i].measCount < 3) {
 				colors [i].a = 0;
 			} else {
-				colors [i].a = 0.2f + 0.8f * (map [i].measCount / 10f);
+				colors [i].a = 0.2f + 1.6f * (map [i].measCount / 10f);
 			}
 		}
 

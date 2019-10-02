@@ -178,7 +178,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
             {
 				if (completed)
                 {
-                    LocalizationThumbnailSelector.Instance.DownloadThumbnail(mSelectedMapId);
                     mMapSelectedPanel.SetActive (false);
 					mMapListPanel.SetActive (false);
 					mInitButtonPanel.SetActive (false);
@@ -309,9 +308,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					}
 				});
 				mCurrMapDetails = metadata;
-
-                // upload thumbnail
-                LocalizationThumbnailSelector.Instance.UploadThumbnail(mSaveMapId);
 			},
 			(completed, faulted, percentage) => {
 				if (completed) {

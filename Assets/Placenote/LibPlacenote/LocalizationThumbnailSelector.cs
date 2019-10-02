@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
 
@@ -14,29 +12,14 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
     private int mMaxLmSize = -1;
     private RenderTexture mBestRenderTexture;
     private Texture2D mThumbnailTexture;
-    private bool mThumbnailSelected = false;
+    private int mThumbnailScale = 6;
 
-    [SerializeField] int mThumbnailScale = 6;
     [SerializeField] RawImage mImage;
-    [SerializeField] Text mLabelText;
-    [SerializeField] ARCameraBackground mARBackground;
-
-    public static LocalizationThumbnailSelector Instance
-    {
-        get
-        {
-            return sInstance;
-        }
-    }
-
-    void Awake()
-    {
-        sInstance = this;
-    }
+    [SerializeField] ARCameraBackground mArBackground;
 
     void Update()
     {
-        Graphics.Blit(null, mBestRenderTexture, mARBackground.material);
+        Graphics.Blit(null, mBestRenderTexture, mArBackground.material);
     }
 
     void Start()
@@ -48,16 +31,12 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         mBestRenderTexture.Create();
         mThumbnailTexture = new Texture2D(Screen.width / mThumbnailScale,
             Screen.height / mThumbnailScale, TextureFormat.ARGB32, false);
+
+        gameObject.SetActive(false);
     }
 
     public void OnPose(Matrix4x4 outputPose, Matrix4x4 arkitPose)
     {
-        // if it's been manually selected, don't keep on auto-selecting
-        if (mThumbnailSelected)
-        {
-            return;
-        }
-
         if (LibPlacenote.Instance.GetMode() != LibPlacenote.MappingMode.MAPPING)
         {
             return;
@@ -72,7 +51,7 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         int lmSize = 0;
         for (int i = 0; i < trackedLandmarks.Length; i++)
         {
-            if (trackedLandmarks[i].measCount > 4)
+            if (trackedLandmarks[i].measCount > 2)
             {
                 lmSize++;
             }
@@ -81,8 +60,6 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         if (lmSize > mMaxLmSize)
         {
             mMaxLmSize = lmSize;
-            Debug.Log(String.Format("Updating thumbnail with {0} landmarks with size {1} {2}",
-                mMaxLmSize, Screen.width / mThumbnailScale, Screen.height / mThumbnailScale));
             SetCurrentImageAsThumbnail();
         }
     }
@@ -114,112 +91,43 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         {
             mImage.texture = mThumbnailTexture;
         }
-    }
 
-    public void OnSelectThumbnailClick()
-    {
-        if (LibPlacenote.Instance.GetMode() != LibPlacenote.MappingMode.MAPPING)
-        {
-            // Prompt that it's not in mapping mode
-            return;
-        }
-
-        LibPlacenote.PNFeaturePointUnity[] trackedLandmarks = LibPlacenote.Instance.GetTrackedFeatures();
-        if (trackedLandmarks == null)
-        {
-            // Prompt that there's not enough features
-            return;
-        }
-
-        int lmSize = 0;
-        for (int i = 0; i < trackedLandmarks.Length; i++)
-        {
-            if (trackedLandmarks[i].measCount > 4)
-            {
-                lmSize++;
-            }
-        }
-
-        if (lmSize < 20)
-        {
-            // Prompt that there's not enough features
-            mLabelText.text = "Can't select thumbnail with " + lmSize + " < 20 landmarks";
-            return;
-        }
-
-        mThumbnailSelected = true;
-        SetCurrentImageAsThumbnail();
-        mLabelText.text = "Selected new thumbnail!";
+        LibPlacenote.Instance.SetLocalizationThumbnail(mThumbnailTexture);
     }
 
     public void OnStatusChange(LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
     {
+        Debug.Log("prev status " + prevStatus + " curr status " + currStatus);
         if (prevStatus != LibPlacenote.MappingStatus.WAITING && currStatus == LibPlacenote.MappingStatus.WAITING)
         {
             mMaxLmSize = -1;
-            mThumbnailSelected = false;
             mImage.gameObject.SetActive(false);
         }
         else if (prevStatus == LibPlacenote.MappingStatus.WAITING)
         {
             mImage.gameObject.SetActive(true);
+            if (LibPlacenote.Instance.GetMode() == LibPlacenote.MappingMode.LOCALIZING)
+            {
+                LibPlacenote.Instance.GetLocalizationThumbnail((thumbnailTex) => {
+                    mThumbnailTexture = thumbnailTex;
+                    RectTransform rectTransform = mImage.rectTransform;
+
+                    if (mThumbnailTexture.width != (int)rectTransform.rect.width)
+                    {
+                        rectTransform.SetSizeWithCurrentAnchors(
+                            RectTransform.Axis.Horizontal, mThumbnailTexture.width);
+                        rectTransform.SetSizeWithCurrentAnchors(
+                            RectTransform.Axis.Vertical, mThumbnailTexture.height);
+                        rectTransform.ForceUpdateRectTransforms();
+                    }
+
+                    if (mImage != null)
+                    {
+                        mImage.texture = mThumbnailTexture;
+                    }
+                });
+            }
         }
-    }
-
-    public void DownloadThumbnail(string mapId)
-    {
-        string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
-
-        // Save Render Texture into a jpg
-        LibPlacenote.Instance.SyncLocalizationThumbnail(mapId, thumbnailPath,
-            (completed, faulted, progress) =>
-            {
-                if (!completed || faulted)
-                {
-                    return;
-                }
-
-                RectTransform rectTransform = mImage.rectTransform;
-                byte[] fileData = File.ReadAllBytes(thumbnailPath);
-                mThumbnailTexture = new Texture2D(2, 2);
-                mThumbnailTexture.LoadImage(fileData);
-                Debug.Log(String.Format("Downloaded localization thumbnail {0} {1}",
-                    mThumbnailTexture.width, mThumbnailTexture.height));
-
-                if (mThumbnailTexture.width != (int)rectTransform.rect.width)
-                {
-                    rectTransform.SetSizeWithCurrentAnchors(
-                        RectTransform.Axis.Horizontal, mThumbnailTexture.width);
-                    rectTransform.SetSizeWithCurrentAnchors(
-                        RectTransform.Axis.Vertical, mThumbnailTexture.height);
-                    rectTransform.ForceUpdateRectTransforms();
-                }
-                mImage.texture = mThumbnailTexture;
-            }
-        );
-    }
-
-    public void UploadThumbnail(string mapId)
-    {
-        string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
-        Debug.Log(String.Format("Upload localization thumbnail {0} {1}",
-            mThumbnailTexture.width, mThumbnailTexture.height));
-        byte[] imgBuffer = mThumbnailTexture.EncodeToPNG();
-        System.IO.File.WriteAllBytes(thumbnailPath, imgBuffer);
-
-        // Save Render Texture into a jpg
-        LibPlacenote.Instance.SyncLocalizationThumbnail(mapId, thumbnailPath,
-            (completed, faulted, progress) =>
-            {
-                if (!completed || faulted)
-                {
-                    return;
-                }
-
-                Debug.Log("Uploaded localization thumbnail");
-                File.Delete(thumbnailPath);
-            }
-        );
     }
 
     public void OnLocalized()
