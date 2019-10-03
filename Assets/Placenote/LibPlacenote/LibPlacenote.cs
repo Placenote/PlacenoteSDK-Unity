@@ -441,6 +441,7 @@ public class LibPlacenote : MonoBehaviour
     private Texture2D mThumbnailTexture = null;
     private string mCurrMappingId;
 
+    private bool keepSendingFrames = true;
     /// <summary>
     /// Get accessor for the LibPlacenote singleton
     /// </summary>
@@ -489,7 +490,7 @@ public class LibPlacenote : MonoBehaviour
     // Function is called when each frame from ARKit becomes available
     unsafe void OnCameraFrameReceived(ARCameraFrameEventArgs events)
     {
-        if (!mSessionStarted)
+        if (!mSessionStarted && !keepSendingFrames)
         {
             return;
         }
@@ -568,12 +569,17 @@ public class LibPlacenote : MonoBehaviour
             arkitQuat, (int)Screen.orientation);
     }
 
+    public void StopSendingFrames()
+    {
+        keepSendingFrames = false;
+    }
 
-	/// <summary>
-	/// Register a listener to events published by LibPlacenote
-	/// </summary>
-	/// <param name="listener">A listener to be added to the subscriber list.</param>
-	public void RegisterListener (PlacenoteListener listener)
+
+    /// <summary>
+    /// Register a listener to events published by LibPlacenote
+    /// </summary>
+    /// <param name="listener">A listener to be added to the subscriber list.</param>
+    public void RegisterListener (PlacenoteListener listener)
 	{
 		listeners.Add (listener);
 	}
@@ -974,6 +980,8 @@ public class LibPlacenote : MonoBehaviour
         mLocalization = false;
         mThumbnailTexture = null;
         mCurrMappingId = "";
+
+        keepSendingFrames = true;
 
 #if !UNITY_EDITOR
 		PNStopSession ();

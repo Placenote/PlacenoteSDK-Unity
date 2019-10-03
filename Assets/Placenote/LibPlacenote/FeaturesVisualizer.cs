@@ -1,25 +1,34 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
+using System.Collections.Generic;
 
+[RequireComponent(typeof(ParticleSystem))]
 
 /// <summary>
 /// Class that constructs a pointcloud mesh from the map retrieved from a LibPlacenote mapping/localization session
 /// </summary>
 public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 {
-	private static FeaturesVisualizer sInstance;
-	[SerializeField] Material mPtCloudMat;
-	[SerializeField] GameObject mMap;
+    private static FeaturesVisualizer sInstance;
 
-	void Awake ()
+    [SerializeField] GameObject mPointCloud; // the particle system
+    ParticleSystem m_ParticleSystem;
+    ParticleSystem.Particle[] m_Particles;
+    int m_NumParticles;
+
+
+    void Awake ()
 	{
 		sInstance = this;
-	}
+
+    }
 
 	void Start ()
 	{
         // This is required for OnPose and OnStatusChange to be triggered
         LibPlacenote.Instance.RegisterListener (this);
-	}
+        m_ParticleSystem = mPointCloud.GetComponent<ParticleSystem>();
+    }
 
 	void Update ()
 	{
@@ -33,13 +42,10 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	/// </remarks>
 	public static void EnablePointcloud ()
 	{
-		if (sInstance.mMap == null) {
-			Debug.LogWarning (
-				"Map game object reference is null, please initialize in editor.Skipping pointcloud visualization"
-			);
-			return;
-		}
-		sInstance.InvokeRepeating ("DrawMap", 0f, 0.1f);
+        sInstance.mPointCloud.SetActive(true);
+        SetVisible(true);
+
+		sInstance.InvokeRepeating ("DrawPointCloud", 0f, 0.1f);
 	}
 
 	/// <summary>
@@ -48,8 +54,11 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	public static void DisablePointcloud ()
 	{
 		sInstance.CancelInvoke ();
+
 		ClearPointcloud ();
-	}
+        SetVisible(false);
+
+    }
 
 
 	/// <summary>
@@ -57,9 +66,10 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	/// </summary>
 	public static void ClearPointcloud() 
 	{
-		MeshFilter mf = sInstance.mMap.GetComponent<MeshFilter> ();
-		mf.mesh.Clear ();
-	}
+
+        sInstance.m_ParticleSystem.Clear();
+
+    }
 
 	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose)
 	{
@@ -73,59 +83,83 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 	}
 
-	public void DrawMap ()
-	{
-		if (LibPlacenote.Instance.GetStatus () != LibPlacenote.MappingStatus.RUNNING) {
-			return;
-		}
 
-		LibPlacenote.PNFeaturePointUnity[] map = LibPlacenote.Instance.GetMap ();
+    public void DrawPointCloud()
+    {
+        if (LibPlacenote.Instance.GetStatus() != LibPlacenote.MappingStatus.RUNNING)
+        {
+            return;
+        }
 
-		if (map == null) {
-			return;
-		}
+        LibPlacenote.PNFeaturePointUnity[] map = LibPlacenote.Instance.GetMap();
 
-		Vector3[] points = new Vector3[map.Length];
-		Color[] colors = new Color[map.Length];
-		for (int i = 0; i < map.Length; ++i) {
+        if (map == null)
+        {
+            return;
+        }
 
-			points [i].x = map [i].point.x;
-			points [i].y = map [i].point.y;
-			points [i].z = -map [i].point.z;
-			colors [i].r = 1 - map [i].measCount / 10f;
-			colors [i].b = 0;
-			colors [i].g = map [i].measCount / 10f;
+        Vector3[] points = new Vector3[map.Length];
+        Color[] colors = new Color[map.Length];
+        for (int i = 0; i < map.Length; ++i)
+        {
 
-			if (map [i].measCount < 3) {
-				colors [i].a = 0;
-			} else {
-				colors [i].a = 0.2f + 1.6f * (map [i].measCount / 10f);
-			}
-		}
+            points[i].x = map[i].point.x;
+            points[i].y = map[i].point.y;
+            points[i].z = -map[i].point.z;
+            colors[i].r = 1 - map[i].measCount / 10f;
+            colors[i].b = 0;
+            colors[i].g = map[i].measCount / 10f;
 
-		// Need to update indicies too!
-		int[] indices = new int[map.Length];
-		for (int i = 0; i < map.Length; ++i) {
-			indices [i] = i;
-		}
+            if (map[i].measCount < 3)
+            {
+                colors[i].a = 0;
+            }
+            else
+            {
+                colors[i].a = 0.2f + 1.6f * (map[i].measCount / 10f);
+            }
+        }
 
-		// Create GameObject container with mesh components for the loaded mesh.
-		MeshFilter mf = mMap.GetComponent<MeshFilter> ();
-		if (mf == null) {
-			mf = mMap.AddComponent<MeshFilter> ();
-			mf.mesh = new Mesh ();
-		}
-		mf.mesh.Clear ();
-		mf.mesh.vertices = points;
-		mf.mesh.colors = colors;
-		mf.mesh.SetIndices (indices, MeshTopology.Points, 0);
+        // start creating the particle system points
 
-		MeshRenderer mr = mMap.GetComponent<MeshRenderer> ();
-		if (mr == null) {
-			mr = mMap.AddComponent<MeshRenderer> ();
-		} 
-		mr.material = mPtCloudMat;
-	}
+
+        int numParticles = points.Length;
+        if (m_Particles == null || m_Particles.Length < numParticles)
+            m_Particles = new ParticleSystem.Particle[numParticles];
+
+
+        //var color = m_ParticleSystem.main.startColor.color;
+        var size = m_ParticleSystem.main.startSize.constant;
+
+        for (int i = 0; i < numParticles; ++i)
+        {
+            m_Particles[i].startColor = colors[i];
+            m_Particles[i].startSize = size;
+            m_Particles[i].position = points[i];
+            m_Particles[i].remainingLifetime = 1f;
+        }
+
+        // Remove any existing particles by setting remainingLifetime
+        // to a negative value.
+        for (int i = numParticles; i < m_NumParticles; ++i)
+        {
+            m_Particles[i].remainingLifetime = -1f;
+        }
+
+        m_ParticleSystem.SetParticles(m_Particles, Math.Max(numParticles, m_NumParticles));
+        m_NumParticles = numParticles;
+
+    }
+
+    static void SetVisible(bool visible)
+    {
+        if (sInstance.m_ParticleSystem == null)
+            return;
+
+        var pRenderer = sInstance.m_ParticleSystem.GetComponent<Renderer>();
+        if (pRenderer != null)
+            pRenderer.enabled = visible;
+    }
 
     public void OnLocalized()
     {

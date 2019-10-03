@@ -48,7 +48,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		mMapListPanel.SetActive (false);
 
-		FeaturesVisualizer.EnablePointcloud ();
+		
 		LibPlacenote.Instance.RegisterListener (this);
 		ResetSlider ();
 
@@ -141,6 +141,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
 		LibPlacenote.Instance.StopSession ();
         FeaturesVisualizer.ClearPointcloud();
+        
         GetComponent<ShapeManager>().ClearShapes();
 
 	}
@@ -243,7 +244,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mMappingButtonPanel.SetActive (true);
 
 		Debug.Log ("Started Session");
-		LibPlacenote.Instance.StartSession ();
+        FeaturesVisualizer.EnablePointcloud();
+        LibPlacenote.Instance.StartSession ();
 
 		if (mReportDebug) {
 			LibPlacenote.Instance.StartRecordDataset (
@@ -329,13 +331,13 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 	{
 		Debug.Log ("prevStatus: " + prevStatus.ToString() + " currStatus: " + currStatus.ToString());
 		if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.LOST) {
-			mLabelText.text = "Localized";
-            GetComponent<ShapeManager>().LoadShapesJSON (mSelectedMapInfo.metadata.userdata);
+			
 		} else if (currStatus == LibPlacenote.MappingStatus.RUNNING && prevStatus == LibPlacenote.MappingStatus.WAITING) {
 			mLabelText.text = "Mapping: Tap to add Shapes";
 		} else if (currStatus == LibPlacenote.MappingStatus.LOST) {
-			mLabelText.text = "Searching for position lock";
+			
 		} else if (currStatus == LibPlacenote.MappingStatus.WAITING) {
+
             if (GetComponent<ShapeManager>().shapeObjList.Count != 0) {
                 GetComponent<ShapeManager>().ClearShapes ();
 			}
@@ -344,5 +346,9 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 
     public void OnLocalized()
     {
+        mLabelText.text = "Localized";
+        GetComponent<ShapeManager>().LoadShapesJSON(mSelectedMapInfo.metadata.userdata);
+        LibPlacenote.Instance.StopSendingFrames();
+
     }
 }

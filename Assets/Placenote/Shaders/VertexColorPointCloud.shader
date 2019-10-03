@@ -38,7 +38,7 @@ SubShader {
         {
             v2f o;
             o.vertex = UnityObjectToClipPos(v.pos);
-            o.size = point_size;
+            o.size = max(2.0, 15.0 / length(ObjSpaceViewDir(v.pos)));
            
             // Color should be based on pose relative info
             o.color = v.color;
