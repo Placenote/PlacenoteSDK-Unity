@@ -494,12 +494,6 @@ public class LibPlacenote : MonoBehaviour
             return;
         }
 
-        XRCameraImage image;
-        if (!cameraManager.TryGetLatestImage(out image))
-        {
-            return;
-        }
-
         if (!mIntrinsicsSet)
         {
             XRCameraIntrinsics intrinsics;
@@ -527,6 +521,12 @@ public class LibPlacenote : MonoBehaviour
             return;
         }
 
+
+        XRCameraImage image;
+        if (!cameraManager.TryGetLatestImage(out image))
+        {
+            return;
+        }
         XRCameraImagePlane yPlane = image.GetPlane(0);
         XRCameraImagePlane vuPlane = image.GetPlane(1);
         if (mImage == null)
