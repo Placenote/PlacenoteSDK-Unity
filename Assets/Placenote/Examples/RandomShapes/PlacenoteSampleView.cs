@@ -33,13 +33,6 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 			return mSelectedMapInfo != null ? mSelectedMapInfo.placeId : null;
 		}
 	}
-	private string mSaveMapId = null;
-
-
-	private BoxCollider mBoxColliderDummy;
-	private SphereCollider mSphereColliderDummy;
-	private CapsuleCollider mCapColliderDummy;
-
 
 	// Use this for initialization
 	void Start ()
@@ -55,12 +48,33 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		// for simulator
 		#if UNITY_EDITOR
 		mSimulatorAddShapeButton.SetActive(true);
-		#endif
-	}
+#endif
+
+        mLocalizationThumbnail.gameObject.SetActive(false);
+        LocalizationThumbnailSelector.Instance.TextureEvent += (thumbnailTexture) =>
+        {
+            if (mLocalizationThumbnail == null)
+            {
+                return;
+            }
+
+            RectTransform rectTransform = mLocalizationThumbnail.rectTransform;
+            if (thumbnailTexture.width != (int)rectTransform.rect.width)
+            {
+                rectTransform.SetSizeWithCurrentAnchors(
+                    RectTransform.Axis.Horizontal, thumbnailTexture.width);
+                rectTransform.SetSizeWithCurrentAnchors(
+                    RectTransform.Axis.Vertical, thumbnailTexture.height);
+                rectTransform.ForceUpdateRectTransforms();
+            }
+            mLocalizationThumbnail.texture = thumbnailTexture;
+        };
+    }
 		
 	void Update ()
 	{
-		if (!mARInit && LibPlacenote.Instance.Initialized()) {
+		if (!mARInit && LibPlacenote.Instance.Initialized())
+        {
 			mARInit = true;
 			mLabelText.text = "Ready to Start!";
 		}
@@ -138,6 +152,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 		mInitButtonPanel.SetActive (true);
 		mExitButton.SetActive (false);
 		mMappingButtonPanel.SetActive (false);
+        mLocalizationThumbnail.gameObject.SetActive(false);
 
 		LibPlacenote.Instance.StopSession ();
         FeaturesVisualizer.ClearPointcloud();
@@ -183,8 +198,8 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 					mInitButtonPanel.SetActive (false);
 					mMappingButtonPanel.SetActive(false);
 					mExitButton.SetActive (true);
-
-					LibPlacenote.Instance.StartSession ();
+                    mLocalizationThumbnail.gameObject.SetActive(true);
+                    LibPlacenote.Instance.StartSession ();
 
 					if (mReportDebug) {
 						LibPlacenote.Instance.StartRecordDataset (
@@ -278,12 +293,11 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				LibPlacenote.Instance.StopSession ();
                 FeaturesVisualizer.ClearPointcloud();
 
-				mSaveMapId = mapId;
 				mInitButtonPanel.SetActive (true);
 				mMappingButtonPanel.SetActive (false);
 				mExitButton.SetActive(false);
 
-				LibPlacenote.MapMetadataSettable metadata = new LibPlacenote.MapMetadataSettable();
+                LibPlacenote.MapMetadataSettable metadata = new LibPlacenote.MapMetadataSettable();
 				metadata.name = RandomName.Get ();
 				mLabelText.text = "Saved Map Name: " + metadata.name;
 

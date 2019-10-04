@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1035804765858530082}
   - component: {fileID: 3115851045795086920}
   - component: {fileID: 2711838841766744936}
+  - component: {fileID: 5803561621592095700}
   m_Layer: 0
   m_Name: PlaceARSessionOrigin
   m_TagString: Untagged
@@ -101,6 +102,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa17d122634046b4a8e23048891fafc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &5803561621592095700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4620038059582172613}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fe34de0cd4f844d7a250187637644ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mArBackground: {fileID: 8676023112320709428}
 --- !u!1 &8384612289340965710
 GameObject:
   m_ObjectHideFlags: 0
@@ -114,7 +128,6 @@ GameObject:
   - component: {fileID: 8999606737428662983}
   - component: {fileID: 4604817127376127514}
   - component: {fileID: 8676023112320709428}
-  - component: {fileID: 2711838841766744939}
   m_Layer: 0
   m_Name: AR Camera
   m_TagString: MainCamera
@@ -227,16 +240,3 @@ MonoBehaviour:
   m_CustomMaterial: {fileID: 0}
   m_UseCustomRendererAsset: 0
   m_CustomRendererAsset: {fileID: 0}
---- !u!114 &2711838841766744939
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8384612289340965710}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0fe34de0cd4f844d7a250187637644ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mARBackground: {fileID: 8676023112320709428}

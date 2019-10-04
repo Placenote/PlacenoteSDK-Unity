@@ -226,6 +226,21 @@ public class LibPlacenote : MonoBehaviour
     }
 
     /// <summary>
+    /// Enums that indicates the quality of mapping in the running session
+    /// </summary>
+    public enum MappingQuality
+    {
+        /// <summary>
+        /// WAITING indicates that a mapping session is limited at the moment
+        /// </summary>
+        LIMITED,
+        /// <summary>
+        /// RUNNING indicates that a localization session is well mapped
+        /// </summary>
+        GOOD
+    }
+
+    /// <summary>
     /// Struct that contains location data for the map. All fields are required.
     /// </summary>
     [System.Serializable]
@@ -786,6 +801,35 @@ public class LibPlacenote : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Gets the quality of mapping of the current frame
+    /// </summary>
+    /// <returns>The quality of mapping of the current frame.</returns>
+    public MappingQuality GetMappingQuality()
+    {
+        LibPlacenote.PNFeaturePointUnity[] trackedLandmarks = LibPlacenote.Instance.GetTrackedFeatures();
+        if (trackedLandmarks == null)
+        {
+            return MappingQuality.LIMITED;
+        }
+
+        int lmSize = 0;
+        for (int i = 0; i < trackedLandmarks.Length; i++)
+        {
+            if (trackedLandmarks[i].measCount > 2)
+            {
+                lmSize++;
+            }
+        }
+
+        if (lmSize > 20)
+        {
+            return MappingQuality.GOOD;
+        }
+
+        return MappingQuality.LIMITED;
+    }
+
 
     /// <summary>
     /// Callback used to publish the computed poses along with its corresponding ARKit pose to listeners
@@ -1330,6 +1374,7 @@ public class LibPlacenote : MonoBehaviour
     {
         if (mSessionStarted)
         {
+            Debug.Log("SetLocalizationThumbnail: Texture set");
             mThumbnailTexture = thumbnailTex;
         }
         else
@@ -1361,24 +1406,21 @@ public class LibPlacenote : MonoBehaviour
 
     private void UploadThumbnail(string mapId)
     {
-        if (mThumbnailTexture == null)
-        {
-            Debug.Log("UploadThumbnail: No thumbnail captured, skipping");
-            return;
-        }
-
-        string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
-        Debug.Log(String.Format("Upload localization thumbnail {0} {1}",
-            mThumbnailTexture.width, mThumbnailTexture.height));
-        byte[] imgBuffer = mThumbnailTexture.EncodeToPNG();
-        System.IO.File.WriteAllBytes(thumbnailPath, imgBuffer);
-
         // Save Render Texture into a jpg
+        string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
         LibPlacenote.Instance.SyncLocalizationThumbnail(mapId, thumbnailPath,
             (completed, faulted, progress) =>
             {
-                if (!completed || faulted)
+
+                if (faulted)
                 {
+                    Debug.Log("Failed to upload localization thumbnail");
+                    return;
+                }
+
+                if (!completed)
+                {
+                    Debug.Log("Uploading thumbnail");
                     return;
                 }
 
@@ -1477,8 +1519,18 @@ public class LibPlacenote : MonoBehaviour
 				String mapId = resultClone.msg;
 				Debug.Log ("Added a record to map db with id " + mapId);
 				PNSaveMap (mapId, OnMapUploaded, contextPtr);
-				savedCb (mapId);
-			} else {
+
+                if (Instance.mThumbnailTexture != null)
+                {
+                    string thumbnailPath = Path.Combine(Application.persistentDataPath, mapId + ".png");
+                    Debug.Log(String.Format("Saving localization thumbnail {0} {1}",
+                        Instance.mThumbnailTexture.width, Instance.mThumbnailTexture.height));
+                    byte[] imgBuffer = Instance.mThumbnailTexture.EncodeToPNG();
+                    System.IO.File.WriteAllBytes(thumbnailPath, imgBuffer);
+                }
+
+                savedCb(mapId);
+            } else {
 				Debug.Log (String.Format ("Failed to add the map! Error msg: %s", resultClone.msg));
 				savedCb (null);
 				handle.Free ();
@@ -1527,10 +1579,10 @@ public class LibPlacenote : MonoBehaviour
 				var convertedJson = JsonConvert.SerializeObject(mapInfoList);
 				File.WriteAllText(Application.dataPath + simMapFileName, convertedJson );
 			}
-		}
+        }
 
-		savedCb (simMap.placeId);
-		progressCb (true, false, 1.0f);
+        savedCb(simMap.placeId);
+        progressCb(true, false, 1.0f);
 #endif
 	}
 
