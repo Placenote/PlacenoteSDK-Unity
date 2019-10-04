@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
+﻿using System;
+using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 
 
@@ -13,9 +13,21 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
     private RenderTexture mBestRenderTexture;
     private Texture2D mThumbnailTexture;
     private int mThumbnailScale = 6;
+    private Action<Texture2D> textureEvent = (texture) =>
+     {
+         Debug.Log("Got new thumbnail texture");
+     };
 
-    [SerializeField] RawImage mImage;
     [SerializeField] ARCameraBackground mArBackground;
+    public static LocalizationThumbnailSelector Instance => sInstance;
+
+    public Action<Texture2D> TextureEvent { get => textureEvent; set => textureEvent = value; }
+
+    void Awake()
+    {
+        sInstance = this;
+    }
+
 
     void Update()
     {
@@ -31,8 +43,6 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         mBestRenderTexture.Create();
         mThumbnailTexture = new Texture2D(Screen.width / mThumbnailScale,
             Screen.height / mThumbnailScale, TextureFormat.ARGB32, false);
-
-        gameObject.SetActive(false);
     }
 
     public void OnPose(Matrix4x4 outputPose, Matrix4x4 arkitPose)
@@ -66,14 +76,8 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
 
     private void SetCurrentImageAsThumbnail()
     {
-        if (mImage != null && Screen.width / mThumbnailScale != (int)mImage.rectTransform.rect.width)
+        if (Screen.width / mThumbnailScale != (int)mThumbnailTexture.width)
         {
-            mImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,
-                Screen.width / mThumbnailScale);
-            mImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
-                Screen.height / mThumbnailScale);
-            mImage.rectTransform.ForceUpdateRectTransforms();
-
             mThumbnailTexture.Resize(Screen.width / mThumbnailScale,
                 Screen.height / mThumbnailScale);
 
@@ -86,45 +90,23 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
         RenderTexture.active = mBestRenderTexture;
         mThumbnailTexture.ReadPixels(new Rect(0, 0, mBestRenderTexture.width, mBestRenderTexture.height), 0, 0);
         mThumbnailTexture.Apply();
-
-        if (mImage != null)
-        {
-            mImage.texture = mThumbnailTexture;
-        }
-
         LibPlacenote.Instance.SetLocalizationThumbnail(mThumbnailTexture);
+        TextureEvent(mThumbnailTexture);
     }
 
     public void OnStatusChange(LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
     {
-        Debug.Log("prev status " + prevStatus + " curr status " + currStatus);
         if (prevStatus != LibPlacenote.MappingStatus.WAITING && currStatus == LibPlacenote.MappingStatus.WAITING)
         {
             mMaxLmSize = -1;
-            mImage.gameObject.SetActive(false);
         }
         else if (prevStatus == LibPlacenote.MappingStatus.WAITING)
         {
-            mImage.gameObject.SetActive(true);
             if (LibPlacenote.Instance.GetMode() == LibPlacenote.MappingMode.LOCALIZING)
             {
                 LibPlacenote.Instance.GetLocalizationThumbnail((thumbnailTex) => {
                     mThumbnailTexture = thumbnailTex;
-                    RectTransform rectTransform = mImage.rectTransform;
-
-                    if (mThumbnailTexture.width != (int)rectTransform.rect.width)
-                    {
-                        rectTransform.SetSizeWithCurrentAnchors(
-                            RectTransform.Axis.Horizontal, mThumbnailTexture.width);
-                        rectTransform.SetSizeWithCurrentAnchors(
-                            RectTransform.Axis.Vertical, mThumbnailTexture.height);
-                        rectTransform.ForceUpdateRectTransforms();
-                    }
-
-                    if (mImage != null)
-                    {
-                        mImage.texture = mThumbnailTexture;
-                    }
+                    TextureEvent(mThumbnailTexture);
                 });
             }
         }
