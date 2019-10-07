@@ -892,16 +892,20 @@ public class LibPlacenote : MonoBehaviour
             {
                 foreach (var listener in listeners) {
 					listener.OnStatusChange (Instance.mPrevStatus, status);
-                    if (Instance.GetMode() == MappingMode.LOCALIZING &&
-                        Instance.mPrevStatus == MappingStatus.LOST &&
-                        status == MappingStatus.RUNNING)
+                }
+
+                if (Instance.GetMode() == MappingMode.LOCALIZING &&
+                    Instance.mPrevStatus == MappingStatus.LOST &&
+                    status == MappingStatus.RUNNING)
+                {
+                    if (Instance.mLocalizedCount == 0)
                     {
-                        if (Instance.mLocalizedCount == 0)
+                        foreach (var listener in listeners)
                         {
                             listener.OnLocalized();
                         }
-                        Instance.mLocalizedCount++;
                     }
+                    Instance.mLocalizedCount++;
                 }
                 Instance.mPrevStatus = status;
             }
