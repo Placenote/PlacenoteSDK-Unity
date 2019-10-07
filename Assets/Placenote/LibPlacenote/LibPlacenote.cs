@@ -505,7 +505,7 @@ public class LibPlacenote : MonoBehaviour
     // Function is called when each frame from ARKit becomes available
     unsafe void OnCameraFrameReceived(ARCameraFrameEventArgs events)
     {
-        if (!mSessionStarted && !keepSendingFrames)
+        if (!mSessionStarted || !keepSendingFrames)
         {
             return;
         }
@@ -865,7 +865,6 @@ public class LibPlacenote : MonoBehaviour
             MainThreadTaskQueue.InvokeOnMainThread(() => {
                 if (Instance.mPrevStatus != MappingStatus.WAITING)
                 {
-
                     foreach (var listener in listeners)
                     {
                         listener.OnStatusChange(Instance.mPrevStatus, MappingStatus.WAITING);
@@ -1832,7 +1831,7 @@ public class LibPlacenote : MonoBehaviour
 #endif
 
 		if (lmSize == 0) {
-			Debug.Log ("Empty landmarks, probably tried to fail");
+			//Debug.Log ("Empty landmarks, probably tried to fail");
 			return null;
 		}
 

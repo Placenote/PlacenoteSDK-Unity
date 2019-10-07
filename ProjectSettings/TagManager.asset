@@ -3,7 +3,9 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - note_delete_button
+  - note_edit_button
   layers:
   - Default
   - TransparentFX

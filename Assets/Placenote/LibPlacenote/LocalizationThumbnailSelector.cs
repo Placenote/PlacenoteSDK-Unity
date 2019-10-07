@@ -31,7 +31,9 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
 
     void Update()
     {
+#if !UNITY_EDITOR
         Graphics.Blit(null, mBestRenderTexture, mArBackground.material);
+#endif
     }
 
     void Start()

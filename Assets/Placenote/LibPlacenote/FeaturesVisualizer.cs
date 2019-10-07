@@ -16,6 +16,9 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
     ParticleSystem.Particle[] m_Particles;
     int m_NumParticles;
 
+    private Gradient gradient;
+    private GradientColorKey[] colorKey;
+    private GradientAlphaKey[] alphaKey;
 
     void Awake ()
 	{
@@ -28,6 +31,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
         // This is required for OnPose and OnStatusChange to be triggered
         LibPlacenote.Instance.RegisterListener (this);
         m_ParticleSystem = mPointCloud.GetComponent<ParticleSystem>();
+
     }
 
 	void Update ()
@@ -40,13 +44,52 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 	/// <remarks>
 	/// NOTE: to avoid the static instance being null, please call this in Start() function in your MonoBehaviour
 	/// </remarks>
-	public static void EnablePointcloud ()
+	public static void EnablePointcloud (Color? weak = null, Color? strong = null)
 	{
+        // Set colors of point cloud
+
+        sInstance.gradient = new Gradient();
+
+        // Populate the color keys at the relative time 0 and 1 (0 and 100%)
+        sInstance.colorKey = new GradientColorKey[2];
+        sInstance.colorKey[0].color = weak ?? Color.red;
+        sInstance.colorKey[0].time = 0.0f;
+        sInstance.colorKey[1].color = strong ?? Color.green;
+        sInstance.colorKey[1].time = 1.0f;
+
+        // Populate the alpha  keys at relative time 0 and 1  (0 and 100%)
+        sInstance.alphaKey = new GradientAlphaKey[2];
+
+        if (weak != null)
+        {
+            sInstance.alphaKey[0].alpha = weak.Value.a;
+        }
+        else
+        {
+            sInstance.alphaKey[0].alpha = 0.2f;
+        }
+
+        if (strong != null)
+        {
+            sInstance.alphaKey[1].alpha = strong.Value.a;
+        }
+        else
+        {
+            sInstance.alphaKey[1].alpha = 1.0f;
+        }
+
+        sInstance.alphaKey[0].time = 0.0f;
+        sInstance.alphaKey[1].time = 1.0f;
+
+        sInstance.gradient.SetKeys(sInstance.colorKey, sInstance.alphaKey);
+
         sInstance.mPointCloud.SetActive(true);
         SetVisible(true);
-
 		sInstance.InvokeRepeating ("DrawPointCloud", 0f, 0.1f);
-	}
+
+    }
+
+
 
 	/// <summary>
 	/// Disable rendering of pointclouds collected from LibPlacenote
@@ -83,7 +126,21 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 		}
 	}
 
+    /// <summary>
+    /// Sets the point cloud texture.
+    /// </summary>
+    /// <param name="ptTexture">Point texture.</param>
+    public static void SetPointCloudTexture(Texture2D ptTexture)
+    {
+        if (ptTexture == null)
+            return;
 
+        sInstance.mPointCloud.GetComponent<ParticleSystem>().GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture = ptTexture;
+    }
+
+    /// <summary>
+    /// Draws the point cloud.
+    /// </summary>
     public void DrawPointCloud()
     {
         if (LibPlacenote.Instance.GetStatus() != LibPlacenote.MappingStatus.RUNNING)
@@ -106,17 +163,21 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
             points[i].x = map[i].point.x;
             points[i].y = map[i].point.y;
             points[i].z = -map[i].point.z;
-            colors[i].r = 1 - map[i].measCount / 10f;
-            colors[i].b = 0;
-            colors[i].g = map[i].measCount / 10f;
 
+            //colors[i].r = 1 - map[i].measCount / 10f;
+            //colors[i].b = 0;
+            //colors[i].g = map[i].measCount / 10f;
+
+            colors[i] = sInstance.gradient.Evaluate(map[i].measCount / 10f);
+
+            // hide points with very low measure count (number of observations)
             if (map[i].measCount < 3)
             {
                 colors[i].a = 0;
             }
             else
             {
-                colors[i].a = 0.2f + 1.6f * (map[i].measCount / 10f);
+                //colors[i].a = 0.2f + 1.6f * (map[i].measCount / 10f);
             }
         }
 
@@ -150,6 +211,40 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
         m_NumParticles = numParticles;
 
     }
+
+    /// <summary>
+    /// Gets the point cloud.
+    /// </summary>
+    /// <returns>The point cloud.</returns>
+    public static List<Vector3> GetPointCloud()
+    {
+
+        if (LibPlacenote.Instance.GetStatus() != LibPlacenote.MappingStatus.RUNNING)
+        {
+            return null;
+        }
+
+        LibPlacenote.PNFeaturePointUnity[] map = LibPlacenote.Instance.GetMap();
+
+        if (map == null)
+        {
+            return null;
+        }
+
+        List<Vector3> pointCloud = new List<Vector3>();
+
+        for (int i = 0; i < map.Length; ++i)
+        {
+            if (map[i].measCount >= 3)
+            {
+                pointCloud.Add(new Vector3(map[i].point.x, map[i].point.y, -map[i].point.z));
+
+            }
+        }
+
+        return pointCloud;
+    }
+
 
     static void SetVisible(bool visible)
     {

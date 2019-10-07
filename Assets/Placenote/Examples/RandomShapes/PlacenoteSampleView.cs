@@ -51,6 +51,7 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 #endif
 
         mLocalizationThumbnail.gameObject.SetActive(false);
+
         LocalizationThumbnailSelector.Instance.TextureEvent += (thumbnailTexture) =>
         {
             if (mLocalizationThumbnail == null)
@@ -300,7 +301,12 @@ public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 				mExitButton.SetActive(false);
 
                 LibPlacenote.MapMetadataSettable metadata = new LibPlacenote.MapMetadataSettable();
-				metadata.name = RandomName.Get ();
+
+                //System.DateTime epochStart = new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc);
+                //int cur_time = (int)(System.DateTime.UtcNow - epochStart).TotalSeconds;
+
+                metadata.name = "Note: " + System.DateTime.Now.ToString();
+
 				mLabelText.text = "Saved Map Name: " + metadata.name;
 
 				JObject userdata = new JObject ();
