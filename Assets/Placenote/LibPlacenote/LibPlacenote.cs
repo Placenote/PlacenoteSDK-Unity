@@ -601,6 +601,14 @@ public class LibPlacenote : MonoBehaviour
     public void RegisterListener (PlacenoteListener listener)
 	{
 		listeners.Add (listener);
+
+        if (mLocalization && mLocalizedCount > 0)
+        {
+            MainThreadTaskQueue.InvokeOnMainThread(() =>
+            {
+                listener.OnLocalized();
+            });
+        }
 	}
 
 

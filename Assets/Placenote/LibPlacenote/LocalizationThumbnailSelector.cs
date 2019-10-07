@@ -14,9 +14,9 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
     private Texture2D mThumbnailTexture;
     private int mThumbnailScale = 6;
     private Action<Texture2D> textureEvent = (texture) =>
-     {
-         Debug.Log("Got new thumbnail texture");
-     };
+    {
+        Debug.Log("Got new thumbnail texture");
+    };
 
     [SerializeField] ARCameraBackground mArBackground;
     public static LocalizationThumbnailSelector Instance => sInstance;
