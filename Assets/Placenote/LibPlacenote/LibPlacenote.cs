@@ -589,6 +589,10 @@ public class LibPlacenote : MonoBehaviour
         keepSendingFrames = false;
     }
 
+    public void RestartSendingFrames()
+    {
+        keepSendingFrames = true;
+    }
 
     /// <summary>
     /// Register a listener to events published by LibPlacenote
@@ -909,6 +913,8 @@ public class LibPlacenote : MonoBehaviour
 	public void StartSession (bool extend = false)
     {
         mSessionStarted = true;
+        keepSendingFrames = true;
+
 #if !UNITY_EDITOR
 		PNStartSession (OnPose, extend, IntPtr.Zero);
 #else
