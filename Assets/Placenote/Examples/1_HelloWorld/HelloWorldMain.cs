@@ -8,7 +8,6 @@ using UnityEngine.XR.ARFoundation;
 
 namespace HelloWorld
 {
-
     public class HelloWorldMain : MonoBehaviour, PlacenoteListener
     {
         [SerializeField] GameObject mInitPanel;
@@ -31,15 +30,14 @@ namespace HelloWorld
 
             // Activating placenote
             //------------------
-            LibPlacenote.Instance.RegisterListener(this); // Register listener for onStatusChange and OnPose
-            FeaturesVisualizer.EnablePointcloud(Color.cyan, Color.blue); // Optional - to see the point features
+            //LibPlacenote.Instance.RegisterListener(this); // Register listener for onStatusChange and OnPose
+            //FeaturesVisualizer.EnablePointcloud(); // Optional - to see the point features
 
             // -----------------
 
             // wait for ar session to start tracking and for placenote to initialize
             StartCoroutine(WaitForARSessionThenStart());
         }
-
 
 
         IEnumerator WaitForARSessionThenStart()
@@ -53,8 +51,8 @@ namespace HelloWorld
 
             // Activating placenote
             //------------------
-            //LibPlacenote.Instance.RegisterListener(this); // Register listener for onStatusChange and OnPose
-            //FeaturesVisualizer.EnablePointcloud(Color.cyan, Color.blue); // Optional - to see the point features
+            LibPlacenote.Instance.RegisterListener(this); // Register listener for onStatusChange and OnPose
+            FeaturesVisualizer.EnablePointcloud(); // Optional - to see the point features
             // ---------------
 
             // AR Session has started tracking here. Now start the session
@@ -129,7 +127,6 @@ namespace HelloWorld
             // get the full point built so far
             List<Vector3> fullPointCloudMap = FeaturesVisualizer.GetPointCloud();
 
-
             // Check if either are null
             if (fullPointCloudMap == null)
             {
@@ -152,8 +149,6 @@ namespace HelloWorld
                     statusLabel.text = "Minimum map size reached but you cannot save yet. Scan one area with many feature points until the button turns blue!";
                 }
 
-
-
             }
 
 
@@ -167,7 +162,7 @@ namespace HelloWorld
 
             }
 
-
+    
 
         }
 
@@ -224,7 +219,7 @@ namespace HelloWorld
                 }
                 else
                 {
-                    statusLabel.text = "Upload Progress: " + percentage.ToString("F2") + "/1.0)";
+                    statusLabel.text = "Upload Progress: " + (percentage*100).ToString("F2") + "%" ;
                 }
             }
             );

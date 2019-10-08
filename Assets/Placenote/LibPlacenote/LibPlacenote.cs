@@ -584,11 +584,17 @@ public class LibPlacenote : MonoBehaviour
             arkitQuat, (int)Screen.orientation);
     }
 
+    /// <summary>
+    /// Stops the sending frames.
+    /// </summary>
     public void StopSendingFrames()
     {
         keepSendingFrames = false;
     }
 
+    /// <summary>
+    /// Restarts the sending frames.
+    /// </summary>
     public void RestartSendingFrames()
     {
         keepSendingFrames = true;

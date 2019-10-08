@@ -177,12 +177,11 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
             }
             else
             {
-                //colors[i].a = 0.2f + 1.6f * (map[i].measCount / 10f);
+                colors[i].a = 0.2f + 1.6f * (map[i].measCount / 10f);
             }
         }
 
         // start creating the particle system points
-
 
         int numParticles = points.Length;
         if (m_Particles == null || m_Particles.Length < numParticles)
@@ -235,7 +234,7 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 
         for (int i = 0; i < map.Length; ++i)
         {
-            if (map[i].measCount >= 3)
+            if (map[i].measCount > 2)
             {
                 pointCloud.Add(new Vector3(map[i].point.x, map[i].point.y, -map[i].point.z));
 

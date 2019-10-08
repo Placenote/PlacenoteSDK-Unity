@@ -319,12 +319,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 189593569}
   m_CullTransparentMesh: 0
---- !u!1 &266181614 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 63ff424b597344bf3aab54be0fb3740c,
-    type: 3}
-  m_PrefabInstance: {fileID: 829590208}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &291273268
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -587,6 +581,12 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 547282091}
   m_CullTransparentMesh: 0
+--- !u!1 &607278845 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 63ff424b597344bf3aab54be0fb3740c,
+    type: 3}
+  m_PrefabInstance: {fileID: 829590208}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &709101190
 GameObject:
   m_ObjectHideFlags: 0
@@ -1019,12 +1019,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 63ff424b597344bf3aab54be0fb3740c, type: 3}
---- !u!1 &903513294 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 397eff049cadd49b99cc68c2e9a66c7d,
-    type: 3}
-  m_PrefabInstance: {fileID: 291273268}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &925377992
 GameObject:
   m_ObjectHideFlags: 0
@@ -1145,8 +1139,8 @@ MonoBehaviour:
   mInitPanel: {fileID: 1563639525}
   mMappingPanel: {fileID: 547282091}
   mLoadingPanel: {fileID: 1458874606}
-  mModelWaving: {fileID: 903513294}
-  mModelDancing: {fileID: 266181614}
+  mModelWaving: {fileID: 607278845}
+  mModelDancing: {fileID: 607278845}
   mMappingProgressBar: {fileID: 2012480354}
   statusLabel: {fileID: 1134940746}
 --- !u!114 &925377998
@@ -1664,6 +1658,10 @@ PrefabInstance:
     - target: {fileID: 1271650370769016, guid: d1e35827f2c514549b1e8c48885a0cc2, type: 3}
       propertyPath: m_Name
       value: PNPointCloud
+      objectReference: {fileID: 0}
+    - target: {fileID: 1271650370769016, guid: d1e35827f2c514549b1e8c48885a0cc2, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4969268942342744, guid: d1e35827f2c514549b1e8c48885a0cc2, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2290,6 +2288,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: PNSessionOrigin
       objectReference: {fileID: 0}
+    - target: {fileID: 7057712620440577599, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
+        type: 3}
+      propertyPath: m_ClearFlags
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 4536323238531420989, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2348,12 +2351,12 @@ PrefabInstance:
     - target: {fileID: 3286079363286424432, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
         type: 3}
       propertyPath: apiKey
-      value: Enter API Key Here
+      value: 026h20d5v4lfibgzewe0s088o3ej9a4bxxzkhmdyq9aum9kkszbolo7b7kqz9c1cic9jwfums2tvvwvsl9cpgyfb0nea5ak59ne0
       objectReference: {fileID: 0}
-    - target: {fileID: 7057712620440577599, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
+    - target: {fileID: 5803561621592095700, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
         type: 3}
-      propertyPath: m_ClearFlags
-      value: 2
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4ff1c5a4b485e47aca5aacd4a978133d, type: 3}
