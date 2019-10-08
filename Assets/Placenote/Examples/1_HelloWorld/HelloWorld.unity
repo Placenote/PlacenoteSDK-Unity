@@ -186,6 +186,12 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &183751032 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 397eff049cadd49b99cc68c2e9a66c7d,
+    type: 3}
+  m_PrefabInstance: {fileID: 291273268}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &189593569
 GameObject:
   m_ObjectHideFlags: 0
@@ -1139,7 +1145,7 @@ MonoBehaviour:
   mInitPanel: {fileID: 1563639525}
   mMappingPanel: {fileID: 547282091}
   mLoadingPanel: {fileID: 1458874606}
-  mModelWaving: {fileID: 607278845}
+  mModelWaving: {fileID: 183751032}
   mModelDancing: {fileID: 607278845}
   mMappingProgressBar: {fileID: 2012480354}
   statusLabel: {fileID: 1134940746}
@@ -2351,7 +2357,7 @@ PrefabInstance:
     - target: {fileID: 3286079363286424432, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
         type: 3}
       propertyPath: apiKey
-      value: 026h20d5v4lfibgzewe0s088o3ej9a4bxxzkhmdyq9aum9kkszbolo7b7kqz9c1cic9jwfums2tvvwvsl9cpgyfb0nea5ak59ne0
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 5803561621592095700, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
         type: 3}
