@@ -27,18 +27,9 @@ namespace HelloWorld
 
         void Start()
         {
-
-            // Activating placenote
-            //------------------
-            //LibPlacenote.Instance.RegisterListener(this); // Register listener for onStatusChange and OnPose
-            //FeaturesVisualizer.EnablePointcloud(); // Optional - to see the point features
-
-            // -----------------
-
             // wait for ar session to start tracking and for placenote to initialize
             StartCoroutine(WaitForARSessionThenStart());
         }
-
 
         IEnumerator WaitForARSessionThenStart()
         {
@@ -53,6 +44,7 @@ namespace HelloWorld
             //------------------
             LibPlacenote.Instance.RegisterListener(this); // Register listener for onStatusChange and OnPose
             FeaturesVisualizer.EnablePointcloud(); // Optional - to see the point features
+
             // ---------------
 
             // AR Session has started tracking here. Now start the session
@@ -60,11 +52,10 @@ namespace HelloWorld
             mInitPanel.SetActive(true);
         }
 
-
         // Start a new session
         public void OnNewMapClick()
         {
-      
+
             // UI navigation and label updates to signal entry into mapping mdoe
             statusLabel.text = "Point at any flat surface, like a table, then hit the + button to place the model";
             mInitPanel.SetActive(false);
@@ -85,9 +76,7 @@ namespace HelloWorld
             GetComponent<ReticleController>().StopReticle();
 
             StartMapping();
-
         }
-
 
         public void StartMapping()
         {
@@ -111,10 +100,7 @@ namespace HelloWorld
             LibPlacenote.Instance.StartSession();
         }
 
-
-
         // In this example we're useing this callback to monitor mapping progress.
-
         public void OnPose(Matrix4x4 outputPose, Matrix4x4 arkitPose)
         {
 
@@ -159,11 +145,7 @@ namespace HelloWorld
                 // The save button is the only child object of the mapping panel in the scene
                 // If you change the scene remember to modify this.
                 mMappingPanel.transform.GetChild(0).gameObject.GetComponent<Button>().interactable = true;
-
             }
-
-    
-
         }
 
 
@@ -219,7 +201,7 @@ namespace HelloWorld
                 }
                 else
                 {
-                    statusLabel.text = "Upload Progress: " + (percentage*100).ToString("F2") + "%" ;
+                    statusLabel.text = "Upload Progress: " + (percentage * 100).ToString("F2") + "%";
                 }
             }
             );
@@ -281,9 +263,9 @@ namespace HelloWorld
 
 
         // Runs when LibPlacenote sends a status change message like Localized!
-        public void OnStatusChange(LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus) { 
-        
-        if (prevStatus == LibPlacenote.MappingStatus.LOST && currStatus == LibPlacenote.MappingStatus.RUNNING)
+        public void OnStatusChange(LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
+        {
+            if (prevStatus == LibPlacenote.MappingStatus.LOST && currStatus == LibPlacenote.MappingStatus.RUNNING)
             {
                 Debug.Log("On status says localized the scene");
             }
@@ -300,7 +282,6 @@ namespace HelloWorld
             mModelDancing.transform.position = savedModelPosition;
             mModelDancing.transform.rotation = savedModelRotation;
             mModelDancing.SetActive(true);
-
         }
 
     }

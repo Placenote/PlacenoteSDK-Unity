@@ -2,7 +2,6 @@
 using UnityEngine.UI;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using System.IO;
 
 public class PlacenoteSampleView : MonoBehaviour, PlacenoteListener
 {

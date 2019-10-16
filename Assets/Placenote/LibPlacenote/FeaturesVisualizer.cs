@@ -20,32 +20,32 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
     private GradientColorKey[] colorKey;
     private GradientAlphaKey[] alphaKey;
 
-    void Awake ()
-	{
-		sInstance = this;
+    void Awake()
+    {
+        sInstance = this;
 
     }
 
-	void Start ()
-	{
+    void Start()
+    {
         // This is required for OnPose and OnStatusChange to be triggered
-        LibPlacenote.Instance.RegisterListener (this);
+        LibPlacenote.Instance.RegisterListener(this);
         m_ParticleSystem = mPointCloud.GetComponent<ParticleSystem>();
 
     }
 
-	void Update ()
-	{
-	}
+    void Update()
+    {
+    }
 
-	/// <summary>
-	/// Enable rendering of pointclouds collected from LibPlacenote for every half second
-	/// </summary>
-	/// <remarks>
-	/// NOTE: to avoid the static instance being null, please call this in Start() function in your MonoBehaviour
-	/// </remarks>
-	public static void EnablePointcloud (Color? weak = null, Color? strong = null)
-	{
+    /// <summary>
+    /// Enable rendering of pointclouds collected from LibPlacenote for every half second
+    /// </summary>
+    /// <remarks>
+    /// NOTE: to avoid the static instance being null, please call this in Start() function in your MonoBehaviour
+    /// </remarks>
+    public static void EnablePointcloud(Color? weak = null, Color? strong = null)
+    {
         // Set colors of point cloud
 
         sInstance.gradient = new Gradient();
@@ -85,46 +85,47 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
 
         sInstance.mPointCloud.SetActive(true);
         SetVisible(true);
-		sInstance.InvokeRepeating ("DrawPointCloud", 0f, 0.1f);
+        sInstance.InvokeRepeating("DrawPointCloud", 0f, 0.1f);
 
     }
 
 
 
-	/// <summary>
-	/// Disable rendering of pointclouds collected from LibPlacenote
-	/// </summary>
-	public static void DisablePointcloud ()
-	{
-		sInstance.CancelInvoke ();
+    /// <summary>
+    /// Disable rendering of pointclouds collected from LibPlacenote
+    /// </summary>
+    public static void DisablePointcloud()
+    {
+        sInstance.CancelInvoke();
 
-		ClearPointcloud ();
+        ClearPointcloud();
         SetVisible(false);
 
     }
 
 
-	/// <summary>
-	///  Clear currently rendering feature/landmark pointcloud
-	/// </summary>
-	public static void ClearPointcloud() 
-	{
+    /// <summary>
+    ///  Clear currently rendering feature/landmark pointcloud
+    /// </summary>
+    public static void ClearPointcloud()
+    {
 
         sInstance.m_ParticleSystem.Clear();
 
     }
 
-	public void OnPose (Matrix4x4 outputPose, Matrix4x4 arkitPose)
-	{
-	}
+    public void OnPose(Matrix4x4 outputPose, Matrix4x4 arkitPose)
+    {
+    }
 
-	public void OnStatusChange (LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
-	{
-		if (currStatus == LibPlacenote.MappingStatus.WAITING) {
-			Debug.Log ("Session stopped, resetting pointcloud mesh.");
-			ClearPointcloud ();
-		}
-	}
+    public void OnStatusChange(LibPlacenote.MappingStatus prevStatus, LibPlacenote.MappingStatus currStatus)
+    {
+        if (currStatus == LibPlacenote.MappingStatus.WAITING)
+        {
+            Debug.Log("Session stopped, resetting pointcloud mesh.");
+            ClearPointcloud();
+        }
+    }
 
     /// <summary>
     /// Sets the point cloud texture.
@@ -164,29 +165,16 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
             points[i].y = map[i].point.y;
             points[i].z = -map[i].point.z;
 
-            //colors[i].r = 1 - map[i].measCount / 10f;
-            //colors[i].b = 0;
-            //colors[i].g = map[i].measCount / 10f;
-
             colors[i] = sInstance.gradient.Evaluate(map[i].measCount / 10f);
 
             // hide points with very low measure count (number of observations)
-            if (map[i].measCount < 3)
-            {
-                colors[i].a = 0;
-            }
-            else
-            {
-                colors[i].a = 0.2f + 1.6f * (map[i].measCount / 10f);
-            }
+            colors[i].a = 0.2f + 1.6f * (map[i].measCount / 10f);
         }
 
         // start creating the particle system points
-
         int numParticles = points.Length;
         if (m_Particles == null || m_Particles.Length < numParticles)
             m_Particles = new ParticleSystem.Particle[numParticles];
-
 
         //var color = m_ParticleSystem.main.startColor.color;
         var size = m_ParticleSystem.main.startSize.constant;
@@ -231,14 +219,9 @@ public class FeaturesVisualizer : MonoBehaviour, PlacenoteListener
         }
 
         List<Vector3> pointCloud = new List<Vector3>();
-
         for (int i = 0; i < map.Length; ++i)
         {
-            if (map[i].measCount > 2)
-            {
-                pointCloud.Add(new Vector3(map[i].point.x, map[i].point.y, -map[i].point.z));
-
-            }
+            pointCloud.Add(new Vector3(map[i].point.x, map[i].point.y, -map[i].point.z));
         }
 
         return pointCloud;

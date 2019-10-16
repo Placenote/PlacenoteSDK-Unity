@@ -60,18 +60,9 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
             return;
         }
 
-        int lmSize = 0;
-        for (int i = 0; i < trackedLandmarks.Length; i++)
+        if (trackedLandmarks.Length > mMaxLmSize)
         {
-            if (trackedLandmarks[i].measCount > 2)
-            {
-                lmSize++;
-            }
-        }
-
-        if (lmSize > mMaxLmSize)
-        {
-            mMaxLmSize = lmSize;
+            mMaxLmSize = trackedLandmarks.Length;
             SetCurrentImageAsThumbnail();
         }
     }
