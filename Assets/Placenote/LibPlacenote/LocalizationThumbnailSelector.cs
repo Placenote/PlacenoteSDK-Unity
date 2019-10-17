@@ -4,7 +4,9 @@ using UnityEngine.XR.ARFoundation;
 
 
 /// <summary>
-/// Class 
+/// Singleton class that selects a localization thumbnail based on the amount
+/// of good features a frame is tracking, and returns the texture via
+/// <see cref="TextureEvent"/> action
 /// </summary>
 public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
 {
@@ -19,8 +21,17 @@ public class LocalizationThumbnailSelector : MonoBehaviour, PlacenoteListener
     };
 
     [SerializeField] ARCameraBackground mArBackground;
+
+    /// <summary>
+    /// Get accessor for the LocalizationThumbnailSelector singleton
+    /// </summary>
+    /// <value>The singleton instance</value>
     public static LocalizationThumbnailSelector Instance => sInstance;
 
+    /// <summary>
+    /// Get accessor for an event that returns the latest captured localization thumbnail
+    /// </summary>
+    /// <value>Event that returns the latest captured localization thumbnail</value>
     public Action<Texture2D> TextureEvent { get => textureEvent; set => textureEvent = value; }
 
     void Awake()

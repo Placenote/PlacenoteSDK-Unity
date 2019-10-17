@@ -31,7 +31,6 @@ public class UnityARImageFrameData
 /// <summary>
 /// Singleton class that acts as a C# wrapper to the C LibPlacenote library
 /// </summary>
-
 public class LibPlacenote : MonoBehaviour
 {
     /// <summary>
@@ -419,7 +418,6 @@ public class LibPlacenote : MonoBehaviour
 
     private static LibPlacenote sInstance;
     private List<PlacenoteListener> listeners = new List<PlacenoteListener>();
-    private string mMapPath;
     private MappingStatus mPrevStatus = MappingStatus.WAITING;
     private bool mInitialized = false;
     private List<Action<MapInfo[]>> mapListCbs = new List<Action<MapInfo[]>>();
@@ -984,7 +982,7 @@ public class LibPlacenote : MonoBehaviour
     /// if the current pose is different (above threshold) from the previous pose
     /// </summary>
     /// <param name="currCameraPose">Curr camera pose.</param>
-    public void SaveCameraPose()
+    private void SaveCameraPose()
     {
         PNTransformUnity currCameraPose = GetPose();
         /// Converts PNTransformUnity back into Vector3 and Quaternion
@@ -1020,7 +1018,7 @@ public class LibPlacenote : MonoBehaviour
     /// For Unity Simulator
     /// Checks if the current camera pose is within the range for localization.
     /// </summary>
-    public void CheckLocalization()
+    private void CheckLocalization()
     {
         PNTransformUnity currCameraPose = GetPose();
         Vector3 currPosition = new Vector3(currCameraPose.position.x, currCameraPose.position.y, currCameraPose.position.z);
@@ -1441,8 +1439,8 @@ public class LibPlacenote : MonoBehaviour
 
     /// <summary>
     /// Setting the localization thumbnail for the current map
-	/// <param name="thumbnailTex">Thumbnail texture to be uploaded along with the current map when saved.</param>
     /// </summary>
+	/// <param name="thumbnailTex">Thumbnail texture to be uploaded along with the current map when saved.</param>
     public void SetLocalizationThumbnail(Texture2D thumbnailTex)
     {
         if (mSessionStarted)
@@ -1859,7 +1857,13 @@ public class LibPlacenote : MonoBehaviour
         });
     }
 
-    public void SyncLocalizationThumbnail(String mapId, String thumbnailPath, Action<bool, bool, float> syncProgressCb)
+    /// <summary>
+    /// C# Wrapper around PNSyncThumbnail API call. Downloads the thumbnail if it doesn't exists, and uploads it if it does
+    /// </summary>
+    /// <param name="mapId">ID of the map for the localization thumbnail to be synchronized.</param>
+    /// <param name="thumbnailPath">File path of the thumbnail</param>
+    /// <param name="syncProgressCb">Callback to report the synchronization progress</param>
+    private void SyncLocalizationThumbnail(String mapId, String thumbnailPath, Action<bool, bool, float> syncProgressCb)
     {
         if (File.Exists(thumbnailPath))
         {
