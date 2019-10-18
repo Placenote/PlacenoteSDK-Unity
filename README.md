@@ -1,6 +1,6 @@
 # Placenote SDK Unity Sample app.
 The Placenote Software development kit (SDK) allows developers to create mobile applications that are location aware indoors without the need for GPS, markers or beacons. The SDK is compatible with all ARKit enabled phones and can be used to create persistent augmented reality experiences using Unity!
-The Placenote SDK Unity Sample app provided here is to serve as an example on how to integrate the SDK into a Unity app. This app is written primarily in C#. Questions? Comments? Issues? Come see us on [Slack](https://placenote.com/slack)
+The Placenote SDK Unity Sample app provided here is to serve as an example on how to integrate the SDK into a Unity app. This app is written primarily in C#. Questions? Comments? Issues? Come see us on [Slack](https://placenote.com/slack).
 
 * Note: The Placenote SDK for Unity currently only supports ARKit enabled iOS devices. Android support is planned for mid 2019.
 
@@ -40,4 +40,4 @@ The Placenote SDK Unity Sample app provided here is to serve as an example on ho
      ```
   * More details can be found on the [git lfs website](https://git-lfs.github.com/)
 
-* After you have this repo, you can continue using the [Placenote official documentation] to build the project on iOS. (https://placenote.com/docs/unity/build-instructions/)
+* After you have this repo, you can continue using the [Placenote official documentation](https://docs.placenote.com/unity/unity-getting-started) to build the project on iOS. 

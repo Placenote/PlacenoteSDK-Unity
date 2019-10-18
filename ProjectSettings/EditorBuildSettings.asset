@@ -5,13 +5,19 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Placenote/Examples/RandomShapes/RandomShapes.unity
     guid: 1257efda9ace3439485a7e2c7516465e
   - enabled: 0
-    path: Assets/Placenote/Examples/SaveAndLoadAMap/SaveAndLoadAMap.unity
+    path: Assets/Placenote/Examples/1_HelloWorld/HelloWorld.unity
     guid: dd93a25ab3537451c981c88731e9a4ee
   - enabled: 0
-    path: Assets/Placenote/Examples/SaveMetaData/SaveMetaData.unity
+    path: Assets/Placenote/Examples/2_BuildACity/BuildACity.unity
     guid: d1f32b9175c944fd2bcc1c0c16824170
+  - enabled: 0
+    path: Assets/Placenote/Examples/3_StickyNotes/StickyNotes.unity
+    guid: 41383623771544cb5bbf6df7ae95e49b
+  - enabled: 0
+    path: Assets/Placenote/Examples/4_PaintBrush/PaintBrush.unity
+    guid: 6131bddd2cb274ef38a2ba5e261b00da
   m_configObjects: {}

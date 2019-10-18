@@ -1,0 +1,14 @@
+#  ==========================================================================
+#  Wavefront Material file
+#  Exported by Red-i Productions' "Riptide Pro"
+#  (a commercial plugin for Cinema 4D PC & Mac, R10 or later)
+#  
+#  Red-i Productions
+#  http://skinprops.com
+#  
+#  ==========================================================================
+
+newmtl Cube
+Kd 0.800000 0.800000 0.800000
+illum 1
+map_Kd roadSurface_Color.png
