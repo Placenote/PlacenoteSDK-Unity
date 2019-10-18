@@ -7,9 +7,9 @@ using UnityEngine.UI;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace SaveMetaData
+namespace BuildACity
 {
-    public class SaveMetaData : MonoBehaviour, PlacenoteListener
+    public class BuildACity : MonoBehaviour, PlacenoteListener
     {
         // UI game object references
         [SerializeField] GameObject initPanel;
@@ -78,11 +78,9 @@ namespace SaveMetaData
                 return;
             }
 
-
             mappingPanel.SetActive(false);
 
             GetComponent<PlacementReticleController>().StopReticle();
-
 
             // save and upload the map
             LibPlacenote.Instance.SaveMap(

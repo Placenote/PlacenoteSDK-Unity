@@ -77,9 +77,9 @@ namespace StickyNotes
                 if (thumbnailTexture.width != (int)rectTransform.rect.width)
                 {
                     rectTransform.SetSizeWithCurrentAnchors(
-                        RectTransform.Axis.Horizontal, thumbnailTexture.width);
+                        RectTransform.Axis.Horizontal, thumbnailTexture.width*2);
                     rectTransform.SetSizeWithCurrentAnchors(
-                        RectTransform.Axis.Vertical, thumbnailTexture.height);
+                        RectTransform.Axis.Vertical, thumbnailTexture.height*2);
                     rectTransform.ForceUpdateRectTransforms();
                 }
                 mLocalizationThumbnail.texture = thumbnailTexture;
@@ -96,39 +96,6 @@ namespace StickyNotes
             }
         }
 
-        /*
-        public void OnListMapClick()
-        {
-            if (!LibPlacenote.Instance.Initialized())
-            {
-                Debug.Log("SDK not yet initialized");
-                return;
-            }
-
-            foreach (Transform t in mListContentParent.transform)
-            {
-                Destroy(t.gameObject);
-            }
-
-            mMapListPanel.SetActive(true);
-            mInitPanel.SetActive(false);
-            mRadiusSlider.gameObject.SetActive(true);
-
-            LibPlacenote.Instance.ListMaps((mapList) =>
-            {
-            // Render the map list!
-            foreach (LibPlacenote.MapInfo mapInfoItem in mapList)
-                {
-                    if (mapInfoItem.metadata.userdata != null)
-                    {
-                        Debug.Log(mapInfoItem.metadata.userdata.ToString(Formatting.None));
-                    }
-
-                    AddMapToList(mapInfoItem);
-                }
-            });
-        }
-        */
 
         public void OnSearchMapsClick()
         {
@@ -173,11 +140,43 @@ namespace StickyNotes
                 mInitPanel.SetActive(false);
 
             });
-
-
-
         }
 
+        // To get a list of all maps you have created, use list maps
+
+        /*
+        public void OnListMapClick()
+        {
+            if (!LibPlacenote.Instance.Initialized())
+            {
+                Debug.Log("SDK not yet initialized");
+                return;
+            }
+
+            foreach (Transform t in mListContentParent.transform)
+            {
+                Destroy(t.gameObject);
+            }
+
+            mMapListPanel.SetActive(true);
+            mInitPanel.SetActive(false);
+            mRadiusSlider.gameObject.SetActive(true);
+
+            LibPlacenote.Instance.ListMaps((mapList) =>
+            {
+            // Render the map list!
+            foreach (LibPlacenote.MapInfo mapInfoItem in mapList)
+                {
+                    if (mapInfoItem.metadata.userdata != null)
+                    {
+                        Debug.Log(mapInfoItem.metadata.userdata.ToString(Formatting.None));
+                    }
+
+                    AddMapToList(mapInfoItem);
+                }
+            });
+        }
+        */
 
 
         public void OnCancelClick()
@@ -190,6 +189,8 @@ namespace StickyNotes
 
         public void OnExitClick()
         {
+            mLabelText.text = "Session was reset. You can start new map or load your map again.";
+
             mInitPanel.SetActive(true);
             mMapLoadPanel.SetActive(false);
             mMapLoadButtonPanel.SetActive(false);
@@ -384,7 +385,7 @@ namespace StickyNotes
                 FeaturesVisualizer.ClearPointcloud();
 
                 mSaveMapId = mapId;
-                mInitPanel.SetActive(true);
+
                 mMappingPanel.SetActive(false);
 
                 LibPlacenote.MapMetadataSettable metadata = new LibPlacenote.MapMetadataSettable();
@@ -427,6 +428,8 @@ namespace StickyNotes
                 if (completed)
                 {
                     mLabelText.text = "Upload Complete! You can now click My Maps and choose a map to load.";
+                    mInitPanel.SetActive(true);
+
                 }
                 else if (faulted)
                 {
@@ -434,7 +437,7 @@ namespace StickyNotes
                 }
                 else
                 {
-                    mLabelText.text = "Uploading Map Named: " + mCurrMapDetails.name + "(" + percentage.ToString("F2") + "/1.0)";
+                    mLabelText.text = "Uploading Map " + "(" + (percentage*100.0f).ToString("F2") + " %)";
                 }
             });
         }

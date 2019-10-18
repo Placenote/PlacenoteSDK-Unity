@@ -2294,11 +2294,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: PNSessionOrigin
       objectReference: {fileID: 0}
-    - target: {fileID: 7057712620440577599, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
-        type: 3}
-      propertyPath: m_ClearFlags
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 4536323238531420989, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2363,6 +2358,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7057712620440577599, guid: 4ff1c5a4b485e47aca5aacd4a978133d,
+        type: 3}
+      propertyPath: m_ClearFlags
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4ff1c5a4b485e47aca5aacd4a978133d, type: 3}

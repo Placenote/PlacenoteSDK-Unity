@@ -213,6 +213,9 @@ namespace StickyNotes
                 note = ""
             };
 
+            // Set up the buttons on each note
+            note.GetComponent<NoteController>().mEditButton.onClick.AddListener(OnEditButtonClick);
+            note.GetComponent<NoteController>().mDeleteButton.onClick.AddListener(OnDeleteButtonClick);
             TurnOnButtons();
 
             EditCurrNote();

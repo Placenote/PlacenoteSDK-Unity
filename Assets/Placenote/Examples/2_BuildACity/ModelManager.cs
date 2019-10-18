@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace SaveMetaData
+namespace BuildACity
 {
 
     // Classes to hold model information
@@ -48,7 +48,7 @@ namespace SaveMetaData
 
             GameObject newModel = Instantiate(modelPrefabs[modelInfo.modelType]);
 
-            newModel.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            newModel.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
 
             newModel.transform.position = new Vector3(modelInfo.px, modelInfo.py, modelInfo.pz);
             newModel.transform.rotation = new Quaternion(modelInfo.qx, modelInfo.qy, modelInfo.qz, modelInfo.qw);
@@ -56,33 +56,6 @@ namespace SaveMetaData
             ModelInfoList.Add(modelInfo);
             ModelObjList.Add(newModel);
         }
-
-        /*
-        public void OnAddModelClick(int index)
-        {
-            if (GetComponent<PlacementReticleController>().mReticle.activeInHierarchy)
-            {
-                Vector3 position = GetComponent<PlacementReticleController>().mReticle.transform.position;
-
-                Vector3 relativePos = position - Camera.main.transform.position;
-                //Quaternion rotation = Quaternion.LookRotation(relativePos, Vector3.up);
-
-
-                // create model info object
-                ModelInfo modelInfo = new ModelInfo();
-                modelInfo.px = position.x;
-                modelInfo.py = position.y;
-                modelInfo.pz = position.z;
-                //modelInfo.qx = rotation.x;
-                //modelInfo.qy = rotation.y;
-                //modelInfo.qz = rotation.z;
-                //modelInfo.qw = rotation.w;
-                modelInfo.modelType = index;
-
-                AddModel(modelInfo);
-            }
-        }
-        */
 
         public void OnModelButtonPressDown(int index)
         {
@@ -100,10 +73,6 @@ namespace SaveMetaData
             if (GetComponent<PlacementReticleController>().mObjReticle.activeInHierarchy)
             {
                 Vector3 position = GetComponent<PlacementReticleController>().mObjReticle.transform.position;
-
-                //Vector3 relativePos = position - Camera.main.transform.position;
-                //Quaternion rotation = Quaternion.LookRotation(relativePos, Vector3.up);
-
                 Quaternion rotation = GetComponent<PlacementReticleController>().mObjReticle.transform.rotation;
 
                 // create model info object

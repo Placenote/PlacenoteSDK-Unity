@@ -127,7 +127,7 @@ public class PaintController : MonoBehaviour, PlacenoteListener {
 
 				saveScene (mapId);
 
-				textLabel.text = "Saving Your Painting...";
+				textLabel.text = "Saving Your Painting: ";
 
 				//mLabelText.text = "Saved Map ID: " + mapId;
 				//mInitButtonPanel.SetActive (true);
@@ -150,10 +150,17 @@ public class PaintController : MonoBehaviour, PlacenoteListener {
                     // clearing the painting and history currently active
                     onClearAllClick();
 
-
+                }
+                else if(faulted)
+                {
+                    textLabel.text = "Map upload failed.";
+                }
+                else
+                {
+                    textLabel.text = "Saving Your Painting: " + (percentage * 100.0f).ToString("F2") + " %";
                 }
 
-			}
+            }
 		);
 	}
 		

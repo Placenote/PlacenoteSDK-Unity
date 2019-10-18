@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 
-namespace SaveMetaData
+namespace BuildACity
 {
     public class PlacementReticleController : MonoBehaviour
     {
@@ -44,7 +44,7 @@ namespace SaveMetaData
         public void ObjReticleActivate(GameObject modelPrefab)
         {
             mObjReticle = Instantiate(modelPrefab);
-            mObjReticle.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            mObjReticle.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
             mObjReticle.SetActive(false);
         }
 
@@ -84,7 +84,7 @@ namespace SaveMetaData
                 var screenPosition = new Vector2(Screen.width / 2, Screen.height / 2);
 
                 // World Hit Test
-                if (m_RaycastManager.Raycast(screenPosition, s_Hits, TrackableType.PlaneWithinPolygon))
+                if (m_RaycastManager.Raycast(screenPosition, s_Hits, TrackableType.PlaneWithinBounds))
                 {
 
                     // Raycast hits are sorted by distance, so get the closest hit.
